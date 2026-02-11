@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════════════
+  ⚠️ IMPORTANT - USE THE CORRECT EXCEL FILE ⚠️
+═══════════════════════════════════════════════════════════════
+
+WHY "NO REPORTS FOUND":
+-----------------------
+All 4 files you uploaded FAILED because they have wrong format:
+
+❌ 0PLANT DEPCAP.xlsx - WRONG FORMAT
+❌ PLANT STATUS.xlsx - WRONG FORMAT  
+❌ Sample_Spesdfsd.xlsx - WRONG FORMAT
+❌ CORRECT_SAMPLE_AGUS!.xlsx - WRONG FORMAT (has "ersdfdefsdf" column)
+
+SOLUTION:
+---------
+
+1. USE THIS FILE: CORRECT_SAMPLE_AGUS1.xlsx
+   Location: npc-reporting-system\CORRECT_SAMPLE_AGUS1.xlsx
+
+2. This file has the CORRECT format with these columns:
+   ✓ Date
+   ✓ Unit Number
+   ✓ Generation kWh
+   ✓ Operating Hours
+   ✓ Availability Hours
+   ✓ Forced Outage Hours
+   ✓ Scheduled Outage Hours
+
+3. Go to Upload Excel Reports page
+4. Select: AGUS1
+5. Upload: CORRECT_SAMPLE_AGUS1.xlsx
+6. Wait for success message
+7. Go to View Reports page
+8. Select AGUS1 plant
+9. Click "Apply Filters" button
+
+IMPORTANT:
+----------
+- Do NOT use files with names like "PLANT_DEPCAP", "PLANT_STATUS", etc.
+- These are different files with wrong format
+- Only use CORRECT_SAMPLE_AGUS1.xlsx
+
+After successful upload, you will see 40 records in View Reports!
+
+═══════════════════════════════════════════════════════════════

@@ -1,0 +1,89 @@
+🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍
+
+FILE COMPARISON - WHAT YOU UPLOADED VS WHAT YOU NEED
+====================================================
+
+WHAT YOU UPLOADED (ALL WRONG):
+------------------------------
+
+❌ File #1: CORRECT_SAMPLE_AGUS!.xlsx
+   └─ Has "!" exclamation mark, not "1"
+   └─ Contains column: "ersdfdefsdf"
+   └─ Status: FAILED
+   └─ Records: 0
+
+❌ File #2: Sample_Spesdfsd.xlsx
+   └─ Contains column: "ersdfdefsdf"
+   └─ Status: FAILED
+   └─ Records: 0
+
+❌ File #3: PLANT STATUS.xlsx
+   └─ Contains column: "national_power_corporation"
+   └─ Status: FAILED
+   └─ Records: 0
+
+❌ File #4: 0PLANT DEPCAP.xlsx
+   └─ Contains column: "4._edit_with_approved_p..."
+   └─ Status: FAILED
+   └─ Records: 0
+
+═══════════════════════════════════════════════════════════════
+
+WHAT YOU NEED (CORRECT FILE):
+------------------------------
+
+✅ File Name: CORRECT_SAMPLE_AGUS1.xlsx
+   └─ Has "1" (number one), not "!" (exclamation)
+   └─ Contains correct columns:
+      • Date
+      • Unit Number
+      • Generation kWh
+      • Operating Hours
+      • Availability Hours
+      • Forced Outage Hours
+      • Scheduled Outage Hours
+   └─ Will import: 40 records
+   └─ Status: Will be COMPLETED
+
+═══════════════════════════════════════════════════════════════
+
+SIDE-BY-SIDE COMPARISON:
+-------------------------
+
+WRONG FILE:                    CORRECT FILE:
+CORRECT_SAMPLE_AGUS!.xlsx  →  CORRECT_SAMPLE_AGUS1.xlsx
+                    ↑                          ↑
+            Exclamation mark              Number one
+                 (!)                          (1)
+
+═══════════════════════════════════════════════════════════════
+
+HOW TO TELL THEM APART:
+-----------------------
+
+Look at the file name carefully:
+
+AGUS! = WRONG (exclamation mark)
+AGUS1 = CORRECT (number one)
+
+The file with "!" has wrong data inside.
+The file with "1" has correct data inside.
+
+═══════════════════════════════════════════════════════════════
+
+WHAT TO DO NOW:
+---------------
+
+1. Find the file: CORRECT_SAMPLE_AGUS1.xlsx
+   (Look for the number "1", not "!")
+
+2. Upload it for AGUS1 plant
+
+3. Wait for: "File uploaded successfully! 40 records imported."
+
+4. Then all features will work:
+   ✓ View Reports will show data
+   ✓ Generate Report will work
+   ✓ Summary statistics will show
+
+🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍🔍

@@ -1,0 +1,368 @@
+# API Documentation - NPC Reporting System
+
+Base URL: `http://localhost:8000/api`
+
+## Authentication
+
+All endpoints require authentication. Use session-based authentication or token authentication.
+
+```javascript
+// Example with session auth
+axios.defaults.withCredentials = true;
+```
+
+## Endpoints
+
+### 1. Plants
+
+#### List All Plants
+```
+GET /api/plants/
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "code": "AGUS1",
+    "name": "Agus 1 Hydroelectric Plant",
+    "capacity_mw": "100.00",
+    "location": "Lanao del Sur",
+    "commissioned_date": "1990-01-01",
+    "is_active": true
+  }
+]
+```
+
+---
+
+### 2. Units
+
+#### List All Units
+```
+GET /api/units/
+```
+
+**Query Parameters:**
+- `plant_code` (optional): Filter by plant code (e.g., AGUS1)
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "plant": 1,
+    "plant_name": "Agus 1 Hydroelectric Plant",
+    "unit_number": 1,
+    "capacity_mw": "25.00",
+    "is_active": true
+  }
+]
+```
+
+---
+
+### 3. Upload Excel File
+
+#### Upload File
+```
+POST /api/uploaded-files/upload/
+```
+
+**Request:**
+- Content-Type: `multipart/form-data`
+- Body:
+  - `file`: Excel file (.xlsx)
+  - `plant_code`: Plant code (AGUS1-AGUS7)
+
+**Example:**
+```javascript
+const formData = new FormData();
+formData.append('file', fileObject);
+formData.append('plant_code', 'AGUS1');
+
+axios.post('/api/uploaded-files/upload/', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+```
+
+**Success Response (201):**
+```json
+{
+  "message": "File uploaded and processed successfully",
+  "records_imported": 150,
+  "file_id": 42
+}
+```
+
+**Error Response (400):**
+```json
+{
+  "error": "Validation errors: Missing required columns: generation_kwh"
+}
+```
+
+---
+
+### 4. Uploaded Files History
+
+#### List Uploaded Files
+```
+GET /api/uploaded-files/
+```
+
+**Response:**
+```json
+{
+  "count": 10,
+  "next": "http://localhost:8000/api/uploaded-files/?page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "original_filename": "agus1_january.xlsx",
+      "plant": 1,
+      "plant_name": "Agus 1 Hydroelectric Plant",
+      "uploaded_by": 1,
+      "uploaded_by_username": "admin",
+      "uploaded_at": "2024-01-15T10:30:00Z",
+      "status": "COMPLETED",
+      "records_imported": 150,
+      "file_size": 45678
+    }
+  ]
+}
+```
+
+---
+
+### 5. Generation Reports
+
+#### List Reports
+```
+GET /api/generation-reports/
+```
+
+**Query Parameters:**
+- `plant_code`: Filter by plant (can be multiple: `?plant_code=AGUS1&plant_code=AGUS2`)
+- `start_date`: Filter from date (YYYY-MM-DD)
+- `end_date`: Filter to date (YYYY-MM-DD)
+- `unit_id`: Filter by unit ID
+- `page`: Page number for pagination
+
+**Example:**
+```
+GET /api/generation-reports/?plant_code=AGUS1&start_date=2024-01-01&end_date=2024-01-31&page=1
+```
+
+**Response:**
+```json
+{
+  "count": 150,
+  "next": "http://localhost:8000/api/generation-reports/?page=2",
+  "previous": null,
+  "results": [
+    {
+      "id": 1,
+      "plant_code": "AGUS1",
+      "unit_number": 1,
+      "report_date": "2024-01-15",
+      "generation_kwh": "500000.00",
+      "operating_hours": "23.50",
+      "capacity_factor": "85.42",
+      "availability_factor": "97.92"
+    }
+  ]
+}
+```
+
+#### Get Report Summary
+```
+GET /api/generation-reports/summary/
+```
+
+**Query Parameters:** Same as list reports
+
+**Response:**
+```json
+{
+  "total_generation": "15000000.00",
+  "avg_capacity_factor": "82.50",
+  "avg_availability_factor": "95.30",
+  "total_operating_hours": "3540.00",
+  "total_forced_outage_hours": "120.00"
+}
+```
+
+#### Generate Excel Report
+```
+POST /api/generation-reports/generate_report/
+```
+
+**Request Body:**
+```json
+{
+  "plant_codes": ["AGUS1", "AGUS2"],
+  "start_date": "2024-01-01",
+  "end_date": "2024-01-31",
+  "report_type": "daily"
+}
+```
+
+**Report Types:**
+- `daily`: Daily detailed report
+- `monthly`: Monthly summary report
+- `consolidated`: Consolidated report across plants
+
+**Response:**
+- Content-Type: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- Binary Excel file
+
+**Example:**
+```javascript
+axios.post('/api/generation-reports/generate_report/', data, {
+  responseType: 'blob'
+}).then(response => {
+  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'report.xlsx');
+  document.body.appendChild(link);
+  link.click();
+});
+```
+
+---
+
+## Error Responses
+
+### 400 Bad Request
+```json
+{
+  "error": "Validation error message",
+  "field_errors": {
+    "plant_code": ["This field is required."]
+  }
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "detail": "Authentication credentials were not provided."
+}
+```
+
+### 404 Not Found
+```json
+{
+  "error": "No data found for the specified criteria"
+}
+```
+
+### 500 Internal Server Error
+```json
+{
+  "error": "An unexpected error occurred"
+}
+```
+
+---
+
+## Excel File Format Requirements
+
+### Required Columns
+| Column Name | Type | Description | Validation |
+|------------|------|-------------|------------|
+| date | Date | Report date | YYYY-MM-DD format |
+| unit_number | Integer | Unit number | Must exist in database |
+| generation_kwh | Decimal | Generation in kWh | Non-negative |
+| operating_hours | Decimal | Operating hours | 0-24 |
+| availability_hours | Decimal | Availability hours | 0-24 |
+| forced_outage_hours | Decimal | Forced outage hours | 0-24 |
+| scheduled_outage_hours | Decimal | Scheduled outage hours | 0-24 |
+| remarks | Text | Optional remarks | Optional |
+
+### Example Excel Data
+
+| date | unit_number | generation_kwh | operating_hours | availability_hours | forced_outage_hours | scheduled_outage_hours | remarks |
+|------|-------------|----------------|-----------------|-------------------|---------------------|----------------------|---------|
+| 2024-01-15 | 1 | 500000 | 23.5 | 23.5 | 0.5 | 0 | Normal operation |
+| 2024-01-15 | 2 | 480000 | 22.0 | 24.0 | 2.0 | 0 | Minor issue |
+
+---
+
+## Rate Limiting
+
+Currently no rate limiting is implemented. For production, consider:
+- 100 requests per minute per user
+- 10 file uploads per hour per user
+
+---
+
+## Pagination
+
+All list endpoints use pagination:
+- Default page size: 50 items
+- Maximum page size: 100 items
+- Use `?page=2` to navigate pages
+
+**Response Structure:**
+```json
+{
+  "count": 500,
+  "next": "http://localhost:8000/api/endpoint/?page=3",
+  "previous": "http://localhost:8000/api/endpoint/?page=1",
+  "results": [...]
+}
+```
+
+---
+
+## CORS Configuration
+
+Allowed origins (development):
+- `http://localhost:8080`
+- `http://localhost:3000`
+
+For production, update `CORS_ALLOWED_ORIGINS` in settings.py
+
+---
+
+## Testing the API
+
+### Using cURL
+
+```bash
+# Login first (if using session auth)
+curl -X POST http://localhost:8000/api-auth/login/ \
+  -d "username=admin&password=admin123" \
+  -c cookies.txt
+
+# List plants
+curl -X GET http://localhost:8000/api/plants/ \
+  -b cookies.txt
+
+# Upload file
+curl -X POST http://localhost:8000/api/uploaded-files/upload/ \
+  -F "file=@report.xlsx" \
+  -F "plant_code=AGUS1" \
+  -b cookies.txt
+```
+
+### Using Postman
+
+1. Import collection from `/postman/NPC_API.postman_collection.json`
+2. Set environment variables
+3. Test endpoints
+
+---
+
+## Versioning
+
+Current version: v1 (implicit)
+
+Future versions will use URL versioning:
+- `/api/v1/plants/`
+- `/api/v2/plants/`

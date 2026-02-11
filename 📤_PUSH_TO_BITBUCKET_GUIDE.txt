@@ -1,0 +1,191 @@
+═══════════════════════════════════════════════════════════════
+  📤 COMPLETE GUIDE: PUSH TO BITBUCKET
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: AUTOMATIC (EASIEST)
+==============================
+
+1. Install Git for Windows:
+   - Download: https://git-scm.com/download/win
+   - Install with default settings
+   - Restart Command Prompt after installation
+
+2. Double-click: PUSH_TO_BITBUCKET.bat
+   - It will automatically:
+     ✓ Check if Git is installed
+     ✓ Initialize repository
+     ✓ Add Bitbucket remote
+     ✓ Commit all files
+     ✓ Push to Bitbucket
+
+3. Enter your Bitbucket password when prompted
+
+═══════════════════════════════════════════════════════════════
+
+OPTION 2: MANUAL (STEP BY STEP)
+================================
+
+STEP 1: Install Git
+-------------------
+Download and install from: https://git-scm.com/download/win
+
+STEP 2: Configure Git
+---------------------
+Open Command Prompt and run:
+
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+STEP 3: Navigate to Project
+----------------------------
+cd "C:\Users\eladiong\Desktop\OJT Intern\npc-reporting-system"
+
+STEP 4: Initialize Repository
+------------------------------
+git init
+
+STEP 5: Add All Files
+----------------------
+git add .
+
+STEP 6: Commit
+--------------
+git commit -m "Initial commit: NPC Reporting System"
+
+STEP 7: Add Remote
+------------------
+git remote add origin https://artchelintern-admin@bitbucket.org/ojtinternprogram/npc.git
+
+STEP 8: Push to Bitbucket
+--------------------------
+git branch -M main
+git push -u origin main
+
+Enter password when prompted.
+
+═══════════════════════════════════════════════════════════════
+
+AUTHENTICATION
+==============
+
+Username: artchelintern-admin
+
+Password Options:
+1. Your Bitbucket account password
+2. App Password (if 2FA is enabled)
+
+To create App Password:
+1. Go to: https://bitbucket.org/account/settings/app-passwords/
+2. Click "Create app password"
+3. Name: "NPC Reporting System"
+4. Permissions: Check "Repositories: Write"
+5. Click "Create"
+6. Copy the generated password
+7. Use this password when pushing
+
+═══════════════════════════════════════════════════════════════
+
+WHAT WILL BE PUSHED
+===================
+
+✅ Backend code (Django)
+✅ Frontend code (Vue.js)
+✅ Configuration files
+✅ Documentation
+✅ Sample files
+✅ Database schema
+
+❌ NOT included (via .gitignore):
+   - node_modules/
+   - venv/
+   - db.sqlite3
+   - uploaded files
+   - __pycache__/
+   - .env files
+
+═══════════════════════════════════════════════════════════════
+
+FUTURE UPDATES
+==============
+
+After initial push, to push updates:
+
+1. Make your changes
+2. Open Command Prompt in project folder
+3. Run:
+   git add .
+   git commit -m "Description of changes"
+   git push
+
+═══════════════════════════════════════════════════════════════
+
+TROUBLESHOOTING
+===============
+
+Problem: "git is not recognized"
+Solution: Install Git and restart Command Prompt
+
+Problem: "Authentication failed"
+Solution: 
+- Check username is correct (artchelintern-admin)
+- Use App Password if 2FA is enabled
+- Verify you have access to the repository
+
+Problem: "Permission denied"
+Solution:
+- Contact repository admin to grant write access
+- Verify repository URL is correct
+
+Problem: "Repository not found"
+Solution:
+- Check URL: https://bitbucket.org/ojtinternprogram/npc
+- Verify repository exists
+- Check you have access
+
+═══════════════════════════════════════════════════════════════
+
+VERIFY PUSH SUCCESS
+===================
+
+After pushing, verify:
+
+1. Go to: https://bitbucket.org/ojtinternprogram/npc
+2. Log in with your credentials
+3. You should see all your files
+4. Check the commit message
+5. Verify file count and structure
+
+═══════════════════════════════════════════════════════════════
+
+REPOSITORY STRUCTURE ON BITBUCKET
+==================================
+
+npc/
+├── backend/
+│   ├── npc_reporting/
+│   ├── reports/
+│   ├── manage.py
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   └── package.json
+├── .gitignore
+├── README_BITBUCKET.md
+└── Documentation files
+
+═══════════════════════════════════════════════════════════════
+
+NEED HELP?
+==========
+
+If you encounter issues:
+
+1. Check the error message carefully
+2. Read the troubleshooting section above
+3. Verify Git is installed: git --version
+4. Check internet connection
+5. Verify Bitbucket credentials
+6. Contact repository administrator
+
+═══════════════════════════════════════════════════════════════
