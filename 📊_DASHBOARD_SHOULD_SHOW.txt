@@ -1,0 +1,164 @@
+============================================================
+WHAT DASHBOARD SHOULD SHOW (CORRECT DATA)
+============================================================
+
+DATABASE STATUS (VERIFIED):
+✓ AGUS1: 40 records, 990,000 kWh, 4.12% CF, 100% availability
+✓ AGUS2: 40 records, 990,000 kWh, 2.29% CF, 100% availability
+✓ AGUS4: 0 records - NO DATA
+✓ AGUS5: 0 records - NO DATA
+✓ AGUS6: 0 records - NO DATA
+✓ AGUS7: 0 records - NO DATA
+
+============================================================
+WHAT YOU'RE SEEING NOW (WRONG):
+============================================================
+
+All plants showing SAME data:
+- Generation: 1,980,000 kWh  ← This is TOTAL of all plants
+- Capacity Factor: 3.21%     ← This is AVERAGE of all plants
+- Availability: 100.00%
+
+This means the dashboard is showing OVERALL statistics
+for each individual plant instead of PER-PLANT statistics.
+
+============================================================
+WHAT YOU SHOULD SEE (CORRECT):
+============================================================
+
+AGUS1 Card:
+  Generation: 990,000.00 kWh
+  Capacity Factor: 4.12%
+  Availability: 100.00%
+  [Progress bar showing 4.12%]
+
+AGUS2 Card:
+  Generation: 990,000.00 kWh
+  Capacity Factor: 2.29%
+  Availability: 100.00%
+  [Progress bar showing 2.29%]
+
+AGUS4 Card:
+  [Icon: inbox]
+  "No data uploaded yet"
+  [No progress bar]
+  [Card slightly faded/dimmed]
+
+AGUS5 Card:
+  [Icon: inbox]
+  "No data uploaded yet"
+  [No progress bar]
+  [Card slightly faded/dimmed]
+
+AGUS6 Card:
+  [Icon: inbox]
+  "No data uploaded yet"
+  [No progress bar]
+  [Card slightly faded/dimmed]
+
+AGUS7 Card:
+  [Icon: inbox]
+  "No data uploaded yet"
+  [No progress bar]
+  [Card slightly faded/dimmed]
+
+============================================================
+WHY YOU'RE SEEING WRONG DATA:
+============================================================
+
+1. Browser is using CACHED JavaScript code
+   - Old code fetches overall stats for all plants
+   - New code fetches per-plant stats
+
+2. Backend CORS headers not updated yet
+   - Need to restart backend to apply new settings
+
+============================================================
+HOW TO FIX (2 SIMPLE STEPS):
+============================================================
+
+STEP 1: RESTART BACKEND
+   cd backend
+   python manage.py runserver
+
+STEP 2: HARD REFRESH BROWSER
+   Press: Ctrl + Shift + R
+   (This clears cached JavaScript)
+
+============================================================
+AFTER REFRESH, CHECK CONSOLE (F12):
+============================================================
+
+You should see:
+=== LOADING PLANT STATS ===
+Plants to check: AGUS1, AGUS2, AGUS4, AGUS5, AGUS6, AGUS7
+
+--- Checking AGUS1 ---
+AGUS1: Found 40 reports
+AGUS1 Summary: {generation: 990000, capacityFactor: 4.12, ...}
+
+--- Checking AGUS2 ---
+AGUS2: Found 40 reports
+AGUS2 Summary: {generation: 990000, capacityFactor: 2.29, ...}
+
+--- Checking AGUS4 ---
+AGUS4: Found 0 reports
+AGUS4: NO DATA - returning zeros
+
+--- Checking AGUS5 ---
+AGUS5: Found 0 reports
+AGUS5: NO DATA - returning zeros
+
+--- Checking AGUS6 ---
+AGUS6: Found 0 reports
+AGUS6: NO DATA - returning zeros
+
+--- Checking AGUS7 ---
+AGUS7: Found 0 reports
+AGUS7: NO DATA - returning zeros
+
+=== FINAL RESULTS ===
+AGUS1: Gen=990000, CF=4.12%, Avail=100%, HasData=true
+AGUS2: Gen=990000, CF=2.29%, Avail=100%, HasData=true
+AGUS4: Gen=0, CF=0%, Avail=0%, HasData=false
+AGUS5: Gen=0, CF=0%, Avail=0%, HasData=false
+AGUS6: Gen=0, CF=0%, Avail=0%, HasData=false
+AGUS7: Gen=0, CF=0%, Avail=0%, HasData=false
+
+============================================================
+IF STILL SHOWING WRONG DATA AFTER REFRESH:
+============================================================
+
+1. CLEAR BROWSER CACHE COMPLETELY
+   - Chrome: Ctrl+Shift+Delete
+   - Select "Cached images and files"
+   - Click "Clear data"
+
+2. TRY INCOGNITO MODE
+   - Chrome: Ctrl+Shift+N
+   - This ensures no cached data
+
+3. CLOSE AND REOPEN BROWSER
+   - Sometimes browser holds onto cache
+   - Complete restart helps
+
+4. CHECK BACKEND IS RUNNING
+   - Terminal should show: "Starting development server..."
+   - No errors
+
+============================================================
+THE CODE IS ALREADY FIXED!
+============================================================
+
+The Dashboard.vue code I wrote ALREADY:
+✓ Fetches data per plant (not overall)
+✓ Checks if each plant has reports
+✓ Shows zeros for plants with no data
+✓ Shows "No data uploaded yet" message
+✓ Dims cards for plants without data
+
+You just need to load the NEW code by:
+1. Restarting backend
+2. Hard refreshing browser
+
+============================================================

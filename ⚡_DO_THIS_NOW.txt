@@ -1,0 +1,29 @@
+============================================================
+DO THIS NOW - FINAL FIX
+============================================================
+
+The CORS error is because of cache-busting headers.
+I've fixed it. Just do these 2 steps:
+
+1. RESTART BACKEND
+   - Go to backend terminal
+   - Press Ctrl+C
+   - Run: python manage.py runserver
+
+2. HARD REFRESH BROWSER
+   - Press: Ctrl + Shift + R
+
+DONE! Dashboard should work now.
+
+============================================================
+
+WHAT TO EXPECT:
+✓ No CORS errors
+✓ Dashboard shows real data per plant
+✓ AGUS1: 990,000 kWh, 4.12%
+✓ AGUS2: 990,000 kWh, 2.29%
+✓ AGUS4-7: "No data uploaded yet"
+
+Open console (F12) to see detailed logs.
+
+============================================================

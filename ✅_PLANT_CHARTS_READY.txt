@@ -1,0 +1,63 @@
+============================================================
+PLANT DETAIL CHARTS - READY TO INSTALL
+============================================================
+
+I've created the PlantDetailModal component with real data charts!
+
+WHAT I CREATED:
+✅ PlantDetailModal.vue - Complete modal with charts
+✅ Uses Chart.js for beautiful visualizations
+✅ Fetches REAL data from your database
+✅ Shows generation trends, capacity factor, unit performance
+✅ Professional design matching your NPC theme
+
+============================================================
+INSTALLATION STEPS:
+============================================================
+
+STEP 1: INSTALL CHART.JS (Required!)
+cd frontend
+npm install chart.js vue-chartjs
+
+STEP 2: UPDATE DASHBOARD
+I need to make the plant cards clickable and add the modal.
+Tell me when Step 1 is done, and I'll update Dashboard.vue
+
+============================================================
+WHAT THE MODAL SHOWS:
+============================================================
+
+For plants WITH data (AGUS1, AGUS2):
+✓ Summary stats (generation, CF, availability, hours)
+✓ Generation Trend Chart (line chart over time)
+✓ Capacity Factor Trend Chart (line chart)
+✓ Unit Performance Chart (bar chart comparing units)
+
+For plants WITHOUT data (AGUS4-7):
+✓ "No Data Available" message
+✓ Button to go to Upload page
+
+============================================================
+FEATURES:
+============================================================
+
+✓ Click any plant card to open modal
+✓ Beautiful gradient header with plant info
+✓ Real-time data from database
+✓ Responsive charts that resize
+✓ Close button and click-outside-to-close
+✓ Loading state while fetching data
+✓ Professional NPC blue/green theme
+
+============================================================
+NEXT STEP:
+============================================================
+
+Run this command NOW:
+cd frontend
+npm install chart.js vue-chartjs
+
+Then tell me it's done, and I'll update the Dashboard
+to make the plant cards clickable!
+
+============================================================

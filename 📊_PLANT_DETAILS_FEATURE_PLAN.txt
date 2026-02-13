@@ -1,0 +1,204 @@
+============================================================
+PLANT DETAILS WITH CHARTS - FEATURE PLAN
+============================================================
+
+FEATURE REQUEST:
+When clicking a plant card in the Dashboard's "Plants Overview",
+show detailed view with graphs and real data for that plant.
+
+============================================================
+WHAT NEEDS TO BE BUILT:
+============================================================
+
+1. MAKE PLANT CARDS CLICKABLE
+   - Add click handler to plant cards
+   - Add hover effect to show it's clickable
+   - Add cursor pointer
+
+2. CREATE PLANT DETAIL PAGE/MODAL
+   - New component: PlantDetail.vue
+   - Or: Modal popup on Dashboard
+   - Show plant information header
+
+3. FETCH REAL DATA FOR SELECTED PLANT
+   - Get all generation reports for the plant
+   - Get summary statistics
+   - Get time-series data for charts
+
+4. DISPLAY CHARTS WITH REAL DATA
+   Charts to show:
+   - Generation Trend (line chart over time)
+   - Capacity Factor Trend (line chart)
+   - Availability vs Outages (stacked bar chart)
+   - Unit Performance Comparison (bar chart)
+   - Monthly Summary (bar chart)
+
+============================================================
+TECHNICAL REQUIREMENTS:
+============================================================
+
+CHARTING LIBRARY:
+Need to install a Vue chart library:
+- Chart.js with vue-chartjs (recommended)
+- Or: Apache ECharts
+- Or: Recharts
+
+Installation:
+npm install chart.js vue-chartjs
+
+DATA STRUCTURE:
+For AGUS1 (example with real data):
+{
+  plant: "AGUS1",
+  dateRange: "Feb 1-10, 2026",
+  totalGeneration: 990000,
+  avgCapacityFactor: 4.12,
+  avgAvailability: 100,
+  
+  dailyData: [
+    { date: "2026-02-01", generation: 99000, cf: 4.12, avail: 100 },
+    { date: "2026-02-02", generation: 99000, cf: 4.12, avail: 100 },
+    ...
+  ],
+  
+  unitData: [
+    { unit: "Unit 1", generation: 247500, cf: 4.12 },
+    { unit: "Unit 2", generation: 247500, cf: 4.12 },
+    { unit: "Unit 3", generation: 247500, cf: 4.12 },
+    { unit: "Unit 4", generation: 247500, cf: 4.12 }
+  ]
+}
+
+============================================================
+IMPLEMENTATION STEPS:
+============================================================
+
+STEP 1: Install Chart Library
+cd frontend
+npm install chart.js vue-chartjs
+
+STEP 2: Create PlantDetail Component
+File: frontend/src/components/PlantDetail.vue
+- Accept plant code as prop
+- Fetch plant data on mount
+- Display charts with real data
+
+STEP 3: Update Dashboard
+- Make plant cards clickable
+- Add router link or modal trigger
+- Pass plant code to detail view
+
+STEP 4: Create API Endpoint (if needed)
+Backend: Add endpoint for detailed plant analytics
+GET /api/plants/{code}/analytics/
+
+STEP 5: Create Charts
+- Generation Trend Chart
+- Capacity Factor Chart
+- Availability Chart
+- Unit Comparison Chart
+
+============================================================
+EXAMPLE CHARTS TO SHOW:
+============================================================
+
+1. GENERATION TREND (Line Chart)
+   X-axis: Dates (Feb 1-10)
+   Y-axis: Generation (kWh)
+   Data: Daily generation values
+   
+2. CAPACITY FACTOR TREND (Line Chart)
+   X-axis: Dates
+   Y-axis: Capacity Factor (%)
+   Data: Daily capacity factor
+   
+3. AVAILABILITY VS OUTAGES (Stacked Bar)
+   X-axis: Dates
+   Y-axis: Hours
+   Stacks: Available, Forced Outage, Scheduled Outage
+   
+4. UNIT PERFORMANCE (Bar Chart)
+   X-axis: Units (Unit 1, 2, 3, 4)
+   Y-axis: Generation (kWh)
+   Data: Total generation per unit
+
+5. OPERATING HOURS (Bar Chart)
+   X-axis: Dates
+   Y-axis: Hours
+   Data: Daily operating hours
+
+============================================================
+SAMPLE DATA FOR AGUS1:
+============================================================
+
+Based on current database (40 records):
+- Date Range: 10 days
+- 4 units per day
+- Total: 990,000 kWh
+- Avg CF: 4.12%
+- Avg Availability: 100%
+
+Daily breakdown:
+Day 1: 99,000 kWh (4 units × 24,750 kWh each)
+Day 2: 99,000 kWh
+...
+Day 10: 99,000 kWh
+
+============================================================
+UI DESIGN:
+============================================================
+
+PLANT DETAIL VIEW:
+┌─────────────────────────────────────────────┐
+│ ← Back to Dashboard                         │
+│                                             │
+│ AGUS1 - Agus 1 Hydroelectric Plant         │
+│ Lanao del Sur • 100 MW                     │
+│                                             │
+│ ┌─────────┐ ┌─────────┐ ┌─────────┐       │
+│ │ 990,000 │ │  4.12%  │ │ 100.00% │       │
+│ │   kWh   │ │   CF    │ │  Avail  │       │
+│ └─────────┘ └─────────┘ └─────────┘       │
+│                                             │
+│ Generation Trend                            │
+│ ┌─────────────────────────────────────┐   │
+│ │     [Line Chart]                    │   │
+│ │                                     │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ Capacity Factor Trend                       │
+│ ┌─────────────────────────────────────┐   │
+│ │     [Line Chart]                    │   │
+│ └─────────────────────────────────────┘   │
+│                                             │
+│ Unit Performance Comparison                 │
+│ ┌─────────────────────────────────────┐   │
+│ │     [Bar Chart]                     │   │
+│ └─────────────────────────────────────┘   │
+└─────────────────────────────────────────────┘
+
+============================================================
+ESTIMATED WORK:
+============================================================
+
+Time: 2-3 hours
+Complexity: Medium
+Files to create/modify:
+- PlantDetail.vue (new)
+- Dashboard.vue (modify)
+- router/index.js (add route)
+- api.js (add endpoint if needed)
+
+============================================================
+NEXT STEPS:
+============================================================
+
+1. Confirm you want this feature
+2. Choose: Modal popup or separate page?
+3. Choose: Which charts to include?
+4. I'll implement it step by step
+
+This is a great feature that will make the dashboard
+much more useful and interactive!
+
+============================================================

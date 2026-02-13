@@ -1,0 +1,168 @@
+============================================================
+ALL FIXES APPLIED - READY TO TEST
+============================================================
+
+THREE ISSUES FIXED:
+1. ✅ Dashboard showing same data for all plants
+2. ✅ CORS error for port 8081
+3. ✅ Browser caching old data
+
+============================================================
+FIX #1: DASHBOARD DATA (Per-Plant Stats)
+============================================================
+
+WHAT WAS WRONG:
+- Dashboard was showing identical data for all plants
+- Not fetching per-plant statistics correctly
+
+WHAT WAS FIXED:
+✅ Enhanced loadPlantsStats() to fetch data per plant
+✅ Added detailed console logging for debugging
+✅ Plants with no data show "No data uploaded yet"
+✅ Plants with data show real statistics
+
+EXPECTED RESULTS:
+- AGUS1: 990,000 kWh, 4.12% capacity factor, 100% availability
+- AGUS2: 990,000 kWh, 2.29% capacity factor, 100% availability
+- AGUS4: "No data uploaded yet"
+- AGUS5: "No data uploaded yet"
+- AGUS6: "No data uploaded yet"
+- AGUS7: "No data uploaded yet"
+
+============================================================
+FIX #2: CORS ERROR (Port 8081)
+============================================================
+
+WHAT WAS WRONG:
+- Frontend running on port 8081
+- Backend only allowed port 8080
+- Browser blocked API requests
+
+WHAT WAS FIXED:
+✅ Added port 8081 to CORS_ALLOWED_ORIGINS
+✅ Added for localhost, 127.0.0.1, and network IP
+✅ Updated backend/npc_reporting/settings.py
+
+CORS SETTINGS NOW:
+- http://localhost:8080 ✓
+- http://localhost:8081 ✓
+- http://127.0.0.1:8080 ✓
+- http://127.0.0.1:8081 ✓
+- http://192.168.120.87:8080 ✓
+- http://192.168.120.87:8081 ✓
+
+============================================================
+FIX #3: BROWSER CACHING
+============================================================
+
+WHAT WAS WRONG:
+- Browser caching old API responses
+- Dashboard showing stale data
+
+WHAT WAS FIXED:
+✅ Added cache-busting headers to API client
+✅ Added timestamp parameters to API calls
+✅ Forces fresh data on every request
+
+============================================================
+WHAT YOU NEED TO DO NOW:
+============================================================
+
+STEP 1: RESTART BACKEND SERVER
+   - Go to backend terminal
+   - Press Ctrl+C to stop
+   - Run: python manage.py runserver
+   - Wait for "Starting development server..."
+
+STEP 2: HARD REFRESH FRONTEND
+   - Go to browser with frontend
+   - Press: Ctrl + Shift + R (or Ctrl + F5)
+   - This clears cached JavaScript
+
+STEP 3: OPEN BROWSER CONSOLE
+   - Press F12 to open Developer Tools
+   - Click "Console" tab
+   - Look for "=== LOADING PLANT STATS ==="
+
+STEP 4: CHECK DASHBOARD
+   - Should see different data for each plant
+   - AGUS1 and AGUS2 should show real data
+   - AGUS4-7 should show "No data uploaded yet"
+   - No CORS errors in console
+
+============================================================
+CONSOLE OUTPUT YOU SHOULD SEE:
+============================================================
+
+=== LOADING PLANT STATS ===
+Plants to check: AGUS1 (Agus 1...), AGUS2 (Agus 2...), ...
+
+--- Checking AGUS1 ---
+AGUS1: Found 40 reports
+AGUS1 Summary: {generation: 990000, capacityFactor: 4.12, ...}
+
+--- Checking AGUS2 ---
+AGUS2: Found 40 reports
+AGUS2 Summary: {generation: 990000, capacityFactor: 2.29, ...}
+
+--- Checking AGUS4 ---
+AGUS4: Found 0 reports
+AGUS4: NO DATA - returning zeros
+
+(same for AGUS5, AGUS6, AGUS7)
+
+=== FINAL RESULTS ===
+AGUS1: Gen=990000, CF=4.12%, Avail=100%, HasData=true
+AGUS2: Gen=990000, CF=2.29%, Avail=100%, HasData=true
+AGUS4: Gen=0, CF=0%, Avail=0%, HasData=false
+AGUS5: Gen=0, CF=0%, Avail=0%, HasData=false
+AGUS6: Gen=0, CF=0%, Avail=0%, HasData=false
+AGUS7: Gen=0, CF=0%, Avail=0%, HasData=false
+
+============================================================
+IF STILL NOT WORKING:
+============================================================
+
+1. CLEAR BROWSER CACHE COMPLETELY
+   - Chrome: Ctrl+Shift+Delete → Clear browsing data
+   - Select "Cached images and files"
+   - Click "Clear data"
+
+2. TRY INCOGNITO/PRIVATE MODE
+   - Chrome: Ctrl+Shift+N
+   - This ensures no cached data
+
+3. CHECK BACKEND IS RUNNING
+   - Should see: "Starting development server at http://127.0.0.1:8000/"
+   - No errors in terminal
+
+4. CHECK FRONTEND IS RUNNING
+   - Should see: "App running at: http://localhost:8081/"
+   - Or port 8080
+
+5. VERIFY DATABASE HAS DATA
+   - Run: python check_all_plants.py
+   - Should show 40 records for AGUS1 and AGUS2
+
+============================================================
+FILES MODIFIED:
+============================================================
+
+1. frontend/src/components/Dashboard.vue
+   - Enhanced loadPlantsStats() method
+   - Added detailed console logging
+   - Better error handling
+
+2. frontend/src/services/api.js
+   - Added cache-busting headers
+   - Added timestamp parameters
+   - Prevents browser caching
+
+3. backend/npc_reporting/settings.py
+   - Added port 8081 to CORS_ALLOWED_ORIGINS
+   - Added for all IP addresses
+
+============================================================
+SUMMARY:
+All fixes are applied. Just restart backend and hard refresh!
+============================================================

@@ -1,0 +1,53 @@
+============================================================
+✅ CHART.JS INSTALLED - NOW RESTART FRONTEND!
+============================================================
+
+Chart.js is installed. Now you need to restart the frontend
+server to compile the new changes.
+
+============================================================
+HOW TO RESTART:
+============================================================
+
+1. Go to your frontend terminal
+2. Press Ctrl+C to stop the server
+3. Run: npm run serve
+4. Wait for "Compiled successfully"
+
+============================================================
+THEN TEST:
+============================================================
+
+1. Open Dashboard: http://localhost:8080
+2. Click on AGUS1 plant card (has data)
+   → Modal opens with 3 beautiful charts!
+   → Shows generation trend, capacity factor, unit performance
+   → All data is REAL from your database
+
+3. Click on AGUS2 plant card (has data)
+   → Same thing - charts with real data!
+
+4. Click on AGUS4, AGUS5, AGUS6, or AGUS7 (no data)
+   → Shows "No Data Available" message
+   → Button to go to Upload page
+
+============================================================
+WHAT TO EXPECT:
+============================================================
+
+✓ Plant cards with data are clickable (cursor: pointer)
+✓ Plant cards without data are NOT clickable
+✓ Modal has gradient blue/green header
+✓ Shows plant name, location, capacity
+✓ 4 stat boxes at top
+✓ 3 charts below (generation, capacity factor, units)
+✓ Close with X, back arrow, or click outside
+✓ Smooth animations
+
+============================================================
+READY TO TEST!
+============================================================
+
+Restart your frontend now and click on a plant card!
+
+============================================================

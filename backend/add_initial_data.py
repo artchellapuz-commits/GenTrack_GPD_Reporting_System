@@ -11,12 +11,12 @@ print("Creating plants...")
 
 # Plant data: (code, name, capacity_mw, location, num_units, unit_capacity)
 plants_data = [
-    ('AGUS1', 'Agus 1 Hydroelectric Plant', 100, 'Lanao del Sur', 4, 25),
-    ('AGUS2', 'Agus 2 Hydroelectric Plant', 180, 'Lanao del Sur', 4, 45),
-    ('AGUS4', 'Agus 4 Hydroelectric Plant', 200, 'Lanao del Norte', 4, 50),
-    ('AGUS5', 'Agus 5 Hydroelectric Plant', 52, 'Lanao del Norte', 2, 26),
-    ('AGUS6', 'Agus 6 Hydroelectric Plant', 200, 'Lanao del Norte', 4, 50),
-    ('AGUS7', 'Agus 7 Hydroelectric Plant', 200, 'Lanao del Norte', 4, 50),
+    ('AGUS1', 'Agus 1 Hydroelectric Power Plant', 100, 'Lanao del Sur', 4, 25),
+    ('AGUS2', 'Agus 2 Hydroelectric Power Plant', 180, 'Lanao del Sur', 4, 45),
+    ('AGUS4', 'Agus 4 Hydroelectric Power Plant', 200, 'Lanao del Norte', 4, 50),
+    ('AGUS5', 'Agus 5 Hydroelectric Power Plant', 52, 'Lanao del Norte', 2, 26),
+    ('AGUS6', 'Agus 6 Hydroelectric Power Plant', 200, 'Lanao del Norte', 4, 50),
+    ('AGUS7', 'Agus 7 Hydroelectric Power Plant', 200, 'Lanao del Norte', 4, 50),
 ]
 
 for code, name, capacity, location, num_units, unit_capacity in plants_data:

@@ -1,0 +1,151 @@
+⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+
+BITBUCKET ERROR 402 - PAYMENT REQUIRED
+======================================
+
+ERROR MESSAGE:
+--------------
+fatal: unable to access 'https://bitbucket.org/ojtinternprogram/npc.git/': 
+The requested URL returned error: 402
+
+WHAT THIS MEANS:
+----------------
+HTTP 402 = Payment Required
+
+This error occurs when:
+1. Bitbucket workspace has exceeded storage limit
+2. Workspace plan doesn't allow more repositories
+3. Billing issue with the Bitbucket account
+4. Repository limit reached for the current plan
+
+SOLUTION OPTIONS:
+=================
+
+OPTION 1: Contact Workspace Admin
+----------------------------------
+The workspace owner needs to:
+1. Go to: https://bitbucket.org/ojtinternprogram/workspace/settings/plans
+2. Check current plan and limits
+3. Upgrade plan if needed
+4. Or delete unused repositories to free up space
+
+Contact: Workspace administrator for "ojtinternprogram"
+
+OPTION 2: Use GitHub Instead
+-----------------------------
+GitHub offers free unlimited repositories.
+
+Steps:
+1. Create GitHub account (if you don't have one)
+2. Create new repository on GitHub
+3. Push code to GitHub instead
+
+Commands:
+git remote remove origin
+git remote add origin https://github.com/YOUR_USERNAME/npc-reporting.git
+git push -u origin main
+
+OPTION 3: Use GitLab
+--------------------
+GitLab also offers free unlimited repositories.
+
+Steps:
+1. Create GitLab account
+2. Create new project
+3. Push code to GitLab
+
+Commands:
+git remote remove origin
+git remote add origin https://gitlab.com/YOUR_USERNAME/npc-reporting.git
+git push -u origin main
+
+OPTION 4: Create ZIP Archive
+-----------------------------
+If you just need to share the code:
+
+1. Right-click the npc-reporting-system folder
+2. Send to → Compressed (zipped) folder
+3. Share the ZIP file via email or cloud storage
+
+OPTION 5: Use Local Git Only
+-----------------------------
+Keep using Git locally for version control:
+
+# Continue working with Git locally
+git add .
+git commit -m "Your changes"
+
+# Push later when Bitbucket issue is resolved
+
+OPTION 6: Alternative Bitbucket Repository
+-------------------------------------------
+Ask the workspace admin to:
+1. Create the repository manually in Bitbucket first
+2. Or use a different Bitbucket workspace
+3. Or create a personal Bitbucket repository
+
+WHAT TO DO NOW:
+===============
+
+IMMEDIATE ACTION:
+-----------------
+1. Contact the workspace administrator
+2. Show them this error: "402 Payment Required"
+3. Ask them to check: https://bitbucket.org/ojtinternprogram/workspace/settings/plans
+4. They need to either:
+   - Upgrade the plan
+   - Delete unused repositories
+   - Create the repository manually
+
+TEMPORARY SOLUTION:
+-------------------
+Your code is safely committed locally!
+
+Check with:
+cd "C:\Users\eladiong\Desktop\OJT Intern\npc-reporting-system"
+git log
+
+You can push to Bitbucket later once the issue is resolved.
+
+ALTERNATIVE: PUSH TO GITHUB NOW
+================================
+
+If you want to push immediately to GitHub:
+
+1. Create GitHub account: https://github.com/signup
+
+2. Create new repository:
+   - Go to: https://github.com/new
+   - Name: npc-reporting-system
+   - Keep it Private
+   - Don't initialize with README
+   - Click "Create repository"
+
+3. Push to GitHub:
+   cd "C:\Users\eladiong\Desktop\OJT Intern\npc-reporting-system"
+   git remote remove origin
+   git remote add origin https://github.com/YOUR_USERNAME/npc-reporting-system.git
+   git push -u origin main
+
+YOUR CODE IS SAFE:
+==================
+
+✅ All files are committed locally
+✅ Git repository is initialized
+✅ 109 files committed successfully
+✅ You can push anytime once the issue is resolved
+
+To verify:
+git log --oneline
+git status
+
+CONTACT INFORMATION:
+====================
+
+Workspace: ojtinternprogram
+Issue: 402 Payment Required
+Link: https://bitbucket.org/ojtinternprogram/workspace/settings/plans
+
+The workspace administrator needs to resolve this billing/plan issue.
+
+⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️

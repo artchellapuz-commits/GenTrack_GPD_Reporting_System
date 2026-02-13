@@ -1,0 +1,76 @@
+============================================================
+SCROLLBAR ADDED - ALL PLANTS NOW ACCESSIBLE
+============================================================
+
+CHANGES MADE:
+1. Set dropdown to fixed height (450px total)
+2. Set options area to 350px with ALWAYS visible scrollbar
+3. Changed overflow-y from "auto" to "scroll"
+4. Added custom scrollbar styling for better visibility
+
+============================================================
+HOW IT WORKS NOW:
+============================================================
+
+✓ Dropdown shows 3-4 plants at a time
+✓ Scrollbar is ALWAYS visible on the right
+✓ Scroll down to see all 6 plants:
+  - AGUS1 (top)
+  - AGUS2
+  - AGUS4
+  - AGUS5
+  - AGUS6
+  - AGUS7 (bottom)
+
+✓ Custom scrollbar styling:
+  - 8px wide
+  - Gray track
+  - Darker thumb
+  - Hover effect
+
+============================================================
+TO APPLY:
+============================================================
+
+1. STOP FRONTEND
+   - Press Ctrl+C in frontend terminal
+
+2. START FRONTEND
+   - Run: npm run serve
+   - Wait for "Compiled successfully"
+
+3. REFRESH BROWSER
+   - Press F5 or Ctrl+R
+
+4. TEST DROPDOWN
+   - Click "Select Hydro-Electric Power Plant"
+   - You'll see scrollbar on the right
+   - Scroll down to see all plants
+
+============================================================
+SCROLLING OPTIONS:
+============================================================
+
+You can scroll using:
+✓ Mouse wheel
+✓ Click and drag the scrollbar
+✓ Arrow up/down keys
+✓ Page up/down keys
+
+============================================================
+ALL 6 PLANTS GUARANTEED ACCESSIBLE:
+============================================================
+
+The scrollbar ensures you can ALWAYS reach:
+1. AGUS1 - Agus 1 Hydroelectric Plant
+2. AGUS2 - Agus 2 Hydroelectric Plant
+3. AGUS4 - Agus 4 Hydroelectric Plant
+4. AGUS5 - Agus 5 Hydroelectric Plant
+5. AGUS6 - Agus 6 Hydroelectric Plant
+6. AGUS7 - Agus 7 Hydroelectric Plant
+
+No more hidden plants!
+
+============================================================
+RESTART FRONTEND NOW!
+============================================================

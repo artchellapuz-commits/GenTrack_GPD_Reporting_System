@@ -1,5 +1,6 @@
 <template>
-  <div class="generate-report-page">
+  <AppLayout>
+    <div class="generate-report-page">
     <!-- Page Header -->
     <div class="page-header">
       <h2 class="page-title">Generate Excel Report</h2>
@@ -121,13 +122,18 @@
       </div>
     </transition>
   </div>
+  </AppLayout>
 </template>
 
 <script>
 import api from '../services/api';
+import AppLayout from './AppLayout.vue';
 
 export default {
   name: 'GenerateReport',
+  components: {
+    AppLayout,
+  },
   data() {
     return {
       plants: [],

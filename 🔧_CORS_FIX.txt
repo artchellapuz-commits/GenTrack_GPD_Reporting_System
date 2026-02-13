@@ -1,0 +1,59 @@
+═══════════════════════════════════════════════════════════════
+  🔧 CORS ERROR FIX - PORT 8081
+═══════════════════════════════════════════════════════════════
+
+PROBLEM:
+--------
+Frontend is running on port 8081, but Django only allows port 8080.
+
+Error: "Access-Control-Allow-Origin header is not present"
+
+SOLUTION:
+---------
+I've already added port 8081 to the Django CORS settings.
+
+NOW YOU NEED TO RESTART THE BACKEND:
+-------------------------------------
+
+1. Go to the terminal running Django backend
+2. Press Ctrl+C to stop it
+3. Run again:
+   python manage.py runserver
+
+That's it! The CORS error will be fixed.
+
+═══════════════════════════════════════════════════════════════
+
+ALTERNATIVE: Change Frontend Port to 8080
+==========================================
+
+If you want frontend on port 8080 instead:
+
+1. Stop the frontend (Ctrl+C)
+2. Check if port 8080 is free:
+   netstat -ano | findstr :8080
+3. If something is using it, kill that process
+4. Start frontend again:
+   npm run serve
+
+It should use port 8080 by default.
+
+═══════════════════════════════════════════════════════════════
+
+WHAT I CHANGED:
+===============
+
+File: backend/npc_reporting/settings.py
+
+Added this line:
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+    "http://localhost:8081",  ← NEW!
+    "http://localhost:3000",
+    "http://127.0.0.1:8080",
+    "http://192.168.120.87:8080",
+]
+
+Now both ports 8080 and 8081 are allowed!
+
+═══════════════════════════════════════════════════════════════

@@ -1,0 +1,62 @@
+============================================================
+FIX CORS ERROR - PORT 8081
+============================================================
+
+ERROR YOU'RE SEEING:
+"Access to XMLHttpRequest at 'http://localhost:8000/api/plants/' 
+from origin 'http://localhost:8081' has been blocked by CORS policy"
+
+WHAT THIS MEANS:
+- Your frontend is running on port 8081
+- Backend only allows requests from port 8080
+- Browser blocks the request for security
+
+THE FIX (ALREADY APPLIED):
+✅ Added port 8081 to Django CORS settings
+✅ File: backend/npc_reporting/settings.py
+
+WHAT YOU NEED TO DO:
+1. RESTART THE BACKEND SERVER
+   - Stop the backend (Ctrl+C in backend terminal)
+   - Start it again: python manage.py runserver
+   
+2. HARD REFRESH THE FRONTEND
+   - Press: Ctrl + Shift + R
+   - Or: Ctrl + F5
+
+WHY RESTART IS NEEDED:
+Django only reads settings.py when it starts. Changes to 
+CORS_ALLOWED_ORIGINS won't take effect until you restart.
+
+CURRENT CORS SETTINGS:
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://localhost:8081",      ← ADDED
+    "http://127.0.0.1:8081",      ← ADDED
+    "http://192.168.120.87:8080",
+    "http://192.168.120.87:8081",
+]
+
+STEP-BY-STEP:
+1. Go to backend terminal
+2. Press Ctrl+C to stop server
+3. Run: python manage.py runserver
+4. Wait for "Starting development server..."
+5. Go to frontend browser
+6. Press Ctrl+Shift+R to hard refresh
+7. Check if error is gone
+
+VERIFY IT WORKS:
+- Open browser console (F12)
+- You should see API calls succeeding
+- Dashboard should load plant data
+- No more CORS errors
+
+IF STILL NOT WORKING:
+- Make sure backend is running on port 8000
+- Make sure frontend is on port 8081
+- Check backend terminal for any errors
+- Try clearing browser cache completely
+
+============================================================

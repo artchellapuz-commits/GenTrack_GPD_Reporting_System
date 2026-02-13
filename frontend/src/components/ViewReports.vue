@@ -1,5 +1,6 @@
 <template>
-  <div class="view-reports-page">
+  <AppLayout>
+    <div class="view-reports-page">
     <!-- Page Header -->
     <div class="page-header">
       <h2 class="page-title">
@@ -201,13 +202,18 @@
       <p>Try adjusting your filters to see generation reports</p>
     </div>
   </div>
+  </AppLayout>
 </template>
 
 <script>
 import api from '../services/api';
+import AppLayout from './AppLayout.vue';
 
 export default {
   name: 'ViewReports',
+  components: {
+    AppLayout,
+  },
   data() {
     return {
       plants: [],

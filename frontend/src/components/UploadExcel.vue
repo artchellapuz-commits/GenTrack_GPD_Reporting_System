@@ -1,5 +1,6 @@
 <template>
-  <div class="upload-page">
+  <AppLayout>
+    <div class="upload-page">
     <!-- Page Header -->
     <div class="page-header">
       <h2 class="page-title">Upload Excel Report</h2>
@@ -167,11 +168,11 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="upload in uploadHistory" :key="upload.id">
+              <tr v-for="upload in uploadHistory" :key="upload.id" class="upload-row">
                 <td>
                   <div class="file-cell">
                     <i class="pi pi-file file-icon-sm"></i>
-                    {{ upload.original_filename }}
+                    <span class="filename clickable" @click="viewFile(upload)">{{ upload.original_filename }}</span>
                   </div>
                 </td>
                 <td>
@@ -189,15 +190,17 @@
                   {{ upload.records_imported || 0 }}
                 </td>
                 <td>
-                  <button 
-                    @click="confirmDelete(upload)"
-                    class="btn-delete"
-                    :disabled="deleting === upload.id"
-                    title="Delete this upload and all associated records"
-                  >
-                    <i v-if="deleting !== upload.id" class="pi pi-trash"></i>
-                    <i v-else class="pi pi-spin pi-spinner"></i>
-                  </button>
+                  <div class="action-buttons">
+                    <button 
+                      @click="confirmDelete(upload)"
+                      class="btn-action btn-delete-action"
+                      :disabled="deleting === upload.id"
+                      title="Delete this upload and all associated records"
+                    >
+                      <i v-if="deleting !== upload.id" class="pi pi-trash"></i>
+                      <i v-else class="pi pi-spin pi-spinner"></i>
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -206,13 +209,18 @@
       </div>
     </div>
   </div>
+  </AppLayout>
 </template>
 
 <script>
 import api from '../services/api';
+import AppLayout from './AppLayout.vue';
 
 export default {
   name: 'UploadExcel',
+  components: {
+    AppLayout,
+  },
   data() {
     return {
       plants: [],
@@ -359,6 +367,43 @@ export default {
         this.deleteUpload(upload.id);
       }
     },
+    
+    downloadFile(upload) {
+      // Force download with "Save As" dialog
+      if (upload.file && upload.file.startsWith('http')) {
+        const link = document.createElement('a');
+        link.href = upload.file;
+        link.download = upload.original_filename || 'download.xlsx';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else if (upload.file) {
+        const baseURL = process.env.VUE_APP_API_URL || 'http://localhost:8000';
+        const link = document.createElement('a');
+        link.href = `${baseURL}${upload.file}`;
+        link.download = upload.original_filename || 'download.xlsx';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        this.showMessage('File not available for download', 'error');
+      }
+    },
+    
+    viewFile(upload) {
+      // Open file in new tab - for Excel files, browser will download and open in Excel
+      if (upload.file && upload.file.startsWith('http')) {
+        window.open(upload.file, '_blank', 'noopener,noreferrer');
+      } else if (upload.file) {
+        const baseURL = process.env.VUE_APP_API_URL || 'http://localhost:8000';
+        window.open(`${baseURL}${upload.file}`, '_blank', 'noopener,noreferrer');
+      } else {
+        this.showMessage('File not available for viewing', 'error');
+      }
+    },
+    
     async deleteUpload(uploadId) {
       this.deleting = uploadId;
       
@@ -526,6 +571,95 @@ export default {
   gap: var(--spacing-sm);
 }
 
+.filename {
+  font-weight: 500;
+}
+
+.filename.clickable {
+  color: var(--npc-primary);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.filename.clickable:hover {
+  color: var(--npc-secondary);
+  text-decoration: underline;
+}
+
+.filename.clickable:visited {
+  color: #8b5cf6;
+}
+
+.filename.clickable:visited:hover {
+  color: #7c3aed;
+  text-decoration: underline;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: auto;
+  height: auto;
+  border-radius: 0.375rem;
+}
+
+.btn-action i {
+  font-size: 1.125rem;
+}
+
+.btn-view {
+  color: var(--npc-primary);
+}
+
+.btn-view:hover:not(:disabled) {
+  color: #ffffff;
+  background-color: var(--npc-primary);
+  padding: 0.375rem;
+  transform: scale(1.05);
+}
+
+.btn-download {
+  color: var(--npc-secondary);
+}
+
+.btn-download:hover:not(:disabled) {
+  color: #ffffff;
+  background-color: var(--npc-secondary);
+  padding: 0.375rem;
+  transform: scale(1.05);
+}
+
+.btn-delete-action {
+  color: var(--error);
+}
+
+.btn-delete-action:hover:not(:disabled) {
+  color: #ffffff;
+  background-color: #ff0000;
+  padding: 0.375rem;
+  transform: scale(1.05);
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .file-icon-sm {
   font-size: 1rem;
   color: var(--npc-primary);
@@ -545,21 +679,22 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
+  padding: 0;
+  margin: 0;
   background-color: transparent;
   color: var(--error);
-  border: 1px solid var(--error);
-  border-radius: var(--radius-md);
+  border: none;
+  border-radius: 0.375rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.875rem;
-  min-width: 36px;
-  min-height: 36px;
+  width: auto;
+  height: auto;
 }
 
 .btn-delete:hover:not(:disabled) {
-  background-color: var(--error);
-  color: white;
+  color: #ffffff;
+  background-color: #ff0000;
+  padding: 0.375rem;
   transform: scale(1.05);
 }
 
@@ -569,7 +704,14 @@ export default {
 }
 
 .btn-delete i {
-  font-size: 1rem;
+  font-size: 1.25rem;
+}
+
+/* Remove padding from delete button cell */
+td:has(.btn-delete) {
+  padding: 0.5rem;
+  text-align: center;
+  width: 50px;
 }
 
 /* Custom Dropdown Styles */
@@ -655,7 +797,7 @@ export default {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
   z-index: 1000;
-  max-height: 400px;
+  max-height: 360px; /* Increased more to show all 6 plants */
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -697,8 +839,29 @@ export default {
 }
 
 .dropdown-options {
-  overflow-y: auto;
-  max-height: 320px;
+  overflow-y: scroll; /* Always show scrollbar */
+  max-height: 480px; /* Increased more to show all 6 plants */
+  padding-bottom: 4rem; /* Much more padding to prevent cutoff */
+  margin-bottom: 0.5rem; /* Add margin to create space from parent border */
+}
+
+/* Ensure scrollbar is always visible */
+.dropdown-options::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dropdown-options::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.dropdown-options::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.dropdown-options::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .dropdown-option {

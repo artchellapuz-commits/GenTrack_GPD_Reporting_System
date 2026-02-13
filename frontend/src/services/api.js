@@ -71,12 +71,16 @@ export default {
 
   // Get generation reports
   getGenerationReports(params = {}) {
-    return apiClient.get('/generation-reports/', { params });
+    // Add timestamp to prevent caching
+    const queryParams = { ...params, _t: Date.now() };
+    return apiClient.get('/generation-reports/', { params: queryParams });
   },
 
   // Get summary statistics
   getReportSummary(params = {}) {
-    return apiClient.get('/generation-reports/summary/', { params });
+    // Add timestamp to prevent caching
+    const queryParams = { ...params, _t: Date.now() };
+    return apiClient.get('/generation-reports/summary/', { params: queryParams });
   },
 
   // Generate Excel report

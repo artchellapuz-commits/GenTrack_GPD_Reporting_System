@@ -1,0 +1,77 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                    PSR REPORT IMPORT - QUICK START                   ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+📋 WHAT IS PSR REPORT?
+   Plant Status Report - Complex Excel format with plant generation data
+
+🎯 QUICK IMPORT (3 STEPS)
+
+   1. Place your PSR Excel file in: REPORTS\8. PSR\
+   
+   2. Double-click: IMPORT_PSR_REPORT.bat
+   
+   3. Check the results in the dashboard!
+
+📁 SUPPORTED FILES
+   ✓ MGG-IMS-004.F01, Report Review Rev. 0.xlsx
+   ✓ PSR REPORT-8AM.xlsx
+   ✓ Any PSR format with plant codes in column A
+
+📊 WHAT GETS IMPORTED
+   • Plant codes (AGUS1, AGUS2, etc.)
+   • Generation data
+   • Plant capacity (if available)
+   • Report date
+
+⚡ COMMAND LINE OPTIONS
+
+   Default file:
+   > IMPORT_PSR_REPORT.bat
+
+   Custom file:
+   > IMPORT_PSR_REPORT.bat "path\to\your\file.xlsx"
+
+   Python script:
+   > python IMPORT_PSR_REPORT.py "path\to\file.xlsx"
+
+✅ EXPECTED RESULTS
+   ✓ Plants imported/updated: 20-30 plants
+   ✓ Data records imported: 100-500 records
+   ✓ Time: 5-30 seconds
+
+⚠️  COMMON ISSUES
+
+   "File not found"
+   → Check file path is correct
+   → Use quotes for paths with spaces
+
+   "Could not find plant data"
+   → Verify plant codes in column A
+   → Check file format matches PSR structure
+
+   "No date found"
+   → Add date in file headers
+   → Or accept today's date as default
+
+🔍 VERIFY IMPORT
+   1. Open dashboard: http://localhost:8080
+   2. Check plant list
+   3. View generation data
+   4. Verify dates are correct
+
+📖 FULL DOCUMENTATION
+   See: 📊_PSR_IMPORT_GUIDE.md
+
+💡 TIPS
+   • Keep original file format
+   • Don't modify plant codes
+   • Include date in file headers
+   • Remove summary rows before import
+
+🆘 NEED HELP?
+   1. Read 📊_PSR_IMPORT_GUIDE.md
+   2. Check TROUBLESHOOTING.md
+   3. Contact system administrator
+
+═══════════════════════════════════════════════════════════════════════

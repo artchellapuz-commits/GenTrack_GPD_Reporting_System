@@ -139,3 +139,51 @@ class GenerationReport(models.Model):
             self.availability_factor = (float(self.availability_hours) / 24) * 100
         
         super().save(*args, **kwargs)
+
+
+class PlantCapacity(models.Model):
+    """Historical capacity data for plants"""
+    plant = models.ForeignKey(Plant, on_delete=models.CASCADE, related_name='capacity_records')
+    installed_capacity = models.DecimalField(max_digits=10, decimal_places=2)
+    dependable_capacity = models.DecimalField(max_digits=10, decimal_places=2)
+    effective_date = models.DateField()
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'plant_capacity'
+        unique_together = ['plant', 'effective_date']
+        ordering = ['-effective_date', 'plant']
+        indexes = [
+            models.Index(fields=['plant', 'effective_date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.plant.code} - {self.effective_date}"
+
+
+class HistoricalData(models.Model):
+    """Historical operational data imported from legacy systems"""
+    plant = models.ForeignKey(Plant, on_delete=models.CASCADE, related_name='historical_data')
+    date = models.DateField()
+    generation_mwh = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    availability_percent = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    status = models.CharField(max_length=50, default='Operating')
+    remarks = models.TextField(blank=True)
+    sheet_name = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'historical_data'
+        unique_together = ['plant', 'date']
+        ordering = ['-date', 'plant']
+        indexes = [
+            models.Index(fields=['plant', 'date']),
+            models.Index(fields=['date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.plant.code} - {self.date}"
+

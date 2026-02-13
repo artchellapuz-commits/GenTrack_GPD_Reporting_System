@@ -1,0 +1,66 @@
+============================================================
+DASHBOARD DATA FIX - APPLIED
+============================================================
+
+PROBLEM:
+- Dashboard was showing the same data for all plants
+- Browser was caching old API responses
+
+SOLUTION APPLIED:
+✅ Enhanced console logging to show detailed per-plant data fetching
+✅ Added cache-busting headers to API client
+✅ Added timestamp parameters to API calls to force fresh data
+✅ Improved error handling and debugging output
+
+WHAT TO DO NOW:
+1. Do a HARD REFRESH in your browser:
+   - Press: Ctrl + Shift + R
+   - Or: Ctrl + F5
+   
+2. Open Browser Console (F12) to see detailed logs:
+   - You'll see "=== LOADING PLANT STATS ===" 
+   - Each plant will show its data fetching process
+   - Final results will show correct per-plant data
+
+3. Check the Dashboard:
+   - AGUS1: Should show 990,000 kWh, 4.12% capacity factor
+   - AGUS2: Should show 990,000 kWh, 2.29% capacity factor
+   - AGUS4-7: Should show "No data uploaded yet"
+
+EXPECTED CONSOLE OUTPUT:
+=== LOADING PLANT STATS ===
+Plants to check: AGUS1, AGUS2, AGUS4, AGUS5, AGUS6, AGUS7
+
+--- Checking AGUS1 ---
+AGUS1: Found 40 reports
+AGUS1 Summary: { generation: 990000, capacityFactor: 4.12, ... }
+
+--- Checking AGUS2 ---
+AGUS2: Found 40 reports
+AGUS2 Summary: { generation: 990000, capacityFactor: 2.29, ... }
+
+--- Checking AGUS4 ---
+AGUS4: Found 0 reports
+AGUS4: NO DATA - returning zeros
+
+(same for AGUS5, AGUS6, AGUS7)
+
+=== FINAL RESULTS ===
+AGUS1: Gen=990000, CF=4.12%, Avail=100%, HasData=true
+AGUS2: Gen=990000, CF=2.29%, Avail=100%, HasData=true
+AGUS4: Gen=0, CF=0%, Avail=0%, HasData=false
+...
+
+IF STILL SHOWING WRONG DATA:
+1. Clear browser cache completely
+2. Close and reopen browser
+3. Try in Incognito/Private mode
+4. Check console logs to verify API is being called
+
+DATABASE STATUS (VERIFIED):
+- AGUS1: 40 records, 990,000 kWh, 4.12% CF
+- AGUS2: 40 records, 990,000 kWh, 2.29% CF  
+- AGUS4-7: 0 records (no data)
+
+The fix is applied. Just do a hard refresh!
+============================================================

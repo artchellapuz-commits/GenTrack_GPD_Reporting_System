@@ -1,0 +1,90 @@
+============================================================
+FINAL FIX - CORS HEADERS ISSUE
+============================================================
+
+THE PROBLEM:
+"Request header field pragma is not allowed by 
+Access-Control-Allow-Headers in preflight response"
+
+WHAT HAPPENED:
+- I added cache-busting headers (Pragma, Cache-Control, Expires)
+- Django CORS wasn't configured to allow these headers
+- Browser blocked the requests
+
+THE FIX (JUST APPLIED):
+✅ Removed problematic headers from API client
+✅ Added CORS_ALLOW_HEADERS to Django settings
+✅ Kept timestamp parameter for cache-busting (works better)
+
+============================================================
+WHAT YOU NEED TO DO NOW:
+============================================================
+
+STEP 1: RESTART BACKEND SERVER
+   - Go to backend terminal
+   - Press Ctrl+C to stop
+   - Run: python manage.py runserver
+   - Wait for "Starting development server..."
+
+STEP 2: HARD REFRESH FRONTEND
+   - Press: Ctrl + Shift + R
+   - Or: Ctrl + F5
+
+THAT'S IT!
+
+============================================================
+WHAT CHANGED:
+============================================================
+
+1. backend/npc_reporting/settings.py
+   - Added CORS_ALLOW_HEADERS configuration
+   - Allows: cache-control, pragma, expires headers
+
+2. frontend/src/services/api.js
+   - Removed cache-busting headers from axios config
+   - Kept timestamp parameter (_t=...) for cache-busting
+   - Simpler and more compatible
+
+============================================================
+WHY THIS WORKS BETTER:
+============================================================
+
+BEFORE (Caused CORS Error):
+- Headers: Cache-Control, Pragma, Expires
+- Django blocked these in preflight check
+- Browser rejected requests
+
+AFTER (Works):
+- No special headers
+- Timestamp in URL: ?_t=1770787076855
+- Django allows all requests
+- Browser happy
+
+============================================================
+EXPECTED RESULT:
+============================================================
+
+✓ No CORS errors
+✓ Dashboard loads successfully
+✓ Console shows: "=== LOADING PLANT STATS ==="
+✓ Each plant shows correct data
+✓ AGUS1: 990,000 kWh, 4.12%
+✓ AGUS2: 990,000 kWh, 2.29%
+✓ AGUS4-7: "No data uploaded yet"
+
+============================================================
+IF YOU SEE ANY ERRORS:
+============================================================
+
+1. Make sure backend restarted successfully
+2. Check backend terminal for errors
+3. Hard refresh browser (Ctrl+Shift+R)
+4. Open console (F12) to see detailed logs
+5. Look for "=== LOADING PLANT STATS ===" message
+
+============================================================
+QUICK STEPS:
+1. Restart backend: python manage.py runserver
+2. Hard refresh browser: Ctrl+Shift+R
+3. Check console for logs
+============================================================

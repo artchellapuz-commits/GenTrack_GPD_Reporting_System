@@ -1,0 +1,93 @@
+═══════════════════════════════════════════════════════════════
+  🗑️ HOW TO CLEAR TEST DATA
+═══════════════════════════════════════════════════════════════
+
+WHY IS THERE DATA?
+------------------
+The data you see (1,980,000 kWh, 40 records) is from a test upload
+I did earlier to help debug why your Excel uploads were failing.
+
+I uploaded CORRECT_SAMPLE_AGUS1.xlsx programmatically to test the
+system, and it successfully imported 40 records for AGUS1.
+
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: CLEAR ALL DATA (START FRESH)
+=======================================
+
+If you want to start with a clean database:
+
+1. Open Command Prompt in backend folder:
+   cd "C:\Users\eladiong\Desktop\OJT Intern\npc-reporting-system\backend"
+
+2. Activate virtual environment:
+   venv\Scripts\activate
+
+3. Run the clear script:
+   python clear_database.py
+
+4. Type "yes" when prompted
+
+5. Refresh the dashboard - it will show 0 for everything
+
+═══════════════════════════════════════════════════════════════
+
+OPTION 2: KEEP THE DATA (USE AS DEMO)
+======================================
+
+The test data is actually useful! You can:
+
+1. Keep it to demonstrate the system
+2. Show how the dashboard looks with data
+3. Test the "Generate Report" feature
+4. Test the "View Reports" feature
+
+The data is valid:
+- 40 records for AGUS1
+- Dates: 2026-02-01 to 2026-02-10
+- 4 units per day
+- Realistic generation values
+
+═══════════════════════════════════════════════════════════════
+
+OPTION 3: ADD MORE DATA
+========================
+
+You can upload more Excel files for other plants:
+
+1. Use CORRECT_SAMPLE_AGUS1.xlsx as a template
+2. Modify it for AGUS2, AGUS4, AGUS5, AGUS6, AGUS7
+3. Upload through the web interface
+4. Dashboard will show data for all plants
+
+═══════════════════════════════════════════════════════════════
+
+WHAT HAPPENS AFTER CLEARING:
+=============================
+
+Dashboard will show:
+- Total Generation: 0.00 kWh
+- Avg Capacity Factor: 0.00%
+- Avg Availability: 0.00%
+- Operating Hours: 0.00 hrs
+- All plant cards: 0 values
+- Recent Uploads: Empty
+
+Then you can upload your own real data!
+
+═══════════════════════════════════════════════════════════════
+
+RECOMMENDATION:
+===============
+
+I suggest KEEPING the test data for now because:
+
+✓ It helps you see how the dashboard looks with data
+✓ You can test all features (View Reports, Generate Report)
+✓ It's valid sample data for AGUS1
+✓ You can always clear it later
+
+When you're ready to use real data, just clear it and upload
+your actual Excel files!
+
+═══════════════════════════════════════════════════════════════

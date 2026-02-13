@@ -1,0 +1,70 @@
+============================================================
+VIEWPORT HEIGHT FIX - SHOULD SHOW ALL PLANTS NOW
+============================================================
+
+THE ISSUE:
+Fixed pixel heights (650px, 550px) weren't working because
+the dropdown was still being cut off by something.
+
+THE NEW APPROACH:
+Use viewport-relative height (80vh = 80% of screen height)
+This adapts to any screen size and ensures plenty of room.
+
+============================================================
+CHANGES MADE:
+============================================================
+
+1. Parent container (.custom-select-dropdown):
+   BEFORE: max-height: 650px
+   AFTER:  max-height: 80vh (80% of viewport height)
+
+2. Options container (.dropdown-options):
+   BEFORE: max-height: 550px
+   AFTER:  flex: 1 (takes all available space)
+
+This means:
+- Dropdown can be as tall as 80% of your screen
+- Options container fills all available space
+- All 6 plants should definitely fit!
+
+============================================================
+TO APPLY:
+============================================================
+
+1. STOP FRONTEND (Ctrl+C)
+2. RUN: npm run serve
+3. REFRESH BROWSER
+4. OPEN DROPDOWN
+
+You should now see ALL 6 plants:
+✓ AGUS1
+✓ AGUS2
+✓ AGUS4
+✓ AGUS5
+✓ AGUS6
+✓ AGUS7
+
+============================================================
+IF STILL NOT SHOWING:
+============================================================
+
+Open browser console (F12) and check:
+1. Look for "Loaded plants:" message
+2. Check "Number of plants:" - should be 6
+3. If it shows less than 6, there's an API issue
+4. If it shows 6, there's a CSS/rendering issue
+
+Take a screenshot of the console and show me.
+
+============================================================
+WORKAROUND - USE SEARCH:
+============================================================
+
+While we debug, you can use the search box:
+- Type "5" to find AGUS5
+- Type "6" to find AGUS6
+- Type "7" to find AGUS7
+
+This will filter and show only the plant you want.
+
+============================================================
