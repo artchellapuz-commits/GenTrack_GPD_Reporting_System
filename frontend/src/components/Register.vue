@@ -1,10 +1,8 @@
 <template>
   <div class="register-page">
-    <!-- Floating gradient orbs -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
-    
+    <!-- Theme Controls -->
+    <ThemeControls />
+
     <!-- Back Button -->
     <router-link to="/" class="back-button">
       <i class="pi pi-arrow-left"></i>
@@ -15,40 +13,34 @@
       <div class="register-card">
         <!-- Logo and Title -->
         <div class="register-header">
-          <div class="logo">
+          <div class="logo-icon">
             <img src="@/assets/NPC-logo.png" alt="NPC Logo" />
           </div>
-          <h2>Create Account</h2>
-          <p>Join NPC Reporting System</p>
+          <h2>Create an Account</h2>
+          <p>Sign up to get started</p>
         </div>
 
         <!-- Register Form -->
         <form @submit.prevent="handleRegister" class="register-form">
           <div class="form-row">
             <div class="form-group">
-              <label for="first_name">
-                <i class="pi pi-user"></i>
-                First Name
-              </label>
+              <label for="first_name">First Name</label>
               <input
                 id="first_name"
                 v-model="formData.first_name"
                 type="text"
-                placeholder="Enter first name"
+                placeholder="First name"
                 required
                 :disabled="loading"
               />
             </div>
             <div class="form-group">
-              <label for="last_name">
-                <i class="pi pi-user"></i>
-                Last Name
-              </label>
+              <label for="last_name">Last Name</label>
               <input
                 id="last_name"
                 v-model="formData.last_name"
                 type="text"
-                placeholder="Enter last name"
+                placeholder="Last name"
                 required
                 :disabled="loading"
               />
@@ -56,46 +48,37 @@
           </div>
 
           <div class="form-group">
-            <label for="username">
-              <i class="pi pi-at"></i>
-              Username
-            </label>
+            <label for="username">Username</label>
             <input
               id="username"
               v-model="formData.username"
               type="text"
-              placeholder="Choose a username"
+              placeholder="Username"
               required
               :disabled="loading"
             />
           </div>
 
           <div class="form-group">
-            <label for="email">
-              <i class="pi pi-envelope"></i>
-              Email
-            </label>
+            <label for="email">Email</label>
             <input
               id="email"
               v-model="formData.email"
               type="email"
-              placeholder="Enter your email"
+              placeholder="Email address"
               required
               :disabled="loading"
             />
           </div>
 
           <div class="form-group">
-            <label for="password">
-              <i class="pi pi-lock"></i>
-              Password
-            </label>
+            <label for="password">Password</label>
             <div class="password-input">
               <input
                 id="password"
                 v-model="formData.password"
                 :type="showPassword ? 'text' : 'password'"
-                placeholder="Create a password"
+                placeholder="Password"
                 required
                 :disabled="loading"
               />
@@ -112,16 +95,13 @@
           </div>
 
           <div class="form-group">
-            <label for="password2">
-              <i class="pi pi-lock"></i>
-              Confirm Password
-            </label>
+            <label for="password2">Confirm Password</label>
             <div class="password-input">
               <input
                 id="password2"
                 v-model="formData.password2"
                 :type="showPassword2 ? 'text' : 'password'"
-                placeholder="Confirm your password"
+                placeholder="Confirm password"
                 required
                 :disabled="loading"
               />
@@ -144,10 +124,7 @@
 
           <!-- Register Button -->
           <button type="submit" class="register-button" :disabled="loading">
-            <span v-if="!loading">
-              <!-- <i class="pi pi-user-plus"></i> -->
-              Create Account
-            </span>
+            <span v-if="!loading">Create Account</span>
             <span v-else>
               <i class="pi pi-spin pi-spinner"></i>
               Creating account...
@@ -157,14 +134,9 @@
           <!-- Login Link -->
           <div class="login-link">
             Already have an account?
-            <router-link to="/login">Login here</router-link>
+            <router-link to="/login">Sign in</router-link>
           </div>
         </form>
-      </div>
-
-      <!-- Footer -->
-      <div class="register-footer">
-        <p>&copy; 2026 National Power Corporation. All rights reserved.</p>
       </div>
     </div>
   </div>
@@ -172,9 +144,13 @@
 
 <script>
 import axios from 'axios';
+import ThemeControls from './ThemeControls.vue';
 
 export default {
   name: 'RegisterPage',
+  components: {
+    ThemeControls
+  },
   data() {
     return {
       formData: {
@@ -246,117 +222,70 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  padding: 0;
+  background: #000000;
+  padding: 20px;
   position: relative;
   overflow: hidden;
 }
 
-/* NPC Logo watermark background */
-.register-page::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  max-width: 1200px;
-  height: 100%;
-  max-height: 1200px;
-  background-image: url('@/assets/NPC-logo.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.05;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* Animated stars background */
-.register-page::before {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(2px 2px at 20px 30px, white, transparent),
-    radial-gradient(2px 2px at 60px 70px, white, transparent),
-    radial-gradient(1px 1px at 50px 50px, white, transparent),
-    radial-gradient(1px 1px at 130px 80px, white, transparent),
-    radial-gradient(2px 2px at 90px 10px, white, transparent);
-  background-size: 200px 200px;
-  background-repeat: repeat;
-  opacity: 0.5;
-  animation: twinkle 3s infinite;
-  z-index: 0;
-}
-
 .register-container {
   width: 100%;
-  max-width: 550px;
+  max-width: 650px;
   position: relative;
   z-index: 10;
 }
 
-@keyframes twinkle {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
-}
-
-/* Glassmorphic card */
+/* Dark card with green border - matching Sakai */
 .register-card {
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
-  padding: 40px;
-  box-shadow: 
-    0 8px 32px 0 rgba(31, 38, 135, 0.37),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  background: #1a1a1a;
+  border: 2px solid #10b981;
+  border-radius: 32px;
+  padding: 50px 50px;
+  box-shadow: 0 0 60px rgba(16, 185, 129, 0.2);
   position: relative;
 }
 
 .register-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 36px;
 }
 
-.logo {
-  width: 110px;
-  height: 110px;
-  margin: 0 auto 20px;
+.logo-icon {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 28px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: transparent;
+  border-radius: 50%;
+  padding: 0;
 }
 
-.logo img {
+.logo-icon img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
 }
 
 .register-header h2 {
-  margin: 0 0 8px 0;
+  margin: 0 0 12px 0;
   color: #ffffff;
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.5px;
 }
 
 .register-header p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 14px;
-  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
+  color: #9ca3af;
+  font-size: 15px;
 }
 
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 
 .form-row {
@@ -368,54 +297,45 @@ export default {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .form-group label {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.form-group label i {
-  color: rgba(102, 126, 234, 0.8);
+  font-weight: 400;
+  color: #e5e7eb;
+  font-size: 15px;
 }
 
 .form-group input {
-  padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  font-size: 14px;
-  transition: all 0.3s;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  padding: 14px 18px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.2s;
+  background: #0a0a0a;
   color: #ffffff;
 }
 
 .form-group input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: #6b7280;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: rgba(102, 126, 234, 0.6);
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+  border-color: #10b981;
+  background: #0f0f0f;
 }
 
 .form-group input:disabled {
-  background: rgba(255, 255, 255, 0.05);
+  background: #1a1a1a;
   cursor: not-allowed;
+  color: #6b7280;
 }
 
 .form-group small {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  margin-top: -4px;
+  color: #9ca3af;
+  font-size: 13px;
+  margin-top: -6px;
 }
 
 .password-input {
@@ -424,66 +344,62 @@ export default {
 
 .password-input input {
   width: 100%;
-  padding-right: 45px;
+  padding-right: 50px;
 }
 
 .toggle-password {
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: #6b7280;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.2s;
 }
 
 .toggle-password:hover {
-  color: rgba(102, 126, 234, 0.9);
+  color: #10b981;
 }
 
 .error-message {
-  padding: 12px 16px;
-  background: rgba(255, 100, 100, 0.15);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 100, 100, 0.3);
-  border-radius: 12px;
-  color: #ffcccc;
+  padding: 14px 18px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: #fca5a5;
   font-size: 14px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .register-button {
   padding: 14px 24px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  font-size: 16px;
+  background: #10b981;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
   margin-top: 8px;
 }
 
 .register-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 1) 0%, rgba(118, 75, 162, 1) 100%);
-  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
 }
 
 .register-button:disabled {
@@ -494,27 +410,19 @@ export default {
 .login-link {
   text-align: center;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #9ca3af;
+  padding-top: 8px;
 }
 
 .login-link a {
-  color: rgba(102, 126, 234, 0.9);
+  color: #10b981;
   text-decoration: none;
   font-weight: 600;
-  text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
 }
 
 .login-link a:hover {
-  color: rgba(118, 75, 162, 1);
+  color: #059669;
   text-decoration: underline;
-}
-
-.register-footer {
-  text-align: center;
-  margin-top: 24px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 480px) {
@@ -523,100 +431,48 @@ export default {
   }
   
   .register-card {
-    padding: 30px 20px;
+    padding: 40px 30px;
+    border-radius: 24px;
   }
 
   .register-header h2 {
-    font-size: 20px;
+    font-size: 24px;
   }
 
-  .logo {
-    width: 100px;
-    height: 100px;
-  }
-
-  .orb {
-    display: none;
-  }
-}
-
-/* Floating gradient orbs */
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.6;
-  animation: float 20s infinite ease-in-out;
-  z-index: 1;
-}
-
-.orb-1 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(255, 105, 180, 0.6) 0%, rgba(255, 105, 180, 0) 70%);
-  top: -10%;
-  left: -10%;
-  animation-delay: 0s;
-}
-
-.orb-2 {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.6) 0%, rgba(102, 126, 234, 0) 70%);
-  bottom: -15%;
-  right: -15%;
-  animation-delay: -7s;
-}
-
-.orb-3 {
-  width: 350px;
-  height: 350px;
-  background: radial-gradient(circle, rgba(118, 75, 162, 0.6) 0%, rgba(118, 75, 162, 0) 70%);
-  top: 40%;
-  right: -10%;
-  animation-delay: -14s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(30px, -50px) scale(1.1);
-  }
-  66% {
-    transform: translate(-20px, 20px) scale(0.9);
+  .logo-icon {
+    width: 60px;
+    height: 60px;
   }
 }
 
 /* Back Button */
 .back-button {
   position: fixed;
-  top: 30px;
-  left: 30px;
+  top: 24px;
+  left: 24px;
   z-index: 100;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  color: white;
+  padding: 10px 18px;
+  background: #1a1a1a;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  color: #e5e7eb;
   text-decoration: none;
-  font-size: 0.9375rem;
+  font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(102, 126, 234, 0.5);
-  transform: translateX(-5px);
+  background: #262626;
+  border-color: #10b981;
+  color: #10b981;
+  transform: translateX(-2px);
 }
 
 .back-button i {
-  font-size: 1rem;
+  font-size: 14px;
 }
 </style>

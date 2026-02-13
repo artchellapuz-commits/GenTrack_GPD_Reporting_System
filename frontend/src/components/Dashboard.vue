@@ -414,25 +414,26 @@ export default {
 }
 
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .page-title {
-  font-size: 2rem;
-  color: #1a202c;
+  font-size: 1.75rem;
+  color: #1e293b;
   margin-bottom: 0.5rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  font-weight: 700;
 }
 
 .page-title i {
-  color: var(--npc-primary);
+  color: #3b82f6;
 }
 
 .page-description {
-  color: #718096;
-  font-size: 1rem;
+  color: #64748b;
+  font-size: 0.9375rem;
   margin: 0;
 }
 
@@ -448,11 +449,11 @@ export default {
 
 .loading-state i {
   font-size: 3rem;
-  color: var(--npc-primary);
+  color: #3b82f6;
 }
 
 .loading-state p {
-  color: #718096;
+  color: #64748b;
   font-size: 1.125rem;
 }
 
@@ -461,29 +462,28 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .stat-card {
   background: white;
-  border-radius: 1rem;
+  border-radius: 12px;
   padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
-/* .stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-} */
+.stat-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
 
 .stat-icon {
   width: 64px;
   height: 64px;
-  border-radius: 1rem;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -500,7 +500,7 @@ export default {
 .stat-content label {
   display: block;
   font-size: 0.875rem;
-  color: #718096;
+  color: #64748b;
   margin-bottom: 0.5rem;
   font-weight: 500;
 }
@@ -509,14 +509,47 @@ export default {
   display: block;
   font-size: 1.875rem;
   font-weight: 700;
-  color: #1a202c;
+  color: #1e293b;
   line-height: 1;
 }
 
 .stat-unit {
   font-size: 0.875rem;
-  color: #a0aec0;
+  color: #94a3b8;
   margin-left: 0.25rem;
+}
+
+/* Card */
+.card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.card-title {
+  font-size: 1.25rem;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+}
+
+.card-title i {
+  color: #3b82f6;
+}
+
+.card-body {
+  padding: 1.5rem;
 }
 
 /* Plants Grid */
@@ -527,11 +560,11 @@ export default {
 }
 
 .plant-card {
-  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-  border-radius: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
   padding: 1.5rem;
-  border: 2px solid #e2e8f0;
-  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
 }
 
 .plant-card.clickable {
@@ -539,9 +572,9 @@ export default {
 }
 
 .plant-card.clickable:hover {
-  border-color: var(--npc-primary);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 61, 130, 0.1);
 }
 
 .plant-card:not(.clickable):hover {
@@ -557,16 +590,16 @@ export default {
 
 .plant-header h4 {
   font-size: 1.125rem;
-  color: #1a202c;
+  color: #1e293b;
   margin: 0;
   font-weight: 600;
 }
 
 .plant-code {
-  background: var(--npc-primary);
+  background: #3b82f6;
   color: white;
   padding: 0.25rem 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -586,7 +619,7 @@ export default {
 }
 
 .plant-stat i {
-  color: var(--npc-primary);
+  color: #3b82f6;
   font-size: 1.25rem;
 }
 
@@ -597,7 +630,7 @@ export default {
 .plant-stat label {
   display: block;
   font-size: 0.75rem;
-  color: #718096;
+  color: #64748b;
   margin-bottom: 0.25rem;
 }
 
@@ -605,7 +638,7 @@ export default {
   display: block;
   font-size: 1rem;
   font-weight: 600;
-  color: #1a202c;
+  color: #1e293b;
 }
 
 .plant-card.no-data {
@@ -615,7 +648,7 @@ export default {
 .no-data-message {
   text-align: center;
   padding: 2rem 1rem;
-  color: #a0aec0;
+  color: #94a3b8;
 }
 
 .no-data-message i {
@@ -643,7 +676,7 @@ export default {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--npc-primary), var(--npc-secondary));
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
   transition: width 0.3s ease;
 }
 
@@ -659,19 +692,21 @@ export default {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: #f7fafc;
-  border-radius: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
   transition: all 0.2s ease;
 }
 
 .activity-item:hover {
-  background: #edf2f7;
+  background: #f1f5f9;
+  border-color: #cbd5e0;
 }
 
 .activity-icon {
   width: 48px;
   height: 48px;
-  border-radius: 0.75rem;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -680,18 +715,18 @@ export default {
 }
 
 .activity-icon.completed {
-  background: #c6f6d5;
-  color: #22543d;
+  background: #dcfce7;
+  color: #16a34a;
 }
 
 .activity-icon.failed {
-  background: #fed7d7;
-  color: #742a2a;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .activity-icon.processing {
-  background: #bee3f8;
-  color: #2c5282;
+  background: #dbeafe;
+  color: #2563eb;
 }
 
 .activity-content {
@@ -701,14 +736,14 @@ export default {
 
 .activity-content h4 {
   font-size: 0.9375rem;
-  color: #1a202c;
+  color: #1e293b;
   margin: 0 0 0.25rem 0;
   font-weight: 600;
 }
 
 .activity-content p {
   font-size: 0.875rem;
-  color: #718096;
+  color: #64748b;
   margin: 0;
 }
 
@@ -721,12 +756,12 @@ export default {
 
 .activity-time {
   font-size: 0.75rem;
-  color: #a0aec0;
+  color: #94a3b8;
 }
 
 .activity-status {
   padding: 0.25rem 0.75rem;
-  border-radius: 0.5rem;
+  border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -734,36 +769,37 @@ export default {
 }
 
 .activity-status.completed {
-  background: #c6f6d5;
-  color: #22543d;
+  background: #dcfce7;
+  color: #16a34a;
 }
 
 .activity-status.failed {
-  background: #fed7d7;
-  color: #742a2a;
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .activity-status.processing {
-  background: #bee3f8;
-  color: #2c5282;
+  background: #dbeafe;
+  color: #2563eb;
 }
 
 /* Quick Actions */
 .quick-actions {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
 }
 
 .section-title {
   font-size: 1.25rem;
-  color: #1a202c;
+  color: #1e293b;
   margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-weight: 600;
 }
 
 .section-title i {
-  color: var(--npc-primary);
+  color: #3b82f6;
 }
 
 .actions-grid {
@@ -774,44 +810,44 @@ export default {
 
 .action-card {
   background: white;
-  border-radius: 1rem;
+  border-radius: 12px;
   padding: 2rem 1.5rem;
   text-align: center;
-  border: 2px solid #e2e8f0;
-  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
   text-decoration: none;
   color: inherit;
 }
 
 .action-card:hover {
-  border-color: var(--npc-primary);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 61, 130, 0.15);
 }
 
 .action-card i {
   font-size: 2.5rem;
-  color: var(--npc-primary);
+  color: #3b82f6;
   margin-bottom: 1rem;
 }
 
 .action-card h4 {
   font-size: 1.125rem;
-  color: #1a202c;
+  color: #1e293b;
   margin: 0 0 0.5rem 0;
   font-weight: 600;
 }
 
 .action-card p {
   font-size: 0.875rem;
-  color: #718096;
+  color: #64748b;
   margin: 0;
 }
 
 .empty-state-small {
   text-align: center;
   padding: 2rem;
-  color: #a0aec0;
+  color: #94a3b8;
 }
 
 .empty-state-small i {

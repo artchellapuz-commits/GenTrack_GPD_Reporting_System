@@ -52,6 +52,17 @@
         </div>
 
         <div class="topbar-right">
+          <!-- Light/Dark Mode Toggle -->
+          <button class="topbar-icon-btn" @click="toggleDarkMode" :title="isDarkMode ? 'Light Mode' : 'Dark Mode'">
+            <i :class="isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
+          </button>
+          
+          <!-- Theme Customizer -->
+          <button class="topbar-icon-btn theme-btn" @click="toggleThemeCustomizer" title="Theme Customizer">
+            <i class="pi pi-palette"></i>
+          </button>
+
+          <!-- Admin Profile -->
           <button class="topbar-item" @click="toggleProfileMenu">
             <i class="pi pi-user"></i>
             <span class="username">{{ username }}</span>
@@ -91,20 +102,40 @@
 
     <!-- Sidebar Overlay for Mobile -->
     <div v-if="sidebarActive" class="layout-mask" @click="toggleSidebar"></div>
+
+    <!-- Theme Customizer -->
+    <ThemeCustomizer 
+      ref="themeCustomizer" 
+      @menu-mode-changed="handleMenuModeChange"
+      @dark-mode-changed="handleDarkModeChange"
+    />
   </div>
 </template>
 
 <script>
 import { logout, getUsername } from '../utils/auth';
+import ThemeCustomizer from './ThemeCustomizer.vue';
 
 export default {
   name: 'AppLayout',
+  components: {
+    ThemeCustomizer
+  },
   data() {
     return {
       sidebarActive: true,
       profileMenuActive: false,
-      username: ''
+      username: '',
+      isDarkMode: false,
+      isThemeCustomizerOpen: false
     };
+  },
+  created() {
+    // Load dark mode state from localStorage
+    const savedDarkMode = localStorage.getItem('dark-mode');
+    if (savedDarkMode === 'true') {
+      this.isDarkMode = true;
+    }
   },
   computed: {
     pageTitle() {
@@ -135,6 +166,28 @@ export default {
     toggleProfileMenu() {
       this.profileMenuActive = !this.profileMenuActive;
     },
+    toggleDarkMode() {
+      this.isDarkMode = !this.isDarkMode;
+      localStorage.setItem('dark-mode', this.isDarkMode);
+      
+      // Apply dark mode to body
+      if (this.isDarkMode) {
+        document.body.classList.add('dark-mode');
+        document.documentElement.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.documentElement.classList.remove('dark-mode');
+      }
+      
+      // Sync with ThemeCustomizer
+      if (this.$refs.themeCustomizer) {
+        this.$refs.themeCustomizer.isDarkMode = this.isDarkMode;
+      }
+    },
+    toggleThemeCustomizer() {
+      this.isThemeCustomizerOpen = !this.isThemeCustomizerOpen;
+      this.$refs.themeCustomizer?.toggleCustomizer();
+    },
     handleClickOutside(event) {
       const profileButton = event.target.closest('.topbar-item');
       const profileMenu = event.target.closest('.profile-menu');
@@ -149,6 +202,12 @@ export default {
       } else {
         this.sidebarActive = true;
       }
+    },
+    handleMenuModeChange(mode) {
+      console.log('Menu mode changed to:', mode);
+    },
+    handleDarkModeChange(isDark) {
+      this.isDarkMode = isDark;
     },
     async handleLogout() {
       await logout();
@@ -316,7 +375,7 @@ export default {
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   position: relative;
 }
 
@@ -341,6 +400,35 @@ export default {
 
 .username {
   font-weight: 500;
+}
+
+.topbar-icon-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  font-size: 1.125rem;
+}
+
+.topbar-icon-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.topbar-icon-btn.theme-btn {
+  background: #f59e0b;
+  color: white;
+}
+
+.topbar-icon-btn.theme-btn:hover {
+  background: #d97706;
 }
 
 .profile-menu {

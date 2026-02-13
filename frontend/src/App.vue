@@ -15,6 +15,7 @@ export default {
 
 <style>
 @import './assets/styles.css';
+@import './assets/sakai-theme.css';
 
 #app {
   min-height: 100vh;
@@ -25,6 +26,6 @@ export default {
 /* Main Content */
 .app-main {
   flex: 1;
-  background: linear-gradient(180deg, var(--gray-50) 0%, white 100%);
+  background: #f8fafc;
 }
 </style>

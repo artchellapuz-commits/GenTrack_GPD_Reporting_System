@@ -76,6 +76,7 @@ router.beforeEach((to, from, next) => {
   // Check if route requires guest (login/register)
   else if (to.matched.some(record => record.meta.requiresGuest)) {
     if (authenticated) {
+      // If already logged in, redirect to dashboard
       next('/dashboard');
     } else {
       next();

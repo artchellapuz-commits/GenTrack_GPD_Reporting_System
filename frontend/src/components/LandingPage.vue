@@ -1,9 +1,7 @@
 <template>
   <div class="landing-page">
-    <!-- Animated background elements -->
-    <div class="orb orb-1"></div>
-    <div class="orb orb-2"></div>
-    <div class="orb orb-3"></div>
+    <!-- Theme Controls -->
+    <ThemeControls />
 
     <!-- Hero Section -->
     <section id="hero" class="hero-section">
@@ -184,8 +182,13 @@
 </template>
 
 <script>
+import ThemeControls from './ThemeControls.vue';
+
 export default {
   name: 'LandingPage',
+  components: {
+    ThemeControls
+  },
   mounted() {
     // Hide scrollbar but keep scrolling functionality
     document.body.style.overflowX = 'hidden';
@@ -210,103 +213,11 @@ export default {
 <style scoped>
 .landing-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  background: #ffffff;
   position: relative;
-  overflow: visible;
+  overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
-  box-sizing: border-box;
-}
-
-.landing-page::before,
-.landing-page::after {
-  max-width: 100vw;
-}
-
-/* Animated stars background */
-.landing-page::before {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background-image: 
-    radial-gradient(2px 2px at 20px 30px, white, transparent),
-    radial-gradient(2px 2px at 60px 70px, white, transparent),
-    radial-gradient(1px 1px at 50px 50px, white, transparent),
-    radial-gradient(1px 1px at 130px 80px, white, transparent),
-    radial-gradient(2px 2px at 90px 10px, white, transparent);
-  background-size: 200px 200px;
-  background-repeat: repeat;
-  opacity: 0.5;
-  animation: twinkle 3s infinite;
-  z-index: 0;
-  pointer-events: none;
-}
-
-@keyframes twinkle {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
-}
-
-/* Floating gradient orbs */
-.orb {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.4;
-  animation: float 20s infinite ease-in-out;
-  z-index: 0;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.orb-1 {
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, rgba(102, 126, 234, 0.6) 0%, rgba(102, 126, 234, 0) 70%);
-  top: -5%;
-  left: 0;
-  animation-delay: 0s;
-}
-
-.orb-2 {
-  width: 400px;
-  height: 400px;
-  background: radial-gradient(circle, rgba(118, 75, 162, 0.6) 0%, rgba(118, 75, 162, 0) 70%);
-  bottom: -10%;
-  right: 0;
-  animation-delay: -7s;
-}
-
-.orb-3 {
-  width: 280px;
-  height: 280px;
-  background: radial-gradient(circle, rgba(255, 105, 180, 0.5) 0%, rgba(255, 105, 180, 0) 70%);
-  top: 40%;
-  right: 0;
-  animation-delay: -14s;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translate(0, 0) scale(1);
-  }
-  33% {
-    transform: translate(20px, -30px) scale(1.05);
-  }
-  66% {
-    transform: translate(-15px, 15px) scale(0.95);
-  }
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 /* Hero Section */
@@ -317,6 +228,28 @@ export default {
   justify-content: center;
   text-align: center;
   padding: 80px 20px;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  position: relative;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .hero-content {
@@ -326,31 +259,20 @@ export default {
 
 .logo-hero {
   margin-bottom: 30px;
-  animation: logoFloat 3s ease-in-out infinite;
-}
-
-@keyframes logoFloat {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
 }
 
 .hero-logo {
-  width: 180px;
-  height: 180px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
-  filter: drop-shadow(0 0 40px rgba(102, 126, 234, 0.6));
+  filter: drop-shadow(0 4px 20px rgba(59, 130, 246, 0.3));
 }
 
 .hero-title {
-  font-size: 4rem;
+  font-size: 3.5rem;
   font-weight: 700;
   color: white;
   margin: 0 0 20px 0;
-  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   letter-spacing: -0.02em;
 }
 
@@ -358,7 +280,6 @@ export default {
   font-size: 1.5rem;
   color: rgba(255, 255, 255, 0.9);
   margin: 0 0 15px 0;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .hero-tagline {
@@ -377,61 +298,59 @@ export default {
 
 .btn {
   padding: 16px 40px;
-  border-radius: 12px;
-  font-size: 1.125rem;
+  border-radius: 8px;
+  font-size: 1rem;
   font-weight: 600;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   border: none;
   cursor: pointer;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+  background: #3b82f6;
   color: white;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
 }
 
 .btn-primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.6);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 1) 0%, rgba(118, 75, 162, 1) 100%);
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
 }
 
 .btn-secondary {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .btn-secondary:hover {
-  transform: translateY(-3px);
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
 }
 
 /* Features Section */
 .features-section {
   padding: 100px 20px;
-  position: relative;
+  background: #f8fafc;
 }
 
 .section-title {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  color: white;
+  color: #1e293b;
   text-align: center;
   margin: 0 0 15px 0;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .section-subtitle {
-  font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.125rem;
+  color: #64748b;
   text-align: center;
   margin: 0 0 60px 0;
 }
@@ -444,44 +363,43 @@ export default {
 }
 
 .feature-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   padding: 40px 30px;
   text-align: center;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .feature-card:hover {
-  transform: translateY(-10px);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(102, 126, 234, 0.5);
-  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
 }
 
 .feature-icon {
   width: 80px;
   height: 80px;
   margin: 0 auto 25px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-  border-radius: 20px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2.5rem;
-  color: rgba(102, 126, 234, 0.9);
+  color: white;
 }
 
 .feature-card h3 {
   font-size: 1.5rem;
-  color: white;
+  color: #1e293b;
   margin: 0 0 15px 0;
+  font-weight: 600;
 }
 
 .feature-card p {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   line-height: 1.6;
   margin: 0;
 }
@@ -489,8 +407,7 @@ export default {
 /* Stats Section */
 .stats-section {
   padding: 80px 20px;
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(20px);
+  background: white;
 }
 
 .stats-grid {
@@ -506,19 +423,20 @@ export default {
 .stat-number {
   font-size: 3.5rem;
   font-weight: 700;
-  color: white;
+  color: #3b82f6;
   margin-bottom: 10px;
-  text-shadow: 0 0 30px rgba(102, 126, 234, 0.6);
 }
 
 .stat-label {
   font-size: 1.125rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
+  font-weight: 500;
 }
 
 /* How It Works Section */
 .how-it-works-section {
   padding: 100px 20px;
+  background: #f8fafc;
 }
 
 .steps-grid {
@@ -530,20 +448,19 @@ export default {
 }
 
 .step-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   padding: 40px 30px;
   text-align: center;
   position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .step-card:hover {
-  transform: translateY(-10px);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(102, 126, 234, 0.5);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-color: #3b82f6;
 }
 
 .step-number {
@@ -553,7 +470,7 @@ export default {
   transform: translateX(-50%);
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+  background: #3b82f6;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -561,47 +478,45 @@ export default {
   font-size: 1.25rem;
   font-weight: 700;
   color: white;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
 }
 
 .step-icon {
   width: 70px;
   height: 70px;
   margin: 20px auto 20px;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 15px;
+  background: #eff6ff;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 2rem;
-  color: rgba(102, 126, 234, 0.9);
+  color: #3b82f6;
 }
 
 .step-card h3 {
   font-size: 1.375rem;
-  color: white;
+  color: #1e293b;
   margin: 0 0 15px 0;
+  font-weight: 600;
 }
 
 .step-card p {
   font-size: 0.9375rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #64748b;
   line-height: 1.6;
   margin: 0;
 }
 
 .step-arrow {
   font-size: 2rem;
-  color: rgba(102, 126, 234, 0.5);
+  color: #cbd5e0;
 }
 
 /* Footer */
 .landing-footer {
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(20px);
+  background: #1e293b;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 60px 20px 30px;
-  margin-top: 100px;
 }
 
 .footer-content {
@@ -618,8 +533,8 @@ export default {
 }
 
 .footer-logo {
-  width: 80px;
-  height: 80px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
   margin-bottom: 10px;
 }
@@ -645,8 +560,9 @@ export default {
 
 .footer-column h4 {
   color: white;
-  font-size: 1.125rem;
+  font-size: 1rem;
   margin: 0 0 20px 0;
+  font-weight: 600;
 }
 
 .footer-column a {
@@ -654,11 +570,12 @@ export default {
   color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
   margin-bottom: 12px;
-  transition: color 0.3s ease;
+  transition: color 0.2s ease;
+  font-size: 0.9375rem;
 }
 
 .footer-column a:hover {
-  color: rgba(102, 126, 234, 0.9);
+  color: #3b82f6;
 }
 
 .footer-bottom {
