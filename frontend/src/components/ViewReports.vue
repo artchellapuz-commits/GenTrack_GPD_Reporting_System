@@ -8,7 +8,7 @@
         View Generation Reports
       </h2>
       <p class="page-description">
-        View and analyze generation reports for Agus Hydro-electric Power Plants
+        View and analyze generation reports for Agus and Pulangi Hydro-electric Power Plants
       </p>
     </div>
 
@@ -149,25 +149,36 @@
           <i class="pi pi-table"></i>
           Generation Reports
         </h3>
+        <div class="header-controls">
+          <label class="rows-label">Show:</label>
+          <select v-model="rowsPerPage" @change="onRowsChange" class="rows-select">
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+            <option :value="200">200</option>
+          </select>
+          <span class="rows-label">entries</span>
+        </div>
       </div>
       <div class="card-body p-0">
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Plant</th>
-                <th>Unit</th>
-                <th>Generation (kWh)</th>
-                <th>Operating Hours</th>
-                <th>Capacity Factor (%)</th>
-                <th>Availability (%)</th>
+                <th class="text-left">Date</th>
+                <th class="text-left">Plant</th>
+                <th class="text-center">Unit</th>
+                <th class="text-right">Generation (kWh)</th>
+                <th class="text-center">Operating Hours</th>
+                <th class="text-right">Capacity Factor (%)</th>
+                <th class="text-right">Availability (%)</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="report in reports" :key="report.id">
-                <td>{{ report.report_date }}</td>
-                <td>
+                <td class="text-left">{{ report.report_date }}</td>
+                <td class="text-left">
                   <span class="plant-badge">{{ report.plant_code }}</span>
                 </td>
                 <td class="text-center">{{ report.unit_number }}</td>
@@ -181,17 +192,14 @@
         </div>
 
         <!-- Pagination -->
-        <div class="pagination">
-          <button @click="previousPage" :disabled="!hasPrevious" class="btn-pagination">
-            <i class="pi pi-chevron-left"></i>
-            Previous
-          </button>
-          <span class="pagination-info">Page {{ currentPage }}</span>
-          <button @click="nextPage" :disabled="!hasNext" class="btn-pagination">
-            Next
-            <i class="pi pi-chevron-right"></i>
-          </button>
-        </div>
+        <Paginator 
+          :rows="rowsPerPage" 
+          :totalRecords="totalRecords" 
+          :first="(currentPage - 1) * rowsPerPage"
+          @page="onPageChange($event)"
+          template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+          :pageLinkSize="5"
+        />
       </div>
     </div>
 
@@ -208,16 +216,18 @@
 <script>
 import api from '../services/api';
 import AppLayout from './AppLayout.vue';
+import Paginator from 'primevue/paginator';
 
 export default {
   name: 'ViewReports',
   components: {
     AppLayout,
+    Paginator,
   },
   data() {
     return {
       plants: [],
-      reports: [],
+      allReports: [], // Store all reports
       summary: null,
       loading: false,
       filters: {
@@ -226,9 +236,17 @@ export default {
         endDate: '',
       },
       currentPage: 1,
-      hasNext: false,
-      hasPrevious: false,
+      totalRecords: 0,
+      rowsPerPage: 10,
     };
+  },
+  computed: {
+    reports() {
+      // Client-side pagination
+      const start = (this.currentPage - 1) * this.rowsPerPage;
+      const end = start + this.rowsPerPage;
+      return this.allReports.slice(start, end);
+    }
   },
   mounted() {
     this.loadPlants();
@@ -252,13 +270,12 @@ export default {
           plant_code: this.filters.plantCodes,
           start_date: this.filters.startDate,
           end_date: this.filters.endDate,
-          page: this.currentPage,
+          page_size: 1000, // Get all records (or a large number)
         };
 
         const response = await api.getGenerationReports(params);
-        this.reports = response.data.results || response.data;
-        this.hasNext = !!response.data.next;
-        this.hasPrevious = !!response.data.previous;
+        this.allReports = response.data.results || response.data;
+        this.totalRecords = this.allReports.length;
       } catch (error) {
         console.error('Error loading reports:', error);
       } finally {
@@ -279,13 +296,11 @@ export default {
         console.error('Error loading summary:', error);
       }
     },
-    nextPage() {
-      this.currentPage++;
-      this.loadReports();
+    onPageChange(event) {
+      this.currentPage = event.page + 1; // PrimeVue uses 0-based index
     },
-    previousPage() {
-      this.currentPage--;
-      this.loadReports();
+    onRowsChange() {
+      this.currentPage = 1; // Reset to first page when changing rows per page
     },
     formatNumber(value) {
       return value ? parseFloat(value).toFixed(2) : '0.00';
@@ -321,6 +336,68 @@ export default {
 .page-description {
   color: var(--gray-600);
   font-size: 1rem;
+}
+
+/* Card Header with Controls */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, rgba(0, 61, 130, 0.02), rgba(0, 166, 81, 0.02));
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.card-title i {
+  color: var(--npc-primary);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rows-label {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.rows-select {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  min-width: 4rem;
+}
+
+.rows-select:hover {
+  border-color: var(--npc-primary);
+}
+
+.rows-select:focus {
+  outline: none;
+  border-color: var(--npc-primary);
+  box-shadow: 0 0 0 3px rgba(0, 61, 130, 0.1);
 }
 
 /* Filters */
@@ -569,6 +646,7 @@ th, td {
   padding: var(--spacing-md);
   text-align: left;
   border-bottom: 1px solid var(--gray-200);
+  white-space: nowrap;
 }
 
 th {
@@ -588,12 +666,16 @@ tbody tr:hover {
   background: var(--gray-50);
 }
 
+.text-left {
+  text-align: left !important;
+}
+
 .text-center {
-  text-align: center;
+  text-align: center !important;
 }
 
 .text-right {
-  text-align: right;
+  text-align: right !important;
 }
 
 .plant-badge {
@@ -607,47 +689,111 @@ tbody tr:hover {
   letter-spacing: 0.05em;
 }
 
-/* Pagination */
-.pagination {
+/* Sakai-Style Pagination */
+:deep(.p-paginator) {
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-lg);
-  border-top: 1px solid var(--gray-200);
+  gap: 0.5rem;
 }
 
-.btn-pagination {
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last),
+:deep(.p-paginator .p-paginator-page) {
+  min-width: 2.5rem;
+  height: 2.5rem;
+  margin: 0.125rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-xs);
-  padding: 0.625rem 1rem;
-  background: white;
-  color: var(--npc-primary);
-  border: 2px solid var(--npc-primary);
-  border-radius: var(--radius-md);
-  cursor: pointer;
+  justify-content: center;
   font-weight: 500;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
 }
 
-.btn-pagination:hover:not(:disabled) {
-  background: var(--npc-primary);
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+:deep(.p-paginator .p-paginator-first:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-prev:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-next:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-last:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-page:not(.p-highlight):hover) {
+  background: #f1f5f9;
+  color: var(--npc-primary);
 }
 
-.btn-pagination:disabled {
+:deep(.p-paginator .p-paginator-page.p-highlight) {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+
+:deep(.p-paginator .p-disabled) {
   opacity: 0.4;
   cursor: not-allowed;
 }
 
-.pagination-info {
-  font-weight: 500;
-  color: var(--gray-700);
-  padding: 0 var(--spacing-md);
+:deep(.p-paginator .p-paginator-icon) {
+  font-size: 0.875rem;
+}
+
+/* Rows Per Page Dropdown */
+:deep(.p-paginator .p-dropdown) {
+  margin-left: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  height: 2.5rem;
+  min-width: 4rem;
+}
+
+:deep(.p-paginator .p-dropdown:hover) {
+  border-color: var(--npc-primary);
+}
+
+:deep(.p-paginator .p-dropdown .p-dropdown-label) {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+}
+
+:deep(.p-paginator .p-dropdown .p-dropdown-trigger) {
+  width: 2rem;
+  color: #64748b;
+}
+
+:deep(.p-dropdown-panel) {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-top: 0.25rem;
+}
+
+:deep(.p-dropdown-panel .p-dropdown-items) {
+  padding: 0.25rem;
+}
+
+:deep(.p-dropdown-panel .p-dropdown-item) {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: #1e293b;
+  transition: all 0.2s ease;
+}
+
+:deep(.p-dropdown-panel .p-dropdown-item:hover) {
+  background: #f1f5f9;
+  color: var(--npc-primary);
+}
+
+:deep(.p-dropdown-panel .p-dropdown-item.p-highlight) {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 /* Loading State */

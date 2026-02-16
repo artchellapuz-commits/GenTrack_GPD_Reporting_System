@@ -69,6 +69,7 @@ export default {
       this.isOpen = false;
     },
     handleLogout() {
+      sessionStorage.setItem('justLoggedOut', 'true');
       logout();
       this.$router.push('/login');
     }

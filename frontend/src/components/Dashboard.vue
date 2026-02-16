@@ -3,13 +3,34 @@
     <div class="dashboard-page">
     <!-- Page Header -->
     <div class="page-header">
-      <h2 class="page-title">
-        <i class="pi pi-chart-line"></i>
-        Dashboard
-      </h2>
-      <p class="page-description">
-        Overview of Agus Hydroelectric Power Plants Generation Performance
-      </p>
+      <div class="header-content">
+        <div>
+          <h2 class="page-title">
+            <i class="pi pi-chart-line"></i>
+            Dashboard
+          </h2>
+          <p class="page-description">
+            Overview of Agus and Pulangi Hydroelectric Power Plants Generation Performance
+          </p>
+        </div>
+        <div class="header-actions">
+          <button @click="exportAllDashboardData" class="btn-export-all">
+            <i class="pi pi-file-export"></i>
+            Export Dashboard
+          </button>
+          <button @click="refreshData" class="btn-refresh" :disabled="loading">
+            <i class="pi" :class="loading ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
+            Refresh
+          </button>
+          <button @click="toggleAutoRefresh" class="btn-auto-refresh" :class="{ active: autoRefresh }">
+            <i class="pi pi-clock"></i>
+            Auto-refresh {{ autoRefresh ? 'ON' : 'OFF' }}
+          </button>
+        </div>
+      </div>
+      <div class="last-updated" v-if="lastUpdated">
+        Last updated: {{ formatLastUpdated(lastUpdated) }}
+      </div>
     </div>
 
     <!-- Loading State -->
@@ -70,44 +91,135 @@
       <!-- Plants Overview -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">
-            <i class="pi pi-building"></i>
-            Plants Overview
-          </h3>
+          <div class="card-header-content">
+            <h3 class="card-title">
+              <i class="pi pi-building"></i>
+              Plants Overview
+            </h3>
+            <div class="filter-controls">
+              <div class="search-box">
+                <i class="pi pi-search"></i>
+                <input 
+                  v-model="searchQuery" 
+                  type="text" 
+                  placeholder="Search plants..."
+                  @input="filterPlants"
+                />
+              </div>
+              <select v-model="sortBy" @change="sortPlants" class="sort-select">
+                <option value="name">Sort by Name</option>
+                <option value="generation">Sort by Generation</option>
+                <option value="capacityFactor">Sort by Capacity Factor</option>
+                <option value="availability">Sort by Availability</option>
+              </select>
+              <button @click="toggleSortOrder" class="btn-sort-order">
+                <i class="pi" :class="sortOrder === 'asc' ? 'pi-sort-amount-up' : 'pi-sort-amount-down'"></i>
+              </button>
+              <button 
+                @click="toggleComparisonMode" 
+                class="btn-compare-mode"
+                :class="{ active: comparisonMode }"
+              >
+                <i class="pi pi-chart-bar"></i>
+                {{ comparisonMode ? 'Cancel Compare' : 'Compare Plants' }}
+              </button>
+              <div class="view-toggle">
+                <button 
+                  @click="viewMode = 'grid'" 
+                  class="btn-view" 
+                  :class="{ active: viewMode === 'grid' }"
+                >
+                  <i class="pi pi-th-large"></i>
+                </button>
+                <button 
+                  @click="viewMode = 'list'" 
+                  class="btn-view" 
+                  :class="{ active: viewMode === 'list' }"
+                >
+                  <i class="pi pi-list"></i>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="card-body">
-          <div class="plants-grid">
-            <div 
-              v-for="plant in plantsData" 
-              :key="plant.code" 
-              class="plant-card" 
-              :class="{ 'no-data': !plant.hasData, 'clickable': plant.hasData }"
-              @click="plant.hasData && openPlantDetails(plant)"
-            >
+          <div class="comparison-bar" v-if="comparisonMode">
+            <div class="comparison-info">
+              <i class="pi pi-info-circle"></i>
+              <span>Select 2-4 plants to compare. {{ selectedForComparison.length }} selected.</span>
+            </div>
+            <div class="comparison-actions">
+              <button 
+                @click="openComparison" 
+                class="btn-view-comparison"
+                :disabled="selectedForComparison.length < 2"
+              >
+                <i class="pi pi-eye"></i>
+                View Comparison
+              </button>
+              <button @click="cancelComparison" class="btn-cancel-comparison">
+                <i class="pi pi-times"></i>
+                Cancel
+              </button>
+            </div>
+          </div>
+          <div class="filter-chips" v-if="activeFilters.length > 0">
+            <span class="filter-chip" v-for="filter in activeFilters" :key="filter">
+              {{ filter }}
+              <i class="pi pi-times" @click="removeFilter(filter)"></i>
+            </span>
+          </div>
+          <div class="plants-grid" :class="{ 'list-view': viewMode === 'list' }">
+            <transition-group name="plant-fade">
+              <div 
+                v-for="plant in filteredPlants" 
+                :key="plant.code" 
+                class="plant-card" 
+                :class="{ 
+                  'no-data': !plant.hasData, 
+                  'clickable': plant.hasData && !comparisonMode,
+                  'comparison-mode': comparisonMode,
+                  'selected-for-comparison': isSelectedForComparison(plant)
+                }"
+                @click="comparisonMode && plant.hasData ? comparePlant(plant) : (plant.hasData && openPlantDetails(plant))"
+              >
               <div class="plant-header">
                 <h4>{{ plant.name }}</h4>
-                <span class="plant-code">{{ plant.code }}</span>
+                <div class="plant-badges">
+                  <div class="badge-row">
+                    <span class="plant-code">{{ plant.code }}</span>
+                    <div v-if="comparisonMode && plant.hasData" class="comparison-checkbox">
+                      <i class="pi" :class="isSelectedForComparison(plant) ? 'pi-check-circle' : 'pi-circle'"></i>
+                    </div>
+                  </div>
+                  <span v-if="plant.hasData" class="status-badge active">
+                    <i class="pi pi-circle-fill"></i> Active
+                  </span>
+                  <span v-else class="status-badge inactive">
+                    <i class="pi pi-circle"></i> No Data
+                  </span>
+                </div>
               </div>
               <div v-if="plant.hasData" class="plant-stats">
-                <div class="plant-stat">
+                <div class="plant-stat" @mouseenter="highlightStat($event)" @mouseleave="unhighlightStat($event)">
                   <i class="pi pi-bolt"></i>
                   <div>
                     <label>Generation</label>
-                    <span>{{ formatNumber(plant.generation) }} kWh</span>
+                    <span class="animated-value">{{ formatNumber(plant.generation) }} kWh</span>
                   </div>
                 </div>
-                <div class="plant-stat">
+                <div class="plant-stat" @mouseenter="highlightStat($event)" @mouseleave="unhighlightStat($event)">
                   <i class="pi pi-percentage"></i>
                   <div>
                     <label>Capacity Factor</label>
-                    <span>{{ formatNumber(plant.capacityFactor) }}%</span>
+                    <span class="animated-value">{{ formatNumber(plant.capacityFactor) }}%</span>
                   </div>
                 </div>
-                <div class="plant-stat">
+                <div class="plant-stat" @mouseenter="highlightStat($event)" @mouseleave="unhighlightStat($event)">
                   <i class="pi pi-check-circle"></i>
                   <div>
                     <label>Availability</label>
-                    <span>{{ formatNumber(plant.availability) }}%</span>
+                    <span class="animated-value">{{ formatNumber(plant.availability) }}%</span>
                   </div>
                 </div>
               </div>
@@ -119,11 +231,34 @@
                 <div class="progress-bar">
                   <div 
                     class="progress-fill" 
-                    :style="{ width: plant.capacityFactor + '%' }"
+                    :style="{ 
+                      width: plant.capacityFactor + '%',
+                      background: getProgressColor(plant.capacityFactor)
+                    }"
                   ></div>
                 </div>
+                <span class="progress-label">{{ formatNumber(plant.capacityFactor) }}%</span>
+              </div>
+              <div v-if="plant.hasData && !comparisonMode" class="plant-footer">
+                <button @click.stop="comparePlant(plant)" class="btn-compare">
+                  <i class="pi pi-chart-bar"></i> Compare
+                </button>
+                <button 
+                  @click.stop="exportPlantDataAsExcel(plant)" 
+                  class="btn-export"
+                  :disabled="exportingPlant === plant.code"
+                >
+                  <i class="pi" :class="exportingPlant === plant.code ? 'pi-spin pi-spinner' : 'pi-download'"></i>
+                  {{ exportingPlant === plant.code ? 'Exporting...' : 'Export' }}
+                </button>
               </div>
             </div>
+            </transition-group>
+          </div>
+          <div v-if="filteredPlants.length === 0" class="empty-state">
+            <i class="pi pi-filter-slash"></i>
+            <p>No plants match your filters</p>
+            <button @click="clearFilters" class="btn-clear-filters">Clear Filters</button>
           </div>
         </div>
       </div>
@@ -193,6 +328,137 @@
       :plant="selectedPlant"
       @close="closeModal"
     />
+
+    <!-- Comparison Modal -->
+    <div v-if="showComparisonModal" class="modal-overlay" @click="closeComparison">
+      <div class="comparison-modal" @click.stop>
+        <div class="modal-header">
+          <h2>
+            <i class="pi pi-chart-bar"></i>
+            Plant Comparison
+          </h2>
+          <button @click="closeComparison" class="btn-close-modal">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="comparison-grid">
+            <div class="comparison-column header-column">
+              <div class="metric-label">Plant</div>
+              <div class="metric-label">Code</div>
+              <div class="metric-label">Capacity (MW)</div>
+              <div class="metric-label">Generation (kWh)</div>
+              <div class="metric-label">Capacity Factor (%)</div>
+              <div class="metric-label">Availability (%)</div>
+              <div class="metric-label">Status</div>
+            </div>
+            <div 
+              v-for="plant in selectedForComparison" 
+              :key="plant.code"
+              class="comparison-column data-column"
+            >
+              <div class="plant-name">{{ plant.name }}</div>
+              <div class="plant-code-badge">{{ plant.code }}</div>
+              <div class="metric-value">{{ getPlantCapacity(plant.code) }}</div>
+              <div class="metric-value highlight">{{ formatNumber(plant.generation) }}</div>
+              <div class="metric-value">
+                <div class="metric-with-bar">
+                  <span>{{ formatNumber(plant.capacityFactor) }}</span>
+                  <div class="mini-progress">
+                    <div 
+                      class="mini-progress-fill" 
+                      :style="{ 
+                        width: plant.capacityFactor + '%',
+                        background: getProgressColor(plant.capacityFactor)
+                      }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <div class="metric-value">
+                <div class="metric-with-bar">
+                  <span>{{ formatNumber(plant.availability) }}</span>
+                  <div class="mini-progress">
+                    <div 
+                      class="mini-progress-fill" 
+                      :style="{ 
+                        width: plant.availability + '%',
+                        background: getProgressColor(plant.availability)
+                      }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <div class="metric-value">
+                <span class="status-badge active">
+                  <i class="pi pi-circle-fill"></i> Active
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comparison Charts -->
+          <div class="comparison-charts">
+            <div class="chart-card">
+              <h3>Generation Comparison</h3>
+              <div class="bar-chart">
+                <div 
+                  v-for="plant in selectedForComparison" 
+                  :key="'gen-' + plant.code"
+                  class="bar-item"
+                >
+                  <div class="bar-label">{{ plant.code }}</div>
+                  <div class="bar-container">
+                    <div 
+                      class="bar-fill"
+                      :style="{ 
+                        width: getBarWidth(plant.generation, 'generation') + '%',
+                        background: '#3b82f6'
+                      }"
+                    >
+                      <span class="bar-value">{{ formatNumber(plant.generation) }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <h3>Capacity Factor Comparison</h3>
+              <div class="bar-chart">
+                <div 
+                  v-for="plant in selectedForComparison" 
+                  :key="'cf-' + plant.code"
+                  class="bar-item"
+                >
+                  <div class="bar-label">{{ plant.code }}</div>
+                  <div class="bar-container">
+                    <div 
+                      class="bar-fill"
+                      :style="{ 
+                        width: plant.capacityFactor + '%',
+                        background: getProgressColor(plant.capacityFactor)
+                      }"
+                    >
+                      <span class="bar-value">{{ formatNumber(plant.capacityFactor) }}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="exportComparison" class="btn-export-comparison">
+            <i class="pi pi-download"></i>
+            Export Comparison
+          </button>
+          <button @click="closeComparison" class="btn-close">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
     </div>
   </AppLayout>
 </template>
@@ -201,6 +467,14 @@
 import api from '../services/api';
 import PlantDetailModal from './PlantDetailModal.vue';
 import AppLayout from './AppLayout.vue';
+import { 
+  exportPlantToCSV, 
+  exportComparisonToCSV, 
+  exportDashboardToCSV,
+  downloadCSV,
+  downloadBlob,
+  formatDate 
+} from '../utils/exportUtils';
 
 export default {
   name: 'DashboardView',
@@ -218,13 +492,31 @@ export default {
         totalOperatingHours: 0,
       },
       plantsData: [],
+      filteredPlants: [],
       recentUploads: [],
       showModal: false,
       selectedPlant: null,
+      searchQuery: '',
+      sortBy: 'name',
+      sortOrder: 'asc',
+      viewMode: 'grid',
+      activeFilters: [],
+      autoRefresh: false,
+      refreshInterval: null,
+      lastUpdated: null,
+      comparisonMode: false,
+      selectedForComparison: [],
+      showComparisonModal: false,
+      exportingPlant: null,
     };
   },
   mounted() {
     this.loadDashboardData();
+  },
+  beforeUnmount() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
   },
   methods: {
     async loadDashboardData() {
@@ -238,10 +530,32 @@ export default {
         
         // Load recent uploads
         await this.loadRecentUploads();
+        
+        this.lastUpdated = new Date();
       } catch (error) {
         console.error('Error loading dashboard:', error);
       } finally {
         this.loading = false;
+      }
+    },
+    
+    refreshData() {
+      this.loadDashboardData();
+    },
+    
+    toggleAutoRefresh() {
+      this.autoRefresh = !this.autoRefresh;
+      
+      if (this.autoRefresh) {
+        // Refresh every 30 seconds
+        this.refreshInterval = setInterval(() => {
+          this.loadDashboardData();
+        }, 30000);
+      } else {
+        if (this.refreshInterval) {
+          clearInterval(this.refreshInterval);
+          this.refreshInterval = null;
+        }
       }
     },
     
@@ -328,6 +642,8 @@ export default {
         });
         
         this.plantsData = plantsWithStats;
+        this.filteredPlants = [...plantsWithStats];
+        this.sortPlants();
       } catch (error) {
         console.error('Error loading plants stats:', error);
       }
@@ -367,12 +683,12 @@ export default {
     
     getStatusIcon(status) {
       const icons = {
-        COMPLETED: 'pi-check-circle',
-        FAILED: 'pi-times-circle',
-        PROCESSING: 'pi-spin pi-spinner',
-        PENDING: 'pi-clock',
+        COMPLETED: 'pi pi-check-circle',
+        FAILED: 'pi pi-times-circle',
+        PROCESSING: 'pi pi-spin pi-spinner',
+        PENDING: 'pi pi-clock',
       };
-      return icons[status] || 'pi-circle';
+      return icons[status] || 'pi pi-circle';
     },
     
     openPlantDetails(plant) {
@@ -395,6 +711,7 @@ export default {
         'AGUS5': 52,
         'AGUS6': 200,
         'AGUS7': 200,
+        'PULANGI4': 255,
       };
       return capacities[code] || 0;
     },
@@ -402,6 +719,206 @@ export default {
     closeModal() {
       this.showModal = false;
       this.selectedPlant = null;
+    },
+    
+    filterPlants() {
+      let filtered = [...this.plantsData];
+      
+      if (this.searchQuery) {
+        const query = this.searchQuery.toLowerCase();
+        filtered = filtered.filter(plant => 
+          plant.name.toLowerCase().includes(query) || 
+          plant.code.toLowerCase().includes(query)
+        );
+      }
+      
+      this.filteredPlants = filtered;
+      this.sortPlants();
+    },
+    
+    sortPlants() {
+      this.filteredPlants.sort((a, b) => {
+        let aVal = a[this.sortBy];
+        let bVal = b[this.sortBy];
+        
+        if (this.sortBy === 'name') {
+          aVal = aVal.toLowerCase();
+          bVal = bVal.toLowerCase();
+        }
+        
+        if (this.sortOrder === 'asc') {
+          return aVal > bVal ? 1 : -1;
+        } else {
+          return aVal < bVal ? 1 : -1;
+        }
+      });
+    },
+    
+    toggleSortOrder() {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+      this.sortPlants();
+    },
+    
+    clearFilters() {
+      this.searchQuery = '';
+      this.activeFilters = [];
+      this.filterPlants();
+    },
+    
+    removeFilter(filter) {
+      this.activeFilters = this.activeFilters.filter(f => f !== filter);
+      this.filterPlants();
+    },
+    
+    getProgressColor(value) {
+      if (value >= 80) return 'linear-gradient(90deg, #10b981, #34d399)';
+      if (value >= 60) return 'linear-gradient(90deg, #3b82f6, #60a5fa)';
+      if (value >= 40) return 'linear-gradient(90deg, #f59e0b, #fbbf24)';
+      return 'linear-gradient(90deg, #ef4444, #f87171)';
+    },
+    
+    highlightStat(event) {
+      event.currentTarget.style.transform = 'scale(1.05)';
+      event.currentTarget.style.background = '#e0f2fe';
+    },
+    
+    unhighlightStat(event) {
+      event.currentTarget.style.transform = 'scale(1)';
+      event.currentTarget.style.background = 'transparent';
+    },
+    
+    toggleComparisonMode() {
+      this.comparisonMode = !this.comparisonMode;
+      if (!this.comparisonMode) {
+        this.selectedForComparison = [];
+      }
+    },
+    
+    comparePlant(plant) {
+      if (!this.comparisonMode) {
+        // Start comparison mode with this plant
+        this.comparisonMode = true;
+        this.selectedForComparison = [plant];
+      } else {
+        // Toggle selection
+        const index = this.selectedForComparison.findIndex(p => p.code === plant.code);
+        if (index > -1) {
+          this.selectedForComparison.splice(index, 1);
+        } else {
+          if (this.selectedForComparison.length < 4) {
+            this.selectedForComparison.push(plant);
+          } else {
+            alert('You can compare up to 4 plants at a time');
+          }
+        }
+      }
+    },
+    
+    isSelectedForComparison(plant) {
+      return this.selectedForComparison.some(p => p.code === plant.code);
+    },
+    
+    openComparison() {
+      if (this.selectedForComparison.length < 2) {
+        alert('Please select at least 2 plants to compare');
+        return;
+      }
+      this.showComparisonModal = true;
+    },
+    
+    closeComparison() {
+      this.showComparisonModal = false;
+    },
+    
+    cancelComparison() {
+      this.comparisonMode = false;
+      this.selectedForComparison = [];
+    },
+    
+    async exportPlantDataAsExcel(plant) {
+      this.exportingPlant = plant.code;
+      
+      try {
+        // Get the plant's data
+        const reportsResponse = await api.getGenerationReports({ plant_code: [plant.code] });
+        const reports = reportsResponse.data.results || reportsResponse.data;
+        
+        if (reports.length === 0) {
+          alert(`No data available to export for ${plant.name}`);
+          this.exportingPlant = null;
+          return;
+        }
+        
+        // Try Excel export first
+        try {
+          // Get date range
+          const dates = reports.map(r => new Date(r.date));
+          const startDate = new Date(Math.min(...dates));
+          const endDate = new Date(Math.max(...dates));
+          
+          // Use the generate report API
+          const exportData = {
+            plant_codes: [plant.code],
+            start_date: formatDate(startDate),
+            end_date: formatDate(endDate),
+            report_type: 'daily'
+          };
+          
+          const response = await api.generateReport(exportData);
+          
+          // Download Excel file
+          downloadBlob(
+            new Blob([response.data]), 
+            `${plant.code}_export_${formatDate(new Date())}.xlsx`
+          );
+        } catch (excelError) {
+          console.log('Excel export failed, falling back to CSV:', excelError);
+          
+          // Fallback to CSV export
+          const csvContent = exportPlantToCSV(plant, reports, this.getPlantCapacity(plant.code));
+          downloadCSV(csvContent, `${plant.code}_export_${formatDate(new Date())}.csv`);
+        }
+        
+        this.exportingPlant = null;
+      } catch (error) {
+        console.error('Error exporting plant data:', error);
+        alert(`Failed to export data for ${plant.name}. Please try again.`);
+        this.exportingPlant = null;
+      }
+    },
+    
+    exportAllDashboardData() {
+      const csvContent = exportDashboardToCSV(
+        this.stats, 
+        this.plantsData, 
+        this.getPlantCapacity.bind(this)
+      );
+      downloadCSV(csvContent, `dashboard_export_${formatDate(new Date())}.csv`);
+    },
+    
+    getBarWidth(value, metric) {
+      const maxValue = Math.max(...this.selectedForComparison.map(p => p[metric]));
+      return maxValue > 0 ? (value / maxValue) * 100 : 0;
+    },
+    
+    exportComparison() {
+      const csvContent = exportComparisonToCSV(
+        this.selectedForComparison, 
+        this.getPlantCapacity.bind(this)
+      );
+      downloadCSV(csvContent, `plant-comparison-${formatDate(new Date())}.csv`);
+    },
+    
+    formatLastUpdated(date) {
+      const now = new Date();
+      const diff = now - date;
+      const seconds = Math.floor(diff / 1000);
+      
+      if (seconds < 60) return `${seconds}s ago`;
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      return `${hours}h ago`;
     },
   },
 };
@@ -415,6 +932,72 @@ export default {
 
 .page-header {
   margin-bottom: 1.5rem;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-refresh,
+.btn-auto-refresh,
+.btn-export-all {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-refresh:hover:not(:disabled),
+.btn-auto-refresh:hover,
+.btn-export-all:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.btn-export-all {
+  background: #16a34a;
+  color: white;
+  border-color: #16a34a;
+}
+
+.btn-export-all:hover {
+  background: #15803d;
+  border-color: #15803d;
+  color: white;
+}
+
+.btn-refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-auto-refresh.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.last-updated {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  font-style: italic;
 }
 
 .page-title {
@@ -473,11 +1056,24 @@ export default {
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .stat-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
 }
 
 .stat-icon {
@@ -534,6 +1130,135 @@ export default {
   background: #f8fafc;
 }
 
+.card-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box i {
+  position: absolute;
+  left: 0.75rem;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.search-box input {
+  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  width: 200px;
+  transition: all 0.2s ease;
+}
+
+.search-box input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.sort-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: white;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.btn-sort-order {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #475569;
+}
+
+.btn-sort-order:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.btn-view {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #475569;
+}
+
+.btn-view:hover {
+  background: #f8fafc;
+}
+
+.btn-view.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: #dbeafe;
+  color: #1e40af;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.filter-chip i {
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.filter-chip i:hover {
+  color: #1e3a8a;
+}
+
 .card-title {
   font-size: 1.25rem;
   color: #1e293b;
@@ -555,8 +1280,44 @@ export default {
 /* Plants Grid */
 .plants-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 1.5rem;
+}
+
+.plants-grid.list-view {
+  grid-template-columns: 1fr;
+}
+
+.plants-grid.list-view .plant-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.plants-grid.list-view .plant-header {
+  flex: 0 0 200px;
+}
+
+.plants-grid.list-view .plant-stats {
+  flex: 1;
+  flex-direction: row;
+  gap: 2rem;
+}
+
+.plant-fade-enter-active,
+.plant-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.plant-fade-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.plant-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
 }
 
 .plant-card {
@@ -564,7 +1325,11 @@ export default {
   border-radius: 12px;
   padding: 1.5rem;
   border: 1px solid #e2e8f0;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 .plant-card.clickable {
@@ -573,8 +1338,8 @@ export default {
 
 .plant-card.clickable:hover {
   border-color: #3b82f6;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 16px -4px rgba(59, 130, 246, 0.2);
+  transform: translateY(-4px);
 }
 
 .plant-card:not(.clickable):hover {
@@ -584,8 +1349,9 @@ export default {
 .plant-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1.25rem;
+  gap: 0.75rem;
 }
 
 .plant-header h4 {
@@ -593,6 +1359,23 @@ export default {
   color: #1e293b;
   margin: 0;
   font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  word-wrap: break-word;
+}
+
+.plant-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .plant-code {
@@ -603,6 +1386,34 @@ export default {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.status-badge.active {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-badge.inactive {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.status-badge i {
+  font-size: 0.5rem;
 }
 
 .plant-stats {
@@ -616,6 +1427,9 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
 }
 
 .plant-stat i {
@@ -639,6 +1453,21 @@ export default {
   font-size: 1rem;
   font-weight: 600;
   color: #1e293b;
+}
+
+.animated-value {
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .plant-card.no-data {
@@ -665,6 +1494,7 @@ export default {
 
 .plant-progress {
   margin-top: 1rem;
+  position: relative;
 }
 
 .progress-bar {
@@ -676,8 +1506,524 @@ export default {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  transition: width 0.6s ease;
+  border-radius: 4px;
+}
+
+.progress-label {
+  position: absolute;
+  right: 0;
+  top: -1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.plant-footer {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-compare,
+.btn-export {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.btn-compare i,
+.btn-export i {
+  flex-shrink: 0;
+}
+
+.btn-compare:hover {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.btn-export:hover {
+  background: #dcfce7;
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.btn-export:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-export:disabled:hover {
+  background: white;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #94a3b8;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.empty-state p {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.btn-clear-filters {
+  padding: 0.625rem 1.25rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-clear-filters:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+/* Comparison Mode */
+.btn-compare-mode {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #e2e8f0;
+  background: white;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-compare-mode:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.btn-compare-mode.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.comparison-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.comparison-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #1e40af;
+  font-weight: 500;
+}
+
+.comparison-info i {
+  font-size: 1.25rem;
+}
+
+.comparison-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btn-view-comparison,
+.btn-cancel-comparison {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-view-comparison {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-view-comparison:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.btn-view-comparison:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-cancel-comparison {
+  background: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-cancel-comparison:hover {
+  background: #f8fafc;
+  border-color: #cbd5e0;
+}
+
+.plant-card.comparison-mode {
+  cursor: pointer;
+}
+
+.plant-card.selected-for-comparison {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.comparison-checkbox {
+  font-size: 1.25rem;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.comparison-checkbox i {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.selected-for-comparison .comparison-checkbox {
+  color: #16a34a;
+}
+
+/* Comparison Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.comparison-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 1200px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1e293b;
+}
+
+.modal-header h2 i {
+  color: #3b82f6;
+}
+
+.btn-close-modal {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.btn-close-modal:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.comparison-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.header-column {
+  font-weight: 600;
+  color: #475569;
+}
+
+.metric-label {
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+.data-column {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.5rem;
+}
+
+.plant-name {
+  padding: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  background: #eff6ff;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+.plant-code-badge {
+  padding: 1rem;
+  background: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.875rem;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-value {
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  color: #1e293b;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-value.highlight {
+  background: #fef3c7;
+  font-weight: 600;
+}
+
+.metric-with-bar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mini-progress {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  border-radius: 3px;
   transition: width 0.3s ease;
+}
+
+.comparison-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.chart-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.chart-card h3 {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.125rem;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bar-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bar-label {
+  width: 80px;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+.bar-container {
+  flex: 1;
+  height: 40px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bar-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 0.75rem;
+  border-radius: 8px;
+  transition: width 0.6s ease;
+  min-width: 80px;
+}
+
+.bar-value {
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.btn-export-comparison,
+.btn-close {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-export-comparison {
+  background: #16a34a;
+  color: white;
+}
+
+.btn-export-comparison:hover {
+  background: #15803d;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.3);
+}
+
+.btn-close {
+  background: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-close:hover {
+  background: #f8fafc;
+  border-color: #cbd5e0;
 }
 
 /* Activity List */
@@ -712,6 +2058,13 @@ export default {
   justify-content: center;
   font-size: 1.25rem;
   flex-shrink: 0;
+}
+
+.activity-icon i {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .activity-icon.completed {

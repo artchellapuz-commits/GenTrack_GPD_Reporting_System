@@ -94,6 +94,16 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# File Upload Settings
+# Maximum size for file uploads (25MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 26214400  # 25MB in bytes
+FILE_UPLOAD_MAX_MEMORY_SIZE = 26214400  # 25MB in bytes
+
+# For larger files, consider increasing these limits
+# 50MB: 52428800
+# 100MB: 104857600
+# Note: Larger files will consume more memory and processing time
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {

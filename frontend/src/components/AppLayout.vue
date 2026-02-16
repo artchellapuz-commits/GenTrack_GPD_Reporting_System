@@ -72,18 +72,6 @@
           <div v-if="profileMenuActive" class="profile-menu">
             <ul>
               <li>
-                <a href="#" class="profile-menu-item">
-                  <i class="pi pi-user"></i>
-                  <span>Profile</span>
-                </a>
-              </li>
-              <li>
-                <a href="#" class="profile-menu-item">
-                  <i class="pi pi-cog"></i>
-                  <span>Settings</span>
-                </a>
-              </li>
-              <li>
                 <a href="#" @click.prevent="handleLogout" class="profile-menu-item">
                   <i class="pi pi-sign-out"></i>
                   <span>Logout</span>
@@ -210,6 +198,7 @@ export default {
       this.isDarkMode = isDark;
     },
     async handleLogout() {
+      sessionStorage.setItem('justLoggedOut', 'true');
       await logout();
       this.$router.push('/login');
     }

@@ -1,11 +1,12 @@
 <template>
   <AppLayout>
+    <Toast />
     <div class="upload-page">
     <!-- Page Header -->
     <div class="page-header">
       <h2 class="page-title">Upload Excel Report</h2>
       <p class="page-description">
-        Upload generation reports for Agus Hydro-electric Power Plants. Supported format: .xlsx
+        Upload generation reports for Agus and Pulangi Hydro-electric Power Plants. Supported format: .xlsx (Max: 25MB)
       </p>
     </div>
 
@@ -97,22 +98,103 @@
               Excel File
               <span class="label-required">*</span>
             </label>
-            <div class="file-input-wrapper">
+            
+            <!-- Drag and Drop Zone -->
+            <div 
+              class="drag-drop-zone"
+              :class="{ 
+                'drag-over': isDragging,
+                'has-file': selectedFile,
+                'error': fileError
+              }"
+              @dragover.prevent="handleDragOver"
+              @dragleave.prevent="handleDragLeave"
+              @drop.prevent="handleDrop"
+              @click="triggerFileInput"
+            >
               <input 
                 type="file" 
                 @change="handleFileSelect" 
                 accept=".xlsx"
                 class="file-input"
                 id="file-upload"
+                ref="fileInput"
                 required
               />
-              <label for="file-upload" class="file-input-label">
-                <i class="pi pi-paperclip file-icon"></i>
-                <span v-if="!selectedFile">Choose Excel file...</span>
-                <span v-else class="file-name">{{ selectedFile.name }}</span>
-              </label>
+              
+              <!-- No File State -->
+              <div v-if="!selectedFile" class="drop-zone-content">
+                <div class="drop-zone-icon">
+                  <i class="pi pi-cloud-upload"></i>
+                </div>
+                <div class="drop-zone-text">
+                  <p class="drop-zone-title">
+                    <span v-if="!isDragging">Drag & drop your Excel file here</span>
+                    <span v-else class="dragging-text">Drop file to upload</span>
+                  </p>
+                  <p class="drop-zone-subtitle">or click to browse</p>
+                </div>
+                <div class="drop-zone-specs">
+                  <span class="spec-item">
+                    <i class="pi pi-file-excel"></i>
+                    .xlsx only
+                  </span>
+                  <span class="spec-item">
+                    <i class="pi pi-database"></i>
+                    Max 25MB
+                  </span>
+                </div>
+              </div>
+              
+              <!-- File Selected State -->
+              <div v-else class="file-preview">
+                <div class="file-preview-icon">
+                  <i class="pi pi-file-excel"></i>
+                </div>
+                <div class="file-preview-info">
+                  <div class="file-preview-name">{{ selectedFile.name }}</div>
+                  <div class="file-preview-meta">
+                    <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
+                    <span class="file-type">{{ selectedFile.type || 'Excel File' }}</span>
+                  </div>
+                  <div v-if="fileValidation" class="file-validation">
+                    <i class="pi pi-check-circle"></i>
+                    Valid Excel file
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  @click.stop="removeFile" 
+                  class="btn-remove-file"
+                  title="Remove file"
+                >
+                  <i class="pi pi-times"></i>
+                </button>
+              </div>
             </div>
-            <p class="form-help">Maximum file size: 10MB. Format: .xlsx only</p>
+            
+            <p v-if="fileError" class="form-error">
+              <i class="pi pi-exclamation-circle"></i>
+              {{ fileError }}
+            </p>
+            <p v-else class="form-help">
+              Supported format: .xlsx (Excel 2007+) • Maximum file size: 25MB
+            </p>
+          </div>
+
+          <!-- Upload Progress -->
+          <div v-if="uploading" class="upload-progress-section">
+            <div class="progress-header">
+              <span class="progress-label">Uploading...</span>
+              <span class="progress-percentage">{{ uploadProgress }}%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" :style="{ width: uploadProgress + '%' }"></div>
+            </div>
+            <div class="progress-status">
+              <i class="pi pi-spin pi-spinner"></i>
+              {{ uploadStatus }}
+            </div>
           </div>
 
           <!-- Upload Button -->
@@ -191,15 +273,13 @@
                 </td>
                 <td>
                   <div class="action-buttons">
-                    <button 
+                    <Button 
+                      icon="pi pi-trash"
                       @click="confirmDelete(upload)"
-                      class="btn-action btn-delete-action"
-                      :disabled="deleting === upload.id"
-                      title="Delete this upload and all associated records"
-                    >
-                      <i v-if="deleting !== upload.id" class="pi pi-trash"></i>
-                      <i v-else class="pi pi-spin pi-spinner"></i>
-                    </button>
+                      class="p-button-rounded p-button-danger p-button-text"
+                      :loading="deleting === upload.id"
+                      v-tooltip.top="'Delete upload'"
+                    />
                   </div>
                 </td>
               </tr>
@@ -208,6 +288,45 @@
         </div>
       </div>
     </div>
+
+    <!-- Delete Confirmation Dialog -->
+    <Dialog 
+      v-model:visible="deleteDialog" 
+      :style="{ width: '450px' }" 
+      header="Confirm Delete" 
+      :modal="true"
+      class="p-fluid"
+    >
+      <div class="confirmation-content">
+        <i class="pi pi-exclamation-triangle" style="font-size: 3rem; color: var(--red-500); margin-bottom: 1rem;"></i>
+        <span v-if="uploadToDelete">
+          Are you sure you want to delete <b>{{ uploadToDelete.original_filename }}</b>?
+        </span>
+        <div v-if="uploadToDelete" class="delete-details">
+          <p>This will permanently delete:</p>
+          <ul>
+            <li>The uploaded file</li>
+            <li>{{ uploadToDelete.records_imported || 0 }} generation report records</li>
+          </ul>
+          <p class="warning-text">This action cannot be undone.</p>
+        </div>
+      </div>
+      <template #footer>
+        <Button 
+          label="Cancel" 
+          icon="pi pi-times" 
+          @click="deleteDialog = false" 
+          class="p-button-text"
+        />
+        <Button 
+          label="Delete" 
+          icon="pi pi-trash" 
+          @click="deleteUpload" 
+          class="p-button-danger"
+          :loading="deleting !== null"
+        />
+      </template>
+    </Dialog>
   </div>
   </AppLayout>
 </template>
@@ -215,11 +334,17 @@
 <script>
 import api from '../services/api';
 import AppLayout from './AppLayout.vue';
+import Toast from 'primevue/toast';
+import Dialog from 'primevue/dialog';
+import Button from 'primevue/button';
 
 export default {
   name: 'UploadExcel',
   components: {
     AppLayout,
+    Toast,
+    Dialog,
+    Button,
   },
   data() {
     return {
@@ -227,12 +352,19 @@ export default {
       selectedPlant: '',
       selectedFile: null,
       uploading: false,
+      uploadProgress: 0,
+      uploadStatus: 'Preparing upload...',
       message: '',
       messageType: '',
       uploadHistory: [],
       dropdownOpen: false,
       searchQuery: '',
       deleting: null,
+      deleteDialog: false,
+      uploadToDelete: null,
+      isDragging: false,
+      fileError: '',
+      fileValidation: false,
     };
   },
   computed: {
@@ -296,25 +428,125 @@ export default {
       }
     },
     handleFileSelect(event) {
-      this.selectedFile = event.target.files[0];
+      const file = event.target.files[0];
+      this.validateAndSetFile(file);
+    },
+    
+    handleDragOver(event) {
+      this.isDragging = true;
+    },
+    
+    handleDragLeave(event) {
+      this.isDragging = false;
+    },
+    
+    handleDrop(event) {
+      this.isDragging = false;
+      const file = event.dataTransfer.files[0];
+      this.validateAndSetFile(file);
+    },
+    
+    triggerFileInput() {
+      if (!this.selectedFile) {
+        this.$refs.fileInput.click();
+      }
+    },
+    
+    validateAndSetFile(file) {
+      this.fileError = '';
+      this.fileValidation = false;
+      
+      if (!file) return;
+      
+      // Check file type
+      const validExtensions = ['.xlsx'];
+      const fileName = file.name.toLowerCase();
+      const isValidType = validExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!isValidType) {
+        this.fileError = 'Invalid file type. Please upload an Excel file (.xlsx)';
+        return;
+      }
+      
+      // Check file size (25MB limit)
+      const maxSize = 25 * 1024 * 1024; // 25MB in bytes
+      if (file.size > maxSize) {
+        this.fileError = 'File size exceeds 25MB limit';
+        return;
+      }
+      
+      // File is valid
+      this.selectedFile = file;
+      this.fileValidation = true;
+    },
+    
+    removeFile() {
+      this.selectedFile = null;
+      this.fileError = '';
+      this.fileValidation = false;
+      if (this.$refs.fileInput) {
+        this.$refs.fileInput.value = '';
+      }
+    },
+    
+    formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     },
     async uploadFile() {
       if (!this.selectedPlant || !this.selectedFile) return;
 
       this.uploading = true;
+      this.uploadProgress = 0;
+      this.uploadStatus = 'Preparing upload...';
       this.message = '';
+
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        if (this.uploadProgress < 90) {
+          this.uploadProgress += Math.random() * 15;
+          if (this.uploadProgress > 90) this.uploadProgress = 90;
+          
+          if (this.uploadProgress < 30) {
+            this.uploadStatus = 'Uploading file...';
+          } else if (this.uploadProgress < 60) {
+            this.uploadStatus = 'Processing Excel data...';
+          } else {
+            this.uploadStatus = 'Importing records...';
+          }
+        }
+      }, 300);
 
       try {
         const response = await api.uploadExcel(this.selectedFile, this.selectedPlant);
-        this.showMessage(
-          `${response.data.records_imported} records imported successfully.`,
-          'success'
-        );
-        this.selectedFile = null;
-        this.selectedPlant = '';
-        document.getElementById('file-upload').value = '';
-        this.loadUploadHistory();
+        
+        clearInterval(progressInterval);
+        this.uploadProgress = 100;
+        this.uploadStatus = 'Upload complete!';
+        
+        setTimeout(() => {
+          this.showMessage(
+            `${response.data.records_imported} records imported successfully.`,
+            'success'
+          );
+          this.selectedFile = null;
+          this.selectedPlant = '';
+          this.fileValidation = false;
+          if (this.$refs.fileInput) {
+            this.$refs.fileInput.value = '';
+          }
+          this.loadUploadHistory();
+          this.uploading = false;
+          this.uploadProgress = 0;
+        }, 1000);
       } catch (error) {
+        clearInterval(progressInterval);
+        this.uploading = false;
+        this.uploadProgress = 0;
+        
         let errorMsg = error.response?.data?.error || 'Upload failed';
         
         // Make error message more helpful
@@ -333,8 +565,6 @@ export default {
         }
         
         this.showMessage(errorMsg, 'error');
-      } finally {
-        this.uploading = false;
       }
     },
     showMessage(text, type) {
@@ -492,33 +722,315 @@ export default {
   opacity: 0;
   width: 0;
   height: 0;
+  pointer-events: none;
 }
 
-.file-input-label {
+/* Drag and Drop Zone */
+.drag-drop-zone {
+  position: relative;
+  min-height: 200px;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 3px dashed var(--gray-300);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-md);
-  background-color: var(--gray-50);
-  border: 2px dashed var(--gray-300);
+  justify-content: center;
+}
+
+.drag-drop-zone:hover {
+  border-color: var(--npc-primary);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 61, 130, 0.1);
+}
+
+.drag-drop-zone.drag-over {
+  border-color: var(--npc-primary);
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-style: solid;
+  box-shadow: 0 0 0 4px rgba(0, 61, 130, 0.1);
+  transform: scale(1.02);
+}
+
+.drag-drop-zone.has-file {
+  border-color: #16a34a;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-style: solid;
+}
+
+.drag-drop-zone.error {
+  border-color: #dc2626;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+.drop-zone-content {
+  text-align: center;
+  width: 100%;
+}
+
+.drop-zone-icon {
+  font-size: 4rem;
+  color: var(--npc-primary);
+  margin-bottom: 1rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.drag-drop-zone.drag-over .drop-zone-icon {
+  animation: bounce 0.5s ease-in-out infinite;
+  color: var(--npc-secondary);
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+}
+
+.drop-zone-text {
+  margin-bottom: 1.5rem;
+}
+
+.drop-zone-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 0.5rem;
+}
+
+.dragging-text {
+  color: var(--npc-primary);
+  font-weight: 700;
+}
+
+.drop-zone-subtitle {
+  font-size: 0.9375rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.drop-zone-specs {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.spec-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  font-weight: 500;
+}
+
+.spec-item i {
+  color: var(--npc-primary);
+}
+
+/* File Preview */
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  padding: 1rem;
+  background: white;
   border-radius: var(--radius-md);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.file-preview-icon {
+  font-size: 3rem;
+  color: #16a34a;
+  flex-shrink: 0;
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.file-preview-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-preview-name {
+  font-weight: 600;
+  color: var(--gray-900);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  word-break: break-word;
+}
+
+.file-preview-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin-bottom: 0.5rem;
+}
+
+.file-size {
+  font-weight: 500;
+}
+
+.file-type {
+  color: var(--gray-500);
+}
+
+.file-validation {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #16a34a;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.file-validation i {
+  font-size: 1rem;
+}
+
+.btn-remove-file {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #fee2e2;
+  color: #dc2626;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.file-input-label:hover {
-  border-color: var(--npc-primary);
-  background-color: rgba(0, 61, 130, 0.02);
+.btn-remove-file:hover {
+  background: #dc2626;
+  color: white;
+  transform: rotate(90deg) scale(1.1);
 }
 
-.file-icon {
-  font-size: 1.5rem;
-  color: var(--npc-primary);
-}
-
-.file-name {
-  color: var(--npc-primary);
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: var(--spacing-sm);
+  font-size: 0.875rem;
+  color: #dc2626;
   font-weight: 500;
+}
+
+.form-error i {
+  font-size: 1rem;
+}
+
+/* Upload Progress */
+.upload-progress-section {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #93c5fd;
+  border-radius: var(--radius-lg);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.progress-label {
+  font-weight: 600;
+  color: var(--gray-900);
+  font-size: 1rem;
+}
+
+.progress-percentage {
+  font-weight: 700;
+  color: var(--npc-primary);
+  font-size: 1.125rem;
+}
+
+.progress-bar-container {
+  height: 12px;
+  background: white;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--npc-primary), var(--npc-secondary));
+  border-radius: 6px;
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.progress-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  font-weight: 500;
+}
+
+.progress-status i {
+  color: var(--npc-primary);
 }
 
 .form-actions {
@@ -975,5 +1487,28 @@ td:has(.btn-delete) {
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+
+/* Delete Button Hover Effect in Recent Uploads */
+.action-buttons :deep(.p-button-rounded) {
+  transition: all 0.25s ease;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.action-buttons :deep(.p-button-rounded:hover) {
+  background-color: #dc2626 !important;
+  color: white !important;
+  transform: scale(1.08);
+  box-shadow: 0 3px 8px rgba(220, 38, 38, 0.3);
+}
+
+.action-buttons :deep(.p-button-rounded:active) {
+  transform: scale(1.02);
+}
+
+.action-buttons :deep(.p-button-rounded .p-button-icon) {
+  font-size: 1.125rem;
+  transition: all 0.25s ease;
 }
 </style>

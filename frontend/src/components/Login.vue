@@ -58,7 +58,7 @@
 
           <div class="form-options">
             <label class="remember-me">
-              <input type="checkbox" />
+              <input type="checkbox" v-model="rememberMe" />
               <span>Remember me</span>
             </label>
             <a href="#" class="forgot-password">Forgot password?</a>
@@ -105,10 +105,43 @@ export default {
         username: '',
         password: ''
       },
+      rememberMe: false,
       showPassword: false,
       loading: false,
       error: null
     };
+  },
+  mounted() {
+    // Check if user just logged out
+    const justLoggedOut = sessionStorage.getItem('justLoggedOut');
+    
+    if (justLoggedOut) {
+      // Clear the logout flag
+      sessionStorage.removeItem('justLoggedOut');
+      
+      // Load only username if Remember Me was checked, but NOT password
+      const savedUsername = localStorage.getItem('rememberedUsername');
+      const wasRemembered = localStorage.getItem('rememberMe') === 'true';
+      
+      if (wasRemembered && savedUsername) {
+        this.credentials.username = savedUsername;
+        this.rememberMe = true;
+      }
+      // Password field stays empty after logout
+    } else {
+      // Normal page load - load saved credentials if Remember Me was checked
+      const savedUsername = localStorage.getItem('rememberedUsername');
+      const savedPassword = localStorage.getItem('rememberedPassword');
+      const wasRemembered = localStorage.getItem('rememberMe') === 'true';
+      
+      if (wasRemembered && savedUsername) {
+        this.credentials.username = savedUsername;
+        if (savedPassword) {
+          this.credentials.password = atob(savedPassword); // Decode from base64
+        }
+        this.rememberMe = true;
+      }
+    }
   },
   methods: {
     async handleLogin() {
@@ -120,6 +153,17 @@ export default {
           `${process.env.VUE_APP_API_URL}/auth/login/`,
           this.credentials
         );
+
+        // Handle Remember Me
+        if (this.rememberMe) {
+          localStorage.setItem('rememberedUsername', this.credentials.username);
+          localStorage.setItem('rememberedPassword', btoa(this.credentials.password)); // Encode to base64
+          localStorage.setItem('rememberMe', 'true');
+        } else {
+          localStorage.removeItem('rememberedUsername');
+          localStorage.removeItem('rememberedPassword');
+          localStorage.removeItem('rememberMe');
+        }
 
         // Store tokens
         localStorage.setItem('access_token', response.data.access);

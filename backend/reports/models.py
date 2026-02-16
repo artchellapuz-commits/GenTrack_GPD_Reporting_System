@@ -4,7 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Plant(models.Model):
-    """Agus Hydroelectric Plants (1, 2, 4, 5, 6, 7)"""
+    """Agus and Pulangi Hydroelectric Plants"""
     PLANT_CHOICES = [
         ('AGUS1', 'Agus 1'),
         ('AGUS2', 'Agus 2'),
@@ -12,6 +12,7 @@ class Plant(models.Model):
         ('AGUS5', 'Agus 5'),
         ('AGUS6', 'Agus 6'),
         ('AGUS7', 'Agus 7'),
+        ('PULANGI4', 'Pulangi 4'),
     ]
     
     code = models.CharField(max_length=10, choices=PLANT_CHOICES, unique=True)

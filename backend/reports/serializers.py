@@ -124,7 +124,7 @@ class GenerationReportListSerializer(serializers.ModelSerializer):
 
 class ExcelUploadSerializer(serializers.Serializer):
     file = serializers.FileField()
-    plant_code = serializers.ChoiceField(choices=['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7'])
+    plant_code = serializers.ChoiceField(choices=Plant.PLANT_CHOICES)
     
     def validate_file(self, value):
         if not value.name.endswith('.xlsx'):
@@ -138,7 +138,7 @@ class ExcelUploadSerializer(serializers.Serializer):
 
 class ReportGenerationSerializer(serializers.Serializer):
     plant_codes = serializers.ListField(
-        child=serializers.ChoiceField(choices=['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7']),
+        child=serializers.ChoiceField(choices=Plant.PLANT_CHOICES),
         allow_empty=False
     )
     start_date = serializers.DateField()
