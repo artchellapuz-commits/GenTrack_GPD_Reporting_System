@@ -4,7 +4,7 @@
 Pulangi 4 Hydro-electric Power Plant has been successfully integrated into the NPC Reporting System.
 
 ## Plant Details
-- **Plant Name**: Pulangi 4 Hydroelectric Plant
+- **Plant Name**: Pulangi 4 Hydroelectric Power Plant
 - **Plant Code**: PULANGI4
 - **Location**: Bukidnon
 - **Total Capacity**: 255 MW
@@ -110,7 +110,7 @@ print(f"Units: {plant.units.count()}")
 
 ### Upload Daily Generation Data
 1. Navigate to "Upload Excel" page
-2. Select "Pulangi 4 Hydroelectric Plant" from dropdown
+2. Select "Pulangi 4 Hydroelectric Power Plant" from dropdown
 3. Choose Excel file with generation data
 4. Click "Upload Report"
 
@@ -149,7 +149,7 @@ All existing API endpoints now support Pulangi 4:
 ```sql
 -- Plant record
 INSERT INTO plants (code, name, capacity_mw, location, is_active)
-VALUES ('PULANGI4', 'Pulangi 4 Hydroelectric Plant', 255, 'Bukidnon', true);
+VALUES ('PULANGI4', 'Pulangi 4 Hydroelectric Power Plant', 255, 'Bukidnon', true);
 
 -- Unit records
 INSERT INTO units (plant_id, unit_number, capacity_mw, is_active)

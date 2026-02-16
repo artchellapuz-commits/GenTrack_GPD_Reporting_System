@@ -19,7 +19,7 @@ print()
 # Based on typical Mindanao hydroelectric plant specifications
 plant_data = {
     'code': 'PULANGI4',
-    'name': 'Pulangi 4 Hydroelectric Plant',
+    'name': 'Pulangi 4 Hydroelectric Power Plant',
     'capacity_mw': 255,  # Total installed capacity
     'location': 'Bukidnon',
     'num_units': 3,

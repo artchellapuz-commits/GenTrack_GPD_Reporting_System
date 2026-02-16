@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="generate-report-page">
+    <div class="generate-report-page glass-background">
     <!-- Page Header -->
     <div class="page-header">
       <h2 class="page-title">Generate Excel Report</h2>
@@ -10,7 +10,7 @@
     </div>
 
     <!-- Main Form Card -->
-    <div class="card">
+    <div class="card glass-card glass-fade-in">
       <div class="card-body">
         <form @submit.prevent="generateReport" class="report-form">
           <!-- Plant Selection -->
@@ -51,7 +51,7 @@
               <input 
                 type="date" 
                 v-model="startDate" 
-                class="date-input"
+                class="date-input glass-input"
                 required
               />
             </div>
@@ -64,7 +64,7 @@
               <input 
                 type="date" 
                 v-model="endDate" 
-                class="date-input"
+                class="date-input glass-input"
                 required
               />
             </div>
@@ -104,7 +104,7 @@
           <button 
             type="submit"
             :disabled="!canGenerate || generating"
-            class="btn-generate"
+            class="btn-generate glass-button"
           >
             <i v-if="!generating" class="pi pi-download"></i>
             <i v-else class="pi pi-spin pi-spinner"></i>

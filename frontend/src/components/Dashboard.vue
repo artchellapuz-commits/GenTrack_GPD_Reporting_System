@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="dashboard-page">
+    <div class="dashboard-page glass-background">
     <!-- Page Header -->
     <div class="page-header">
       <div class="header-content">
@@ -14,15 +14,19 @@
           </p>
         </div>
         <div class="header-actions">
-          <button @click="exportAllDashboardData" class="btn-export-all">
-            <i class="pi pi-file-export"></i>
-            Export Dashboard
+          <button @click="exportDashboardToPDF" class="btn-export-pdf glass-button">
+            <i class="pi pi-file-pdf"></i>
+            Export PDF
           </button>
-          <button @click="refreshData" class="btn-refresh" :disabled="loading">
+          <button @click="exportAllDashboardData" class="btn-export-csv glass-button">
+            <i class="pi pi-file-excel"></i>
+            Export CSV
+          </button>
+          <button @click="refreshData" class="btn-refresh glass-button" :disabled="loading">
             <i class="pi" :class="loading ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
             Refresh
           </button>
-          <button @click="toggleAutoRefresh" class="btn-auto-refresh" :class="{ active: autoRefresh }">
+          <button @click="toggleAutoRefresh" class="btn-auto-refresh glass-button" :class="{ active: autoRefresh }">
             <i class="pi pi-clock"></i>
             Auto-refresh {{ autoRefresh ? 'ON' : 'OFF' }}
           </button>
@@ -43,7 +47,7 @@
     <div v-else>
       <!-- Summary Cards -->
       <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-card glass-stat-card glass-float">
           <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
             <i class="pi pi-bolt"></i>
           </div>
@@ -54,7 +58,7 @@
           </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card glass-stat-card glass-float">
           <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
             <i class="pi pi-percentage"></i>
           </div>
@@ -65,7 +69,7 @@
           </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card glass-stat-card glass-float">
           <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
             <i class="pi pi-check-circle"></i>
           </div>
@@ -76,7 +80,7 @@
           </div>
         </div>
 
-        <div class="stat-card">
+        <div class="stat-card glass-stat-card glass-float">
           <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
             <i class="pi pi-clock"></i>
           </div>
@@ -89,7 +93,7 @@
       </div>
 
       <!-- Plants Overview -->
-      <div class="card">
+      <div class="card glass-card">
         <div class="card-header">
           <div class="card-header-content">
             <h3 class="card-title">
@@ -104,20 +108,21 @@
                   type="text" 
                   placeholder="Search plants..."
                   @input="filterPlants"
+                  class="glass-input"
                 />
               </div>
-              <select v-model="sortBy" @change="sortPlants" class="sort-select">
+              <select v-model="sortBy" @change="sortPlants" class="sort-select glass-select">
                 <option value="name">Sort by Name</option>
                 <option value="generation">Sort by Generation</option>
                 <option value="capacityFactor">Sort by Capacity Factor</option>
                 <option value="availability">Sort by Availability</option>
               </select>
-              <button @click="toggleSortOrder" class="btn-sort-order">
+              <button @click="toggleSortOrder" class="btn-sort-order glass-button">
                 <i class="pi" :class="sortOrder === 'asc' ? 'pi-sort-amount-up' : 'pi-sort-amount-down'"></i>
               </button>
               <button 
                 @click="toggleComparisonMode" 
-                class="btn-compare-mode"
+                class="btn-compare-mode glass-button"
                 :class="{ active: comparisonMode }"
               >
                 <i class="pi pi-chart-bar"></i>
@@ -151,13 +156,13 @@
             <div class="comparison-actions">
               <button 
                 @click="openComparison" 
-                class="btn-view-comparison"
+                class="btn-view-comparison glass-button"
                 :disabled="selectedForComparison.length < 2"
               >
                 <i class="pi pi-eye"></i>
                 View Comparison
               </button>
-              <button @click="cancelComparison" class="btn-cancel-comparison">
+              <button @click="cancelComparison" class="btn-cancel-comparison glass-button">
                 <i class="pi pi-times"></i>
                 Cancel
               </button>
@@ -187,6 +192,15 @@
                 <h4>{{ plant.name }}</h4>
                 <div class="plant-badges">
                   <div class="badge-row">
+                    <button 
+                      v-if="plant.hasData && !comparisonMode"
+                      @click.stop="toggleFavorite(plant)" 
+                      class="btn-favorite"
+                      :class="{ 'is-favorite': isFavorite(plant.code) }"
+                      :title="isFavorite(plant.code) ? 'Remove from favorites' : 'Add to favorites'"
+                    >
+                      <i class="pi" :class="isFavorite(plant.code) ? 'pi-star-fill' : 'pi-star'"></i>
+                    </button>
                     <span class="plant-code">{{ plant.code }}</span>
                     <div v-if="comparisonMode && plant.hasData" class="comparison-checkbox">
                       <i class="pi" :class="isSelectedForComparison(plant) ? 'pi-check-circle' : 'pi-circle'"></i>
@@ -240,12 +254,12 @@
                 <span class="progress-label">{{ formatNumber(plant.capacityFactor) }}%</span>
               </div>
               <div v-if="plant.hasData && !comparisonMode" class="plant-footer">
-                <button @click.stop="comparePlant(plant)" class="btn-compare">
+                <button @click.stop="comparePlant(plant)" class="btn-compare glass-button">
                   <i class="pi pi-chart-bar"></i> Compare
                 </button>
                 <button 
                   @click.stop="exportPlantDataAsExcel(plant)" 
-                  class="btn-export"
+                  class="btn-export glass-button"
                   :disabled="exportingPlant === plant.code"
                 >
                   <i class="pi" :class="exportingPlant === plant.code ? 'pi-spin pi-spinner' : 'pi-download'"></i>
@@ -258,13 +272,13 @@
           <div v-if="filteredPlants.length === 0" class="empty-state">
             <i class="pi pi-filter-slash"></i>
             <p>No plants match your filters</p>
-            <button @click="clearFilters" class="btn-clear-filters">Clear Filters</button>
+            <button @click="clearFilters" class="btn-clear-filters glass-button">Clear Filters</button>
           </div>
         </div>
       </div>
 
       <!-- Recent Activity -->
-      <div class="card">
+      <div class="card glass-card glass-fade-in">
         <div class="card-header">
           <h3 class="card-title">
             <i class="pi pi-history"></i>
@@ -330,14 +344,14 @@
     />
 
     <!-- Comparison Modal -->
-    <div v-if="showComparisonModal" class="modal-overlay" @click="closeComparison">
-      <div class="comparison-modal" @click.stop>
+    <div v-if="showComparisonModal" class="modal-overlay glass-overlay" @click="closeComparison">
+      <div class="comparison-modal glass-modal" @click.stop>
         <div class="modal-header">
           <h2>
             <i class="pi pi-chart-bar"></i>
             Plant Comparison
           </h2>
-          <button @click="closeComparison" class="btn-close-modal">
+          <button @click="closeComparison" class="btn-close-modal glass-button">
             <i class="pi pi-times"></i>
           </button>
         </div>
@@ -413,7 +427,7 @@
                       class="bar-fill"
                       :style="{ 
                         width: getBarWidth(plant.generation, 'generation') + '%',
-                        background: '#3b82f6'
+                        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
                       }"
                     >
                       <span class="bar-value">{{ formatNumber(plant.generation) }}</span>
@@ -449,11 +463,11 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="exportComparison" class="btn-export-comparison">
+          <button @click="exportComparison" class="btn-export-comparison glass-button">
             <i class="pi pi-download"></i>
             Export Comparison
           </button>
-          <button @click="closeComparison" class="btn-close">
+          <button @click="closeComparison" class="btn-close glass-button">
             Close
           </button>
         </div>
@@ -475,6 +489,9 @@ import {
   downloadBlob,
   formatDate 
 } from '../utils/exportUtils';
+import pdfExporter from '../utils/pdfExport';
+import favoritesManager from '../utils/favorites';
+import keyboardShortcuts from '../utils/keyboardShortcuts';
 
 export default {
   name: 'DashboardView',
@@ -547,16 +564,65 @@ export default {
       this.autoRefresh = !this.autoRefresh;
       
       if (this.autoRefresh) {
+        this.$toast.success('Auto-refresh enabled (30s interval)');
         // Refresh every 30 seconds
         this.refreshInterval = setInterval(() => {
           this.loadDashboardData();
+          this.$toast.info('Dashboard refreshed', 2000);
         }, 30000);
       } else {
+        this.$toast.info('Auto-refresh disabled');
         if (this.refreshInterval) {
           clearInterval(this.refreshInterval);
           this.refreshInterval = null;
         }
       }
+    },
+    
+    // PDF Export
+    async exportDashboardToPDF() {
+      try {
+        this.$toast.info('Generating PDF...');
+        const doc = await pdfExporter.exportDashboard(this.plantsData, {
+          title: 'NPC Dashboard Report',
+          date: new Date().toLocaleDateString()
+        });
+        await pdfExporter.downloadPDF(doc, `npc-dashboard-${Date.now()}.pdf`);
+        this.$toast.success('PDF downloaded successfully!');
+      } catch (error) {
+        console.error('PDF export error:', error);
+        this.$toast.error('Failed to generate PDF. Install jspdf: npm install jspdf jspdf-autotable');
+      }
+    },
+    
+    // Favorites Management
+    toggleFavorite(plant) {
+      const item = {
+        id: plant.code,
+        type: 'plant',
+        name: plant.name,
+        code: plant.code,
+        data: plant
+      };
+      
+      const added = favoritesManager.toggle(item);
+      
+      if (added) {
+        this.$toast.success(`${plant.name} added to favorites`);
+      } else {
+        this.$toast.info(`${plant.name} removed from favorites`);
+      }
+      
+      // Force re-render
+      this.$forceUpdate();
+    },
+    
+    isFavorite(plantCode) {
+      return favoritesManager.isFavorite(plantCode, 'plant');
+    },
+    
+    getFavorites() {
+      return favoritesManager.getByType('plant');
     },
     
     async loadOverallStats() {
@@ -943,55 +1009,171 @@ export default {
 
 .header-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .btn-refresh,
-.btn-auto-refresh,
-.btn-export-all {
+.btn-auto-refresh {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  border: 1px solid #e2e8f0;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #e2e8f0;
   background: white;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 600;
   color: #475569;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-refresh::before,
+.btn-auto-refresh::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-refresh:hover:not(:disabled)::before,
+.btn-auto-refresh:hover::before {
+  left: 100%;
 }
 
 .btn-refresh:hover:not(:disabled),
-.btn-auto-refresh:hover,
-.btn-export-all:hover {
-  background: #f8fafc;
+.btn-auto-refresh:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-color: #3b82f6;
   color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px -2px rgba(59, 130, 246, 0.2);
 }
 
-.btn-export-all {
-  background: #16a34a;
-  color: white;
-  border-color: #16a34a;
+.btn-refresh:active:not(:disabled),
+.btn-auto-refresh:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px -1px rgba(59, 130, 246, 0.15);
 }
 
-.btn-export-all:hover {
-  background: #15803d;
-  border-color: #15803d;
+.btn-refresh i,
+.btn-auto-refresh i {
+  font-size: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.btn-refresh:hover:not(:disabled) i,
+.btn-auto-refresh:hover i {
+  transform: scale(1.1);
+}
+
+.btn-export-pdf,
+.btn-export-csv {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 600;
   color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-export-pdf::before,
+.btn-export-csv::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-export-pdf:hover::before,
+.btn-export-csv:hover::before {
+  left: 100%;
+}
+
+.btn-export-pdf {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.btn-export-pdf:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(220, 38, 38, 0.4), 0 4px 6px -2px rgba(220, 38, 38, 0.2);
+}
+
+.btn-export-pdf:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.3);
+}
+
+.btn-export-csv {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+.btn-export-csv:hover {
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(22, 163, 74, 0.4), 0 4px 6px -2px rgba(22, 163, 74, 0.2);
+}
+
+.btn-export-csv:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 6px -1px rgba(22, 163, 74, 0.3);
+}
+
+.btn-export-pdf i,
+.btn-export-csv i {
+  font-size: 1.125rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 .btn-refresh:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .btn-auto-refresh.active {
-  background: #3b82f6;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border-color: #3b82f6;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.2);
+}
+
+.btn-auto-refresh.active::before {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
+.btn-auto-refresh.active:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: #2563eb;
+  color: white;
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4), 0 4px 6px -2px rgba(59, 130, 246, 0.2);
+}
+
+.btn-auto-refresh.active i {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 .last-updated {
@@ -1735,6 +1917,42 @@ export default {
   color: #16a34a;
 }
 
+/* Favorite Button */
+.btn-favorite {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: #94a3b8;
+  transition: all 0.2s ease;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.btn-favorite:hover {
+  color: #fbbf24;
+  transform: scale(1.15);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.btn-favorite.is-favorite {
+  color: #fbbf24;
+  animation: starPulse 0.3s ease;
+}
+
+.btn-favorite.is-favorite:hover {
+  color: #f59e0b;
+}
+
+@keyframes starPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
 /* Comparison Modal */
 .modal-overlay {
   position: fixed;
@@ -1818,149 +2036,204 @@ export default {
 
 .comparison-grid {
   display: grid;
-  grid-template-columns: 200px repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: 200px repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
   overflow-x: auto;
+  padding-bottom: 1rem;
 }
 
 .comparison-column {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .header-column {
-  font-weight: 600;
-  color: #475569;
+  font-weight: 700;
+  color: #1e293b;
 }
 
 .metric-label {
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  min-height: 60px;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  min-height: 70px;
   display: flex;
   align-items: center;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
 }
 
 .data-column {
   background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 0.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.data-column:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
 }
 
 .plant-name {
-  padding: 1rem;
-  font-weight: 600;
+  padding: 1.25rem;
+  font-weight: 700;
   color: #1e293b;
-  background: #eff6ff;
-  border-radius: 8px;
-  font-size: 0.9375rem;
-  min-height: 60px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 10px;
+  font-size: 1rem;
+  min-height: 70px;
   display: flex;
   align-items: center;
+  border: 1px solid #93c5fd;
 }
 
 .plant-code-badge {
-  padding: 1rem;
-  background: #3b82f6;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: 10px;
+  font-weight: 700;
   text-align: center;
-  font-size: 0.875rem;
-  min-height: 60px;
+  font-size: 0.9375rem;
+  min-height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
+  letter-spacing: 0.05em;
+  box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
 }
 
 .metric-value {
-  padding: 1rem;
+  padding: 1.25rem;
   background: #f8fafc;
-  border-radius: 8px;
-  font-size: 0.9375rem;
+  border-radius: 10px;
+  font-size: 1rem;
   color: #1e293b;
-  min-height: 60px;
+  min-height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
 }
 
 .metric-value.highlight {
-  background: #fef3c7;
-  font-weight: 600;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  font-weight: 700;
+  border-color: #fbbf24;
+  color: #92400e;
 }
 
 .metric-with-bar {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
 .mini-progress {
-  height: 6px;
+  height: 8px;
   background: #e2e8f0;
-  border-radius: 3px;
+  border-radius: 4px;
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .mini-progress-fill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .comparison-charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
 .chart-card {
-  background: #f8fafc;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.chart-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .chart-card h3 {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.125rem;
+  margin: 0 0 2rem 0;
+  font-size: 1.25rem;
   color: #1e293b;
-  font-weight: 600;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.chart-card h3::before {
+  content: '';
+  width: 4px;
+  height: 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 2px;
 }
 
 .bar-chart {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .bar-item {
   display: flex;
   align-items: center;
   gap: 1rem;
+  animation: slideInLeft 0.5s ease;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .bar-label {
-  width: 80px;
-  font-weight: 600;
-  color: #475569;
-  font-size: 0.875rem;
+  width: 100px;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 0.9375rem;
+  text-align: right;
+  flex-shrink: 0;
 }
 
 .bar-container {
   flex: 1;
-  height: 40px;
-  background: #e2e8f0;
-  border-radius: 8px;
-  overflow: hidden;
+  height: 50px;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-radius: 10px;
+  overflow: visible;
   position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .bar-fill {
@@ -1968,17 +2241,43 @@ export default {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 0.75rem;
-  border-radius: 8px;
-  transition: width 0.6s ease;
-  min-width: 80px;
+  padding-right: 1rem;
+  border-radius: 10px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 100px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.bar-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .bar-value {
   color: white;
-  font-weight: 600;
-  font-size: 0.875rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
 }
 
 .modal-footer {

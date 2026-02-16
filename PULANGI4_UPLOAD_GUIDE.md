@@ -109,7 +109,7 @@ A sample Excel file has been created for you: `SAMPLE_PULANGI4.xlsx`
 
 2. **Upload to System**
    - Go to "Upload Excel" page
-   - Select "Pulangi 4 Hydroelectric Plant" from dropdown
+   - Select "Pulangi 4 Hydroelectric Power Plant" from dropdown
    - Choose your Excel file
    - Click "Upload Report"
 

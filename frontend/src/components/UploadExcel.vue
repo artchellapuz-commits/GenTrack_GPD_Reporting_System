@@ -1,7 +1,7 @@
 <template>
   <AppLayout>
     <Toast />
-    <div class="upload-page">
+    <div class="upload-page glass-background">
     <!-- Page Header -->
     <div class="page-header">
       <h2 class="page-title">Upload Excel Report</h2>
@@ -11,7 +11,7 @@
     </div>
 
     <!-- Upload Form Card -->
-    <div class="card">
+    <div class="card glass-card glass-fade-in">
       <div class="card-body">
         <form @submit.prevent="uploadFile" class="upload-form">
           <!-- Plant Selection -->
@@ -202,7 +202,7 @@
             <button 
               type="submit"
               :disabled="!selectedPlant || !selectedFile || uploading"
-              class="btn btn-primary btn-lg"
+              class="btn btn-primary btn-lg glass-button"
             >
               <span v-if="!uploading">
                 <i class="pi pi-upload btn-icon"></i>
@@ -229,7 +229,7 @@
     </div>
 
     <!-- Upload History -->
-    <div v-if="uploadHistory.length" class="card mt-5">
+    <div v-if="uploadHistory.length" class="card glass-card mt-5 glass-fade-in">
       <div class="card-header">
         <h3 class="card-title">
           <i class="pi pi-history title-icon"></i>
@@ -447,7 +447,7 @@ export default {
     },
     
     triggerFileInput() {
-      if (!this.selectedFile) {
+      if (!this.selectedFile && this.$refs.fileInput) {
         this.$refs.fileInput.click();
       }
     },
@@ -497,12 +497,17 @@ export default {
       return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     },
     async uploadFile() {
-      if (!this.selectedPlant || !this.selectedFile) return;
+      if (!this.selectedPlant || !this.selectedFile) {
+        this.$toast.warning('Please select both a plant and a file');
+        return;
+      }
 
       this.uploading = true;
       this.uploadProgress = 0;
       this.uploadStatus = 'Preparing upload...';
       this.message = '';
+      
+      this.$toast.info('Starting upload...');
 
       // Simulate progress
       const progressInterval = setInterval(() => {
@@ -528,6 +533,7 @@ export default {
         this.uploadStatus = 'Upload complete!';
         
         setTimeout(() => {
+          this.$toast.success(`${response.data.records_imported} records imported successfully!`);
           this.showMessage(
             `${response.data.records_imported} records imported successfully.`,
             'success'
@@ -551,17 +557,10 @@ export default {
         
         // Make error message more helpful
         if (errorMsg.includes('Missing required columns')) {
-          errorMsg = 'Invalid Excel file format!\n\n' +
-                    'Your file is missing required columns. Please use the correct template.\n\n' +
-                    'Required columns:\n' +
-                    '• Date\n' +
-                    '• Unit Number\n' +
-                    '• Generation kWh\n' +
-                    '• Operating Hours\n' +
-                    '• Availability Hours\n' +
-                    '• Forced Outage Hours\n' +
-                    '• Scheduled Outage Hours\n\n' +
-                    'Use the sample file: CORRECT_SAMPLE_AGUS1.xlsx';
+          errorMsg = 'Invalid Excel file format! Please use the correct template with all required columns.';
+          this.$toast.error(errorMsg, 6000);
+        } else {
+          this.$toast.error(errorMsg);
         }
         
         this.showMessage(errorMsg, 'error');

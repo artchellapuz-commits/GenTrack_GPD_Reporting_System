@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="view-reports-page">
+    <div class="view-reports-page glass-background">
     <!-- Page Header -->
     <div class="page-header">
       <h2 class="page-title">
@@ -13,7 +13,7 @@
     </div>
 
     <!-- Filters Card -->
-    <div class="card">
+    <div class="card glass-card glass-fade-in">
       <div class="card-body">
         <div class="filters-form">
           <!-- Plant Selection -->
@@ -54,7 +54,7 @@
               <input 
                 type="date" 
                 v-model="filters.startDate" 
-                class="date-input"
+                class="date-input glass-input"
               />
             </div>
 
@@ -66,18 +66,18 @@
               <input 
                 type="date" 
                 v-model="filters.endDate" 
-                class="date-input"
+                class="date-input glass-input"
               />
             </div>
           </div>
 
           <!-- Action Buttons -->
           <div class="filter-actions">
-            <button @click="loadReports" class="btn btn-primary">
+            <button @click="loadReports" class="btn btn-primary glass-button">
               <i class="pi pi-filter"></i>
               Apply Filters
             </button>
-            <button @click="loadSummary" class="btn btn-secondary">
+            <button @click="loadSummary" class="btn btn-secondary glass-button">
               <i class="pi pi-chart-bar"></i>
               View Summary
             </button>
@@ -87,7 +87,7 @@
     </div>
 
     <!-- Summary Statistics -->
-    <div v-if="summary" class="card summary-card">
+    <div v-if="summary" class="card glass-card summary-card glass-fade-in">
       <div class="card-header">
         <h3 class="card-title">
           <i class="pi pi-chart-bar"></i>
@@ -143,7 +143,7 @@
     </div>
 
     <!-- Reports Table -->
-    <div v-else-if="reports.length" class="card">
+    <div v-else-if="reports.length" class="card glass-card glass-fade-in">
       <div class="card-header">
         <h3 class="card-title">
           <i class="pi pi-table"></i>
@@ -151,7 +151,7 @@
         </h3>
         <div class="header-controls">
           <label class="rows-label">Show:</label>
-          <select v-model="rowsPerPage" @change="onRowsChange" class="rows-select">
+          <select v-model="rowsPerPage" @change="onRowsChange" class="rows-select glass-select">
             <option :value="10">10</option>
             <option :value="25">25</option>
             <option :value="50">50</option>

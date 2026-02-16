@@ -3,7 +3,7 @@
 ## Problem: "Error: Upload failed" when uploading Excel for Pulangi 4
 
 ### ✅ Pulangi 4 is Installed Correctly
-- Plant: Pulangi 4 Hydroelectric Plant
+- Plant: Pulangi 4 Hydroelectric Power Plant
 - Code: PULANGI4
 - Units: 3 (Unit 1, 2, 3 - each 85 MW)
 - Location: Bukidnon
@@ -122,7 +122,7 @@ Before uploading, verify:
 
 2. **Upload the sample file**:
    - Go to "Upload Excel" page
-   - Select "Pulangi 4 Hydroelectric Plant"
+   - Select "Pulangi 4 Hydroelectric Power Plant"
    - Choose `SAMPLE_PULANGI4.xlsx`
    - Click "Upload Report"
 

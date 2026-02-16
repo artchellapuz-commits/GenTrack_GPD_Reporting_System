@@ -1,13 +1,13 @@
 <template>
   <div class="theme-controls">
-    <!-- Light/Dark Mode Toggle -->
-    <button class="theme-control-btn" @click="toggleDarkMode" :title="isDarkMode ? 'Light Mode' : 'Dark Mode'">
-      <i :class="isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
-    </button>
-    
     <!-- Theme Customizer -->
     <button class="theme-control-btn theme-palette-btn" @click="toggleCustomizer" title="Theme Customizer">
       <i class="pi pi-palette"></i>
+    </button>
+    
+    <!-- Light/Dark Mode Toggle -->
+    <button class="theme-control-btn" @click="toggleDarkMode" :title="isDarkMode ? 'Light Mode' : 'Dark Mode'">
+      <i :class="isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
     </button>
 
     <!-- Theme Customizer Panel -->

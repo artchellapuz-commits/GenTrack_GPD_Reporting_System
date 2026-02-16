@@ -52,6 +52,9 @@
         </div>
 
         <div class="topbar-right">
+          <!-- Quick Search -->
+          <QuickSearch />
+          
           <!-- Light/Dark Mode Toggle -->
           <button class="topbar-icon-btn" @click="toggleDarkMode" :title="isDarkMode ? 'Light Mode' : 'Dark Mode'">
             <i :class="isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
@@ -91,8 +94,9 @@
     <!-- Sidebar Overlay for Mobile -->
     <div v-if="sidebarActive" class="layout-mask" @click="toggleSidebar"></div>
 
-    <!-- Theme Customizer -->
+    <!-- Theme Customizer - Always rendered to prevent ref errors -->
     <ThemeCustomizer 
+      v-if="isComponentMounted"
       ref="themeCustomizer" 
       @menu-mode-changed="handleMenuModeChange"
       @dark-mode-changed="handleDarkModeChange"
@@ -103,11 +107,13 @@
 <script>
 import { logout, getUsername } from '../utils/auth';
 import ThemeCustomizer from './ThemeCustomizer.vue';
+import QuickSearch from './QuickSearch.vue';
 
 export default {
   name: 'AppLayout',
   components: {
-    ThemeCustomizer
+    ThemeCustomizer,
+    QuickSearch
   },
   data() {
     return {
@@ -115,7 +121,8 @@ export default {
       profileMenuActive: false,
       username: '',
       isDarkMode: false,
-      isThemeCustomizerOpen: false
+      isThemeCustomizerOpen: false,
+      isComponentMounted: false
     };
   },
   created() {
@@ -142,6 +149,11 @@ export default {
     this.checkScreenSize();
     window.addEventListener('resize', this.checkScreenSize);
     document.addEventListener('click', this.handleClickOutside);
+    
+    // Ensure component is fully mounted before rendering ThemeCustomizer
+    this.$nextTick(() => {
+      this.isComponentMounted = true;
+    });
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkScreenSize);
@@ -167,14 +179,21 @@ export default {
         document.documentElement.classList.remove('dark-mode');
       }
       
-      // Sync with ThemeCustomizer
-      if (this.$refs.themeCustomizer) {
-        this.$refs.themeCustomizer.isDarkMode = this.isDarkMode;
-      }
+      // Sync with ThemeCustomizer using nextTick
+      this.$nextTick(() => {
+        if (this.$refs.themeCustomizer) {
+          this.$refs.themeCustomizer.isDarkMode = this.isDarkMode;
+        }
+      });
     },
     toggleThemeCustomizer() {
       this.isThemeCustomizerOpen = !this.isThemeCustomizerOpen;
-      this.$refs.themeCustomizer?.toggleCustomizer();
+      // Use nextTick to ensure ref is available
+      this.$nextTick(() => {
+        if (this.$refs.themeCustomizer) {
+          this.$refs.themeCustomizer.toggleCustomizer();
+        }
+      });
     },
     handleClickOutside(event) {
       const profileButton = event.target.closest('.topbar-item');

@@ -4,7 +4,7 @@
 This guide explains how to add Pulangi 4 Hydro-electric Power Plant to the NPC Reporting System.
 
 ## Plant Information
-- **Plant Name**: Pulangi 4 Hydroelectric Plant
+- **Plant Name**: Pulangi 4 Hydroelectric Power Plant
 - **Plant Code**: PULANGI4
 - **Location**: Bukidnon
 - **Total Capacity**: 255 MW
@@ -52,7 +52,7 @@ After installation, verify that Pulangi 4 was added successfully:
    - Go to http://localhost:8000/admin
    - Login with your admin credentials
    - Navigate to "Plants"
-   - You should see "Pulangi 4 Hydroelectric Plant" in the list
+   - You should see "Pulangi 4 Hydroelectric Power Plant" in the list
 
 3. Check the frontend:
    - Start the frontend server

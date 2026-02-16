@@ -8,7 +8,7 @@ Getting "Error: Upload failed" when trying to upload Excel file for Pulangi 4.
 
 ## Verification
 ✅ Database check passed:
-- Plant: Pulangi 4 Hydroelectric Plant
+- Plant: Pulangi 4 Hydroelectric Power Plant
 - Code: PULANGI4
 - Units: 3 (Unit 1, 2, 3)
 - Plant Choices includes: PULANGI4
@@ -37,7 +37,7 @@ python manage.py runserver
 
 ### Step 3: Test Upload
 1. Go to "Upload Excel" page
-2. Select "Pulangi 4 Hydroelectric Plant" from dropdown
+2. Select "Pulangi 4 Hydroelectric Power Plant" from dropdown
 3. Choose file: `SAMPLE_PULANGI4.xlsx`
 4. Click "Upload Report"
 5. Should see: "21 records imported successfully"
@@ -57,7 +57,7 @@ The server needs to restart to:
 ## Verification After Restart
 
 After restarting backend, you should be able to:
-- ✅ See "Pulangi 4 Hydroelectric Plant" in upload dropdown
+- ✅ See "Pulangi 4 Hydroelectric Power Plant" in upload dropdown
 - ✅ Upload Excel files for Pulangi 4
 - ✅ See Pulangi 4 data in Dashboard
 - ✅ Filter by Pulangi 4 in View Reports
@@ -131,7 +131,7 @@ cd npc-reporting-system
 ```
 
 Should show:
-- Plant: Pulangi 4 Hydroelectric Plant
+- Plant: Pulangi 4 Hydroelectric Power Plant
 - Units: 3
 - PULANGI4 in Plant Choices list
 
