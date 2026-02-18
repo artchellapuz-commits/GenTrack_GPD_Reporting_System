@@ -1,0 +1,51 @@
+🚀 START THE FRONTEND TO SEE WATER NOMINATION
+================================================
+
+The Water Nomination menu item IS ALREADY in the sidebar code!
+You just need to START THE FRONTEND to see it.
+
+📋 QUICK START:
+--------------
+
+Option 1 - Use the Batch File:
+   Double-click: START_FRONTEND.bat
+
+Option 2 - Manual Command:
+   1. Open a new terminal/command prompt
+   2. cd npc-reporting-system\frontend
+   3. npm run serve
+
+⏱️ Wait for:
+   "App running at: http://localhost:8080/"
+
+🌐 Then Open Browser:
+   http://localhost:8080
+
+🔐 Login and Check Sidebar:
+   You'll see "Water Nomination" menu item with calendar icon!
+
+✅ WHAT'S ALREADY DONE:
+-----------------------
+✅ Backend running at http://127.0.0.1:8000/
+✅ Database migrated with new models
+✅ API endpoints ready
+✅ Sidebar.vue updated with Water Nomination link
+✅ Router configured with /water-nomination route
+✅ WaterNomination.vue component created
+
+❌ WHAT'S MISSING:
+------------------
+❌ Frontend server is NOT running
+   (That's why you don't see it!)
+
+🎯 SOLUTION:
+------------
+Just run: START_FRONTEND.bat
+
+That's it! The menu will appear once frontend starts.
+
+💡 TIP:
+-------
+Keep both servers running:
+- Backend: http://127.0.0.1:8000/ (already running ✅)
+- Frontend: http://localhost:8080/ (start this now!)

@@ -9,12 +9,14 @@ import hashlib
 import os
 import tempfile
 
-from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData
+from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData, WaterNomination, ActualGeneration, Testimonial
 from .serializers import (
     PlantSerializer, UnitSerializer, UploadedFileSerializer,
     GenerationReportSerializer, GenerationReportListSerializer,
     ExcelUploadSerializer, ReportGenerationSerializer,
-    PlantCapacitySerializer, HistoricalDataSerializer, HistoricalDataUploadSerializer
+    PlantCapacitySerializer, HistoricalDataSerializer, HistoricalDataUploadSerializer,
+    WaterNominationSerializer, ActualGenerationSerializer, NominationVarianceSerializer,
+    TestimonialSerializer
 )
 from .services.excel_importer import ExcelImporter
 from .services.excel_exporter import ExcelExporter
@@ -334,3 +336,210 @@ class PlantCapacityViewSet(viewsets.ReadOnlyModelViewSet):
             queryset = queryset.filter(effective_date=effective_date)
         
         return queryset
+
+
+class WaterNominationViewSet(viewsets.ModelViewSet):
+    """ViewSet for water nominations"""
+    queryset = WaterNomination.objects.all().select_related('plant', 'submitted_by', 'approved_by')
+    serializer_class = WaterNominationSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by plant
+        plant_codes = self.request.query_params.getlist('plant_code[]') or self.request.query_params.getlist('plant_code')
+        if plant_codes:
+            queryset = queryset.filter(plant__code__in=plant_codes)
+        
+        # Filter by date range
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        if start_date:
+            queryset = queryset.filter(nomination_date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(nomination_date__lte=end_date)
+        
+        # Filter by status
+        status = self.request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        # Filter by nomination type
+        nomination_type = self.request.query_params.get('nomination_type')
+        if nomination_type:
+            queryset = queryset.filter(nomination_type=nomination_type)
+        
+        return queryset
+    
+    def perform_create(self, serializer):
+        serializer.save(submitted_by=self.request.user if self.request.user.is_authenticated else None)
+    
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        """Submit a nomination for approval"""
+        nomination = self.get_object()
+        
+        if nomination.status != 'DRAFT':
+            return Response({'error': 'Only draft nominations can be submitted'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        nomination.status = 'SUBMITTED'
+        nomination.submitted_at = datetime.now()
+        nomination.submitted_by = request.user if request.user.is_authenticated else None
+        nomination.save()
+        
+        return Response({'message': 'Nomination submitted successfully'}, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approve a submitted nomination"""
+        nomination = self.get_object()
+        
+        if nomination.status != 'SUBMITTED':
+            return Response({'error': 'Only submitted nominations can be approved'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        nomination.status = 'APPROVED'
+        nomination.approved_at = datetime.now()
+        nomination.approved_by = request.user if request.user.is_authenticated else None
+        nomination.save()
+        
+        return Response({'message': 'Nomination approved successfully'}, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Reject a submitted nomination"""
+        nomination = self.get_object()
+        
+        if nomination.status != 'SUBMITTED':
+            return Response({'error': 'Only submitted nominations can be rejected'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        remarks = request.data.get('remarks', '')
+        nomination.status = 'REJECTED'
+        nomination.remarks = remarks
+        nomination.save()
+        
+        return Response({'message': 'Nomination rejected'}, status=status.HTTP_200_OK)
+
+
+class ActualGenerationViewSet(viewsets.ModelViewSet):
+    """ViewSet for actual generation data"""
+    queryset = ActualGeneration.objects.all().select_related('plant')
+    serializer_class = ActualGenerationSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by plant
+        plant_codes = self.request.query_params.getlist('plant_code[]') or self.request.query_params.getlist('plant_code')
+        if plant_codes:
+            queryset = queryset.filter(plant__code__in=plant_codes)
+        
+        # Filter by date range
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        if start_date:
+            queryset = queryset.filter(generation_date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(generation_date__lte=end_date)
+        
+        return queryset
+    
+    @action(detail=False, methods=['get'])
+    def variance_analysis(self, request):
+        """Compare nominations with actual generation"""
+        plant_code = request.query_params.get('plant_code')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        
+        if not all([plant_code, start_date, end_date]):
+            return Response({'error': 'plant_code, start_date, and end_date are required'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            plant = Plant.objects.get(code=plant_code)
+        except Plant.DoesNotExist:
+            return Response({'error': 'Plant not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Get nominations and actuals
+        nominations = WaterNomination.objects.filter(
+            plant=plant,
+            nomination_date__gte=start_date,
+            nomination_date__lte=end_date,
+            status='APPROVED'
+        )
+        
+        actuals = ActualGeneration.objects.filter(
+            plant=plant,
+            generation_date__gte=start_date,
+            generation_date__lte=end_date
+        )
+        
+        # Build comparison data
+        results = []
+        for nomination in nominations:
+            try:
+                actual = actuals.get(generation_date=nomination.nomination_date)
+                
+                # Calculate variance
+                variance_mwh = float(actual.total_actual_mwh) - float(nomination.total_nominated_mwh)
+                variance_percent = (variance_mwh / float(nomination.total_nominated_mwh) * 100) if nomination.total_nominated_mwh > 0 else 0
+                
+                # Hourly comparison
+                hourly_comparison = []
+                for i in range(24):
+                    hour_field = f'hour_{str(i).zfill(2)}'
+                    nominated = float(getattr(nomination, hour_field, 0) or 0)
+                    actual_val = float(getattr(actual, hour_field, 0) or 0)
+                    hourly_comparison.append({
+                        'hour': i,
+                        'time': f"{str(i).zfill(2)}:00-{str(i+1).zfill(2)}:00",
+                        'nominated_mw': nominated,
+                        'actual_mw': actual_val,
+                        'variance_mw': actual_val - nominated,
+                        'variance_percent': ((actual_val - nominated) / nominated * 100) if nominated > 0 else 0
+                    })
+                
+                results.append({
+                    'date': nomination.nomination_date,
+                    'plant_code': plant.code,
+                    'plant_name': plant.name,
+                    'nomination_type': nomination.nomination_type,
+                    'total_nominated_mwh': nomination.total_nominated_mwh,
+                    'total_actual_mwh': actual.total_actual_mwh,
+                    'variance_mwh': variance_mwh,
+                    'variance_percent': round(variance_percent, 2),
+                    'hourly_comparison': hourly_comparison
+                })
+            except ActualGeneration.DoesNotExist:
+                # No actual data for this nomination
+                pass
+        
+        return Response(results, status=status.HTTP_200_OK)
+
+
+class TestimonialViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for testimonials
+    - GET: Public access to view active testimonials
+    - POST: Authenticated users can submit testimonials (pending approval)
+    """
+    serializer_class = TestimonialSerializer
+    permission_classes = [AllowAny]  # Allow public read and authenticated write
+    
+    def get_queryset(self):
+        # Only show active testimonials for list/retrieve
+        if self.action in ['list', 'retrieve']:
+            return Testimonial.objects.filter(is_active=True).order_by('order', '-created_at')
+        # For admin actions, show all
+        return Testimonial.objects.all()
+    
+    def perform_create(self, serializer):
+        # New testimonials default to inactive (pending admin approval)
+        serializer.save(
+            submitted_by=self.request.user if self.request.user.is_authenticated else None,
+            is_active=False
+        )

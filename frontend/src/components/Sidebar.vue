@@ -32,6 +32,10 @@
           <i class="pi pi-download"></i>
           <span class="nav-text">Generate Report</span>
         </router-link>
+        <router-link to="/water-nomination" @click="closeSidebar" class="nav-item">
+          <i class="pi pi-calendar"></i>
+          <span class="nav-text">Water Nomination</span>
+        </router-link>
         
         <div class="nav-divider"></div>
         

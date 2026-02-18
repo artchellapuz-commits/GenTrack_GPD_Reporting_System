@@ -4,6 +4,7 @@ import Dashboard from '../components/Dashboard.vue';
 import UploadExcel from '../components/UploadExcel.vue';
 import ViewReports from '../components/ViewReports.vue';
 import GenerateReport from '../components/GenerateReport.vue';
+import WaterNomination from '../components/WaterNomination.vue';
 import LoginPage from '../components/Login.vue';
 import RegisterPage from '../components/Register.vue';
 import { isAuthenticated } from '../utils/auth';
@@ -49,6 +50,12 @@ const routes = [
     path: '/generate',
     name: 'Generate',
     component: GenerateReport,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/water-nomination',
+    name: 'WaterNomination',
+    component: WaterNomination,
     meta: { requiresAuth: true }
   },
 ];

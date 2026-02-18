@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Plant, Unit, UploadedFile, GenerationReport
+from .models import Plant, Unit, UploadedFile, GenerationReport, Testimonial
 
 
 @admin.register(Plant)
@@ -31,3 +31,12 @@ class GenerationReportAdmin(admin.ModelAdmin):
     search_fields = ['plant__code', 'unit__unit_number']
     date_hierarchy = 'report_date'
     readonly_fields = ['capacity_factor', 'availability_factor', 'created_at', 'updated_at']
+
+
+@admin.register(Testimonial)
+class TestimonialAdmin(admin.ModelAdmin):
+    list_display = ['name', 'position', 'plant', 'rating', 'is_active', 'order', 'created_at']
+    list_filter = ['is_active', 'rating', 'created_at']
+    search_fields = ['name', 'position', 'plant', 'testimonial']
+    list_editable = ['is_active', 'order']
+    ordering = ['order', '-created_at']

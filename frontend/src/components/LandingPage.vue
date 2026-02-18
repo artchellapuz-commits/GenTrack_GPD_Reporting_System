@@ -227,6 +227,13 @@
         <h2 class="section-title">What Our Users Say</h2>
         <p class="section-subtitle">Trusted by NPC personnel across all power plants</p>
         
+        <div class="feedback-cta">
+          <button @click="showFeedbackModal = true" class="btn-feedback">
+            <i class="pi pi-star"></i>
+            Share Your Experience
+          </button>
+        </div>
+        
         <div class="testimonials-carousel">
           <button @click="prevTestimonial" class="testimonial-btn testimonial-btn-prev">
             <i class="pi pi-chevron-left"></i>
@@ -270,6 +277,51 @@
             class="testimonial-indicator"
             :class="{ active: index === currentTestimonialIndex }"
           ></button>
+        </div>
+        
+        <!-- Feedback Modal -->
+        <div v-if="showFeedbackModal" class="modal-overlay" @click.self="showFeedbackModal = false">
+          <div class="feedback-modal">
+            <div class="modal-header">
+              <h3>Share Your Experience</h3>
+              <button @click="showFeedbackModal = false" class="btn-close">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+              <div class="form-group">
+                <label>Your Rating *</label>
+                <div class="star-rating">
+                  <i 
+                    v-for="star in 5" 
+                    :key="star"
+                    @click="feedbackForm.rating = star"
+                    class="pi"
+                    :class="star <= feedbackForm.rating ? 'pi-star-fill' : 'pi-star'"
+                  ></i>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>Your Position *</label>
+                <input v-model="feedbackForm.position" type="text" placeholder="e.g., Plant Manager" required>
+              </div>
+              
+              <div class="form-group">
+                <label>Your Plant</label>
+                <input v-model="feedbackForm.plant" type="text" placeholder="e.g., Agus 2 (optional)">
+              </div>
+              
+              <div class="form-group">
+                <label>Your Testimonial *</label>
+                <textarea v-model="feedbackForm.testimonial" rows="4" placeholder="Share your experience with the NPC Reporting System..." required></textarea>
+              </div>
+            </div>
+            
+            <div class="modal-footer">
+              <button @click="showFeedbackModal = false" class="btn-secondary">Cancel</button>
+              <button @click="submitFeedback" class="btn-primary">Submit Feedback</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -649,28 +701,7 @@ export default {
       ],
       currentTestimonialIndex: 0,
       testimonialInterval: null,
-      testimonials: [
-        {
-          name: 'Maria Santos',
-          role: 'Plant Manager, Agus 2',
-          text: 'The NPC Reporting System has transformed how we manage daily reports. What used to take hours now takes minutes. The real-time dashboard is a game-changer!'
-        },
-        {
-          name: 'Juan Dela Cruz',
-          role: 'Operations Engineer, Pulangi 4',
-          text: 'Excellent system! The automated data validation catches errors before they become problems. Export functionality makes stakeholder reporting effortless.'
-        },
-        {
-          name: 'Ana Reyes',
-          role: 'Technical Supervisor, Agus 6',
-          text: 'User-friendly interface and powerful analytics. The comparison feature helps us identify trends across plants quickly. Highly recommended!'
-        },
-        {
-          name: 'Roberto Garcia',
-          role: 'Chief Engineer, Agus 5',
-          text: 'Impressive reliability and performance. The system handles our daily uploads seamlessly, and the mobile access means I can monitor from anywhere.'
-        }
-      ],
+      testimonials: [],
       timeline: [
         {
           date: 'Q1 2025',
@@ -737,6 +768,13 @@ export default {
       ],
       newsletterEmail: '',
       newsletterSuccess: false,
+      showFeedbackModal: false,
+      feedbackForm: {
+        rating: 5,
+        position: '',
+        plant: '',
+        testimonial: ''
+      },
       activeFaq: null,
       faqs: [
         {
@@ -775,6 +813,9 @@ export default {
     };
   },
   mounted() {
+    // Load testimonials from API
+    this.loadTestimonials();
+    
     // Hide scrollbar but keep scrolling functionality
     document.body.style.overflowX = 'hidden';
     document.documentElement.style.overflowX = 'hidden';
@@ -826,6 +867,41 @@ export default {
     }
   },
   methods: {
+    async loadTestimonials() {
+      try {
+        const response = await fetch('http://localhost:8000/api/testimonials/');
+        const data = await response.json();
+        
+        // Handle both paginated and non-paginated responses
+        const testimonialsList = Array.isArray(data) ? data : (data.results || []);
+        
+        this.testimonials = testimonialsList.map(t => ({
+          name: t.name,
+          role: `${t.position}${t.plant ? ', ' + t.plant : ''}`,
+          text: t.testimonial,
+          rating: t.rating
+        }));
+        
+        // If no testimonials, use fallback
+        if (this.testimonials.length === 0) {
+          this.testimonials = [{
+            name: 'NPC User',
+            role: 'Power Plant Personnel',
+            text: 'The NPC Reporting System has transformed how we manage daily reports.',
+            rating: 5
+          }];
+        }
+      } catch (error) {
+        console.error('Error loading testimonials:', error);
+        // Fallback to default testimonial if API fails
+        this.testimonials = [{
+          name: 'NPC User',
+          role: 'Power Plant Personnel',
+          text: 'The NPC Reporting System has transformed how we manage daily reports.',
+          rating: 5
+        }];
+      }
+    },
     handleScroll() {
       this.scrollY = window.scrollY;
       
@@ -1012,6 +1088,49 @@ export default {
         this.liveStats.activeUsers = 20 + Math.floor(Math.random() * 10);
         this.liveStats.avgResponseTime = 140 + Math.floor(Math.random() * 20);
       }, 5000);
+    },
+    
+    // Feedback form methods
+    async submitFeedback() {
+      // Validate required fields
+      if (!this.feedbackForm.rating || !this.feedbackForm.position || !this.feedbackForm.testimonial) {
+        alert('Please fill in all required fields (Rating, Position, and Testimonial)');
+        return;
+      }
+      
+      try {
+        const response = await fetch('http://localhost:8000/api/testimonials/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: this.feedbackForm.position, // Using position as name for now
+            position: this.feedbackForm.position,
+            plant: this.feedbackForm.plant || null,
+            testimonial: this.feedbackForm.testimonial,
+            rating: this.feedbackForm.rating
+          })
+        });
+        
+        if (response.ok) {
+          alert('Thank you for your feedback! Your testimonial has been submitted and is pending approval.');
+          // Reset form
+          this.feedbackForm = {
+            rating: 5,
+            position: '',
+            plant: '',
+            testimonial: ''
+          };
+          this.showFeedbackModal = false;
+        } else {
+          const error = await response.json();
+          alert('Error submitting feedback: ' + (error.detail || 'Please try again'));
+        }
+      } catch (error) {
+        console.error('Error submitting feedback:', error);
+        alert('Error submitting feedback. Please try again later.');
+      }
     }
   }
 };
@@ -2292,6 +2411,206 @@ export default {
   background: #3b82f6;
   width: 32px;
   border-radius: 6px;
+}
+
+/* Feedback CTA and Modal */
+.feedback-cta {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.btn-feedback {
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-feedback:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.feedback-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.modal-header {
+  padding: 24px 30px;
+  border-bottom: 2px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #64748b;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.btn-close:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.modal-body {
+  padding: 30px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.star-rating {
+  display: flex;
+  gap: 8px;
+  font-size: 2rem;
+}
+
+.star-rating i {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #fbbf24 !important;
+}
+
+.star-rating i.pi-star-fill {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(251, 191, 36, 0.4);
+}
+
+.star-rating i.pi-star {
+  color: #d1d5db !important;
+}
+
+.star-rating i:hover {
+  transform: scale(1.2);
+  filter: brightness(1.2);
+}
+
+.modal-footer {
+  padding: 20px 30px;
+  border-top: 2px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-footer .btn-secondary {
+  padding: 12px 24px;
+  background: #f1f5f9;
+  color: #475569;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.modal-footer .btn-primary {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.modal-footer .btn-primary:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 /* Video Demo Section */

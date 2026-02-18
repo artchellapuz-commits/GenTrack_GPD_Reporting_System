@@ -10,7 +10,8 @@
     </div>
 
     <!-- Main Form Card -->
-    <div class="card glass-card glass-fade-in">
+    <div class="card glass-card glass-fade-in
+    ">
       <div class="card-body">
         <form @submit.prevent="generateReport" class="report-form">
           <!-- Plant Selection -->

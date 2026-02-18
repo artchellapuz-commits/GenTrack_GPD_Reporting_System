@@ -188,3 +188,213 @@ class HistoricalData(models.Model):
     def __str__(self):
         return f"{self.plant.code} - {self.date}"
 
+
+
+class WaterNomination(models.Model):
+    """Water nomination and dispatch scheduling for hydroelectric plants"""
+    
+    NOMINATION_TYPE_CHOICES = [
+        ('DAY_AHEAD', 'Day-Ahead'),
+        ('HOUR_AHEAD', 'Hour-Ahead'),
+        ('REAL_TIME', 'Real-Time'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('DRAFT', 'Draft'),
+        ('SUBMITTED', 'Submitted'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('COMPLETED', 'Completed'),
+    ]
+    
+    # Basic Information
+    plant = models.ForeignKey(Plant, on_delete=models.CASCADE, related_name='water_nominations')
+    nomination_date = models.DateField(help_text="Date for which nomination is made")
+    nomination_type = models.CharField(max_length=20, choices=NOMINATION_TYPE_CHOICES, default='DAY_AHEAD')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+    
+    # Hourly Nomination (24 hours)
+    hour_00 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 00:00-01:00")
+    hour_01 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 01:00-02:00")
+    hour_02 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 02:00-03:00")
+    hour_03 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 03:00-04:00")
+    hour_04 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 04:00-05:00")
+    hour_05 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 05:00-06:00")
+    hour_06 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 06:00-07:00")
+    hour_07 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 07:00-08:00")
+    hour_08 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 08:00-09:00")
+    hour_09 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 09:00-10:00")
+    hour_10 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 10:00-11:00")
+    hour_11 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 11:00-12:00")
+    hour_12 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 12:00-13:00")
+    hour_13 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 13:00-14:00")
+    hour_14 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 14:00-15:00")
+    hour_15 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 15:00-16:00")
+    hour_16 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 16:00-17:00")
+    hour_17 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 17:00-18:00")
+    hour_18 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 18:00-19:00")
+    hour_19 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 19:00-20:00")
+    hour_20 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 20:00-21:00")
+    hour_21 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 21:00-22:00")
+    hour_22 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 22:00-23:00")
+    hour_23 = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Nominated MW for 23:00-24:00")
+    
+    # Summary Fields
+    total_nominated_mw = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text="Total nominated MW for the day")
+    total_nominated_mwh = models.DecimalField(max_digits=15, decimal_places=2, default=0, help_text="Total nominated MWh for the day")
+    
+    # Water Parameters (Optional - can be customized)
+    reservoir_level_start = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Reservoir level at start (meters)")
+    reservoir_level_end = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Reservoir level at end (meters)")
+    water_flow_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Average water flow rate (m³/s)")
+    inflow_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text="Water inflow rate (m³/s)")
+    
+    # Tracking
+    submitted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='submitted_nominations')
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_nominations')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    
+    # Additional Information
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'water_nominations'
+        unique_together = ['plant', 'nomination_date', 'nomination_type']
+        ordering = ['-nomination_date', 'plant']
+        indexes = [
+            models.Index(fields=['plant', 'nomination_date']),
+            models.Index(fields=['nomination_date']),
+            models.Index(fields=['status']),
+            models.Index(fields=['submitted_by']),
+        ]
+    
+    def __str__(self):
+        return f"{self.plant.code} - {self.nomination_date} ({self.nomination_type})"
+    
+    def save(self, *args, **kwargs):
+        # Calculate totals
+        hourly_values = [
+            float(getattr(self, f'hour_{str(i).zfill(2)}', 0) or 0)
+            for i in range(24)
+        ]
+        self.total_nominated_mw = sum(hourly_values)
+        self.total_nominated_mwh = sum(hourly_values)  # Each hour = 1 MWh per MW
+        
+        super().save(*args, **kwargs)
+    
+    def get_hourly_data(self):
+        """Return hourly nomination data as a list"""
+        return [
+            {
+                'hour': i,
+                'time': f"{str(i).zfill(2)}:00-{str(i+1).zfill(2)}:00",
+                'nominated_mw': float(getattr(self, f'hour_{str(i).zfill(2)}', 0) or 0)
+            }
+            for i in range(24)
+        ]
+
+
+class ActualGeneration(models.Model):
+    """Actual hourly generation data for comparison with nominations"""
+    
+    plant = models.ForeignKey(Plant, on_delete=models.CASCADE, related_name='actual_generations')
+    generation_date = models.DateField()
+    
+    # Hourly Actual Generation (24 hours)
+    hour_00 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_01 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_02 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_03 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_04 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_05 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_06 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_07 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_08 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_09 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_10 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_11 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_12 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_13 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_14 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_15 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_16 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_17 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_18 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_19 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_20 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_21 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_22 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    hour_23 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    
+    # Summary
+    total_actual_mw = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total_actual_mwh = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    
+    # Water Parameters
+    actual_water_flow = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    reservoir_level = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'actual_generations'
+        unique_together = ['plant', 'generation_date']
+        ordering = ['-generation_date', 'plant']
+        indexes = [
+            models.Index(fields=['plant', 'generation_date']),
+            models.Index(fields=['generation_date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.plant.code} - {self.generation_date} (Actual)"
+    
+    def save(self, *args, **kwargs):
+        # Calculate totals
+        hourly_values = [
+            float(getattr(self, f'hour_{str(i).zfill(2)}', 0) or 0)
+            for i in range(24)
+        ]
+        self.total_actual_mw = sum(hourly_values)
+        self.total_actual_mwh = sum(hourly_values)
+        
+        super().save(*args, **kwargs)
+    
+    def get_hourly_data(self):
+        """Return hourly actual data as a list"""
+        return [
+            {
+                'hour': i,
+                'time': f"{str(i).zfill(2)}:00-{str(i+1).zfill(2)}:00",
+                'actual_mw': float(getattr(self, f'hour_{str(i).zfill(2)}', 0) or 0)
+            }
+            for i in range(24)
+        ]
+
+
+class Testimonial(models.Model):
+    """User testimonials for the landing page"""
+    name = models.CharField(max_length=100)
+    position = models.CharField(max_length=100)
+    plant = models.CharField(max_length=100, blank=True)
+    testimonial = models.TextField()
+    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], default=5)
+    is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0, help_text="Display order (lower numbers first)")
+    submitted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='testimonials')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'testimonials'
+        ordering = ['order', '-created_at']
+        indexes = [
+            models.Index(fields=['is_active', 'order']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} - {self.position}"

@@ -35,6 +35,12 @@
               <span>Generate Report</span>
             </router-link>
           </li>
+          <li class="menu-item">
+            <router-link to="/water-nomination" class="menu-link">
+              <i class="pi pi-calendar"></i>
+              <span>Water Nomination</span>
+            </router-link>
+          </li>
         </ul>
       </div>
     </div>
@@ -139,7 +145,8 @@ export default {
         '/dashboard': 'Dashboard',
         '/upload': 'Upload Excel',
         '/view': 'View Reports',
-        '/generate': 'Generate Report'
+        '/generate': 'Generate Report',
+        '/water-nomination': 'Water Nomination'
       };
       return titles[route] || 'NPC Reporting System';
     }

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData
+from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData, WaterNomination, ActualGeneration, Testimonial
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -186,3 +186,54 @@ class HistoricalDataUploadSerializer(serializers.Serializer):
                     raise serializers.ValidationError(f"{field}: File size must not exceed 50MB")
         
         return data
+
+
+class WaterNominationSerializer(serializers.ModelSerializer):
+    plant_name = serializers.CharField(source='plant.name', read_only=True)
+    plant_code = serializers.CharField(source='plant.code', read_only=True)
+    submitted_by_username = serializers.CharField(source='submitted_by.username', read_only=True)
+    approved_by_username = serializers.CharField(source='approved_by.username', read_only=True)
+    hourly_data = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = WaterNomination
+        fields = '__all__'
+        read_only_fields = ['submitted_by', 'submitted_at', 'approved_by', 'approved_at', 
+                           'total_nominated_mw', 'total_nominated_mwh']
+    
+    def get_hourly_data(self, obj):
+        return obj.get_hourly_data()
+
+
+class ActualGenerationSerializer(serializers.ModelSerializer):
+    plant_name = serializers.CharField(source='plant.name', read_only=True)
+    plant_code = serializers.CharField(source='plant.code', read_only=True)
+    hourly_data = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ActualGeneration
+        fields = '__all__'
+        read_only_fields = ['total_actual_mw', 'total_actual_mwh']
+    
+    def get_hourly_data(self, obj):
+        return obj.get_hourly_data()
+
+
+class NominationVarianceSerializer(serializers.Serializer):
+    """Serializer for nomination vs actual variance analysis"""
+    date = serializers.DateField()
+    plant_code = serializers.CharField()
+    plant_name = serializers.CharField()
+    nomination_type = serializers.CharField()
+    total_nominated_mwh = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_actual_mwh = serializers.DecimalField(max_digits=15, decimal_places=2)
+    variance_mwh = serializers.DecimalField(max_digits=15, decimal_places=2)
+    variance_percent = serializers.DecimalField(max_digits=5, decimal_places=2)
+    hourly_comparison = serializers.ListField()
+
+
+class TestimonialSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Testimonial
+        fields = ['id', 'name', 'position', 'plant', 'testimonial', 'rating', 'is_active', 'order', 'created_at']
+        read_only_fields = ['id', 'created_at']
