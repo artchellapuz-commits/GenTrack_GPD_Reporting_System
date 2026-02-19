@@ -1,16 +1,69 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
-from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData, WaterNomination, ActualGeneration, Testimonial
+from .models import (
+    Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, 
+    HistoricalData, WaterNomination, ActualGeneration, Testimonial,
+    UserProfile, AuditLog
+)
 
 
 class UserSerializer(serializers.ModelSerializer):
     """User serializer for basic user info"""
+    profile = serializers.SerializerMethodField()
+    role = serializers.CharField(write_only=True, required=False)
+    password = serializers.CharField(write_only=True, required=False)
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'date_joined']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'date_joined', 'profile', 'role', 'password']
         read_only_fields = ['id', 'date_joined']
+    
+    def get_profile(self, obj):
+        try:
+            return {
+                'role': obj.profile.role,
+                'phone': obj.profile.phone,
+                'department': obj.profile.department
+            }
+        except:
+            return {'role': 'VIEWER', 'phone': '', 'department': ''}
+    
+    def create(self, validated_data):
+        role = validated_data.pop('role', 'VIEWER')
+        password = validated_data.pop('password', None)
+        
+        if not password:
+            raise serializers.ValidationError({'password': 'Password is required'})
+        
+        user = User.objects.create_user(**validated_data, password=password)
+        
+        # Create or update profile with role
+        from .models import UserProfile
+        UserProfile.objects.update_or_create(
+            user=user,
+            defaults={'role': role}
+        )
+        
+        return user
+    
+    def update(self, instance, validated_data):
+        role = validated_data.pop('role', None)
+        validated_data.pop('password', None)  # Don't update password through this serializer
+        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update role if provided
+        if role:
+            from .models import UserProfile
+            UserProfile.objects.update_or_create(
+                user=instance,
+                defaults={'role': role}
+            )
+        
+        return instance
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -39,15 +92,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer for user profile with additional info"""
     uploads_count = serializers.SerializerMethodField()
     last_upload = serializers.SerializerMethodField()
+    profile = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'is_staff', 'is_active', 'date_joined', 'last_login',
-            'uploads_count', 'last_upload'
+            'uploads_count', 'last_upload', 'profile'
         ]
-        read_only_fields = ['id', 'username', 'date_joined', 'last_login', 'uploads_count', 'last_upload']
+        read_only_fields = ['id', 'username', 'date_joined', 'last_login', 'uploads_count', 'last_upload', 'profile']
     
     def get_uploads_count(self, obj):
         return obj.uploadedfile_set.count()
@@ -61,6 +115,29 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 'plant': last_upload.plant.code
             }
         return None
+    
+    def get_profile(self, obj):
+        """Get user profile with role and permissions"""
+        if not hasattr(obj, 'profile'):
+            return None
+        
+        profile = obj.profile
+        return {
+            'role': profile.role,
+            'role_display': profile.get_role_display(),
+            'plant': profile.plant.code if profile.plant else None,
+            'plant_name': profile.plant.name if profile.plant else None,
+            'phone': profile.phone,
+            'department': profile.department,
+            'position': profile.position,
+            'email_notifications': profile.email_notifications,
+            'permissions': {
+                'can_upload_data': profile.can_upload_data(),
+                'can_approve_data': profile.can_approve_data(),
+                'can_manage_users': profile.can_manage_users(),
+                'can_export_data': profile.can_export_data(),
+            }
+        }
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -237,3 +314,34 @@ class TestimonialSerializer(serializers.ModelSerializer):
         model = Testimonial
         fields = ['id', 'name', 'position', 'plant', 'testimonial', 'rating', 'is_active', 'order', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+
+class UserProfileDetailSerializer(serializers.ModelSerializer):
+    """Detailed user profile with role and permissions"""
+    user = UserSerializer(read_only=True)
+    plant_name = serializers.CharField(source='plant.name', read_only=True)
+    permissions = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UserProfile
+        fields = '__all__'
+        read_only_fields = ['user', 'created_at', 'updated_at']
+    
+    def get_permissions(self, obj):
+        return {
+            'can_upload_data': obj.can_upload_data(),
+            'can_approve_data': obj.can_approve_data(),
+            'can_manage_users': obj.can_manage_users(),
+            'can_export_data': obj.can_export_data(),
+        }
+
+
+class AuditLogSerializer(serializers.ModelSerializer):
+    """Audit log serializer"""
+    username = serializers.CharField(source='user.username', read_only=True)
+    
+    class Meta:
+        model = AuditLog
+        fields = '__all__'
+        read_only_fields = ['user', 'timestamp']

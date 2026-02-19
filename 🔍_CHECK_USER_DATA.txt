@@ -1,0 +1,150 @@
+═══════════════════════════════════════════════════════════════
+   🔍 HOW TO CHECK IF USER MANAGEMENT SHOULD APPEAR
+═══════════════════════════════════════════════════════════════
+
+The "User Management" link only appears for ADMIN users.
+
+STEP 1: CHECK YOUR USER DATA
+═══════════════════════════════════════════════════════════════
+
+1. Login to the system
+2. Open browser console (Press F12)
+3. Type this command:
+
+   JSON.parse(localStorage.getItem('user'))
+
+4. Look at the output. You should see something like:
+
+   {
+     "id": 1,
+     "username": "admin",
+     "email": "admin@npc.com",
+     "is_staff": true,
+     "profile": {
+       "role": "ADMIN",
+       "phone": "",
+       "department": ""
+     }
+   }
+
+STEP 2: CHECK IF YOU'RE RECOGNIZED AS ADMIN
+═══════════════════════════════════════════════════════════════
+
+In the browser console, type:
+
+   const user = JSON.parse(localStorage.getItem('user'));
+   console.log('is_staff:', user.is_staff);
+   console.log('role:', user.profile?.role);
+
+You should see:
+   is_staff: true
+   role: "ADMIN"
+
+STEP 3: IF USER MANAGEMENT IS NOT SHOWING
+═══════════════════════════════════════════════════════════════
+
+OPTION A: LOGOUT AND LOGIN AGAIN
+   1. Click logout
+   2. Login again with admin credentials
+   3. This will refresh your user data
+
+OPTION B: MANUALLY FIX USER DATA (TEMPORARY)
+   1. Open browser console (F12)
+   2. Run this command:
+
+   const user = JSON.parse(localStorage.getItem('user'));
+   user.is_staff = true;
+   if (!user.profile) user.profile = {};
+   user.profile.role = 'ADMIN';
+   localStorage.setItem('user', JSON.stringify(user));
+   location.reload();
+
+OPTION C: CHECK BACKEND USER DATA
+   1. Go to: http://localhost:8000/admin
+   2. Login with admin credentials
+   3. Click "Users" 
+   4. Find your user
+   5. Make sure:
+      - "Staff status" is checked
+      - User has a UserProfile with role "ADMIN"
+
+═══════════════════════════════════════════════════════════════
+   🔧 COMMON ISSUES
+═══════════════════════════════════════════════════════════════
+
+ISSUE 1: User has no profile
+SOLUTION: The backend should create a profile automatically.
+          If not, create one in Django admin.
+
+ISSUE 2: is_staff is false
+SOLUTION: In Django admin, edit the user and check "Staff status"
+
+ISSUE 3: Profile role is not ADMIN
+SOLUTION: In Django admin, edit the UserProfile and set role to "ADMIN"
+
+ISSUE 4: Old cached data
+SOLUTION: Logout and login again to refresh user data
+
+═══════════════════════════════════════════════════════════════
+   ✅ EXPECTED BEHAVIOR
+═══════════════════════════════════════════════════════════════
+
+When logged in as ADMIN, you should see:
+
+SIDEBAR:
+  Dashboard
+  Upload Excel
+  View Reports
+  Generate Report
+  Water Nomination ▼
+    - Manage Nominations
+    - Approval Queue
+  
+  ADMINISTRATION
+    User Management  ← THIS SHOULD APPEAR
+    Admin Panel
+    Audit Logs
+  
+  My Profile
+  Logout
+
+═══════════════════════════════════════════════════════════════
+   🧪 TEST THE isAdmin() FUNCTION
+═══════════════════════════════════════════════════════════════
+
+In browser console, run:
+
+function isAdmin() {
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+  if (!user) return false;
+  
+  // Check is_staff
+  if (user.is_staff) return true;
+  
+  // Check profile role
+  if (user.profile && user.profile.role === 'ADMIN') return true;
+  
+  return false;
+}
+
+console.log('Is Admin?', isAdmin());
+
+This should return: true
+
+═══════════════════════════════════════════════════════════════
+   📝 QUICK FIX SCRIPT
+═══════════════════════════════════════════════════════════════
+
+If User Management is not showing, run this in browser console:
+
+// Force admin status
+const user = JSON.parse(localStorage.getItem('user') || '{}');
+user.is_staff = true;
+user.profile = user.profile || {};
+user.profile.role = 'ADMIN';
+localStorage.setItem('user', JSON.stringify(user));
+console.log('✓ Admin status set. Reloading page...');
+setTimeout(() => location.reload(), 1000);
+
+═══════════════════════════════════════════════════════════════

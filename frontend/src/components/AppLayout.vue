@@ -7,6 +7,9 @@
           <img src="@/assets/NPC-logo.png" alt="NPC Logo" class="logo-image" />
           <span class="logo-text">NPC System</span>
         </router-link>
+        <div class="user-role-badge" v-if="userRole">
+          <span class="role-badge" :class="`role-${roleBadgeColor}`">{{ roleDisplay }}</span>
+        </div>
       </div>
 
       <div class="layout-menu-container">
@@ -17,12 +20,15 @@
               <span>Dashboard</span>
             </router-link>
           </li>
-          <li class="menu-item">
+          
+          <!-- Upload - Only for Operator, Manager, Admin -->
+          <li class="menu-item" v-if="canUpload">
             <router-link to="/upload" class="menu-link">
               <i class="pi pi-upload"></i>
               <span>Upload Excel</span>
             </router-link>
           </li>
+          
           <li class="menu-item">
             <router-link to="/view" class="menu-link">
               <i class="pi pi-chart-bar"></i>
@@ -35,12 +41,53 @@
               <span>Generate Report</span>
             </router-link>
           </li>
-          <li class="menu-item">
-            <router-link to="/water-nomination" class="menu-link">
+          
+          <!-- Water Nomination with Dropdown - Only for Operator, Manager, Admin -->
+          <li class="menu-item menu-item-dropdown" v-if="canUpload">
+            <a href="#" @click.prevent="toggleWaterNominationDropdown" class="menu-link">
               <i class="pi pi-calendar"></i>
               <span>Water Nomination</span>
-            </router-link>
+              <i class="pi pi-chevron-down dropdown-icon" :class="{ rotated: waterNominationOpen }"></i>
+            </a>
+            <ul class="submenu" :class="{ open: waterNominationOpen }">
+              <li class="submenu-item">
+                <router-link to="/water-nomination" class="submenu-link">
+                  <i class="pi pi-file-edit"></i>
+                  <span>Manage Nominations</span>
+                </router-link>
+              </li>
+              <li class="submenu-item" v-if="canApprove">
+                <router-link to="/approval-queue" class="submenu-link">
+                  <i class="pi pi-check-circle"></i>
+                  <span>Approval Queue</span>
+                </router-link>
+              </li>
+            </ul>
           </li>
+          
+          <!-- Admin Section - Only for Admin -->
+          <template v-if="isAdminUser">
+            <li class="menu-divider"></li>
+            <li class="menu-section-title">Administration</li>
+            <li class="menu-item">
+              <router-link to="/user-management" class="menu-link">
+                <i class="pi pi-users"></i>
+                <span>User Management</span>
+              </router-link>
+            </li>
+            <li class="menu-item">
+              <a href="http://localhost:8000/admin" target="_blank" class="menu-link">
+                <i class="pi pi-cog"></i>
+                <span>Admin Panel</span>
+              </a>
+            </li>
+            <li class="menu-item">
+              <router-link to="/audit-logs" class="menu-link">
+                <i class="pi pi-history"></i>
+                <span>Audit Logs</span>
+              </router-link>
+            </li>
+          </template>
         </ul>
       </div>
     </div>
@@ -111,7 +158,16 @@
 </template>
 
 <script>
-import { logout, getUsername } from '../utils/auth';
+import { 
+  logout, 
+  getUsername, 
+  getUserRole, 
+  getRoleDisplayName, 
+  getRoleBadgeColor,
+  canUploadData,
+  canApproveData,
+  isAdmin
+} from '../utils/auth';
 import ThemeCustomizer from './ThemeCustomizer.vue';
 import QuickSearch from './QuickSearch.vue';
 
@@ -126,9 +182,16 @@ export default {
       sidebarActive: true,
       profileMenuActive: false,
       username: '',
+      userRole: '',
+      roleDisplay: '',
+      roleBadgeColor: 'secondary',
+      canUpload: false,
+      canApprove: false,
+      isAdminUser: false,
       isDarkMode: false,
       isThemeCustomizerOpen: false,
-      isComponentMounted: false
+      isComponentMounted: false,
+      waterNominationOpen: false
     };
   },
   created() {
@@ -146,14 +209,18 @@ export default {
         '/upload': 'Upload Excel',
         '/view': 'View Reports',
         '/generate': 'Generate Report',
-        '/water-nomination': 'Water Nomination'
+        '/water-nomination': 'Manage Nominations',
+        '/approval-queue': 'Approval Queue',
+        '/audit-logs': 'Audit Logs',
+        '/user-management': 'User Management'
       };
-      return titles[route] || 'NPC Reporting System';
+      return titles[route] || 'NPC System';
     }
   },
   mounted() {
-    this.username = getUsername() || 'User';
+    this.loadUserInfo();
     this.checkScreenSize();
+    this.checkCurrentRoute();
     window.addEventListener('resize', this.checkScreenSize);
     document.addEventListener('click', this.handleClickOutside);
     
@@ -166,9 +233,33 @@ export default {
     window.removeEventListener('resize', this.checkScreenSize);
     document.removeEventListener('click', this.handleClickOutside);
   },
+  watch: {
+    '$route'(to) {
+      this.checkCurrentRoute();
+    }
+  },
   methods: {
+    checkCurrentRoute() {
+      // Auto-open dropdown if on water nomination or approval queue pages
+      const currentPath = this.$route.path;
+      if (currentPath === '/water-nomination' || currentPath === '/approval-queue') {
+        this.waterNominationOpen = true;
+      }
+    },
+    loadUserInfo() {
+      this.username = getUsername() || 'User';
+      this.userRole = getUserRole() || 'VIEWER';
+      this.roleDisplay = getRoleDisplayName(this.userRole);
+      this.roleBadgeColor = getRoleBadgeColor(this.userRole);
+      this.canUpload = canUploadData();
+      this.canApprove = canApproveData();
+      this.isAdminUser = isAdmin();
+    },
     toggleSidebar() {
       this.sidebarActive = !this.sidebarActive;
+    },
+    toggleWaterNominationDropdown() {
+      this.waterNominationOpen = !this.waterNominationOpen;
     },
     toggleProfileMenu() {
       this.profileMenuActive = !this.profileMenuActive;
@@ -250,6 +341,7 @@ export default {
   z-index: 999;
   transition: transform 0.3s;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .layout-static-inactive .layout-sidebar {
@@ -260,8 +352,10 @@ export default {
   height: 70px;
   display: flex;
   align-items: center;
-  padding: 0 1.5rem;
+  justify-content: space-between;
+  padding: 0 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
 }
 
 .logo {
@@ -276,12 +370,52 @@ export default {
   width: 40px;
   height: 40px;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 .logo-text {
   font-size: 1.25rem;
   font-weight: 700;
   color: white;
+  white-space: nowrap;
+}
+
+.user-role-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.role-badge.role-info {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.role-badge.role-success {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+
+.role-badge.role-warning {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+}
+
+.role-badge.role-danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
 }
 
 .layout-menu-container {
@@ -324,6 +458,88 @@ export default {
 .menu-link i {
   font-size: 1.125rem;
   width: 20px;
+}
+
+/* Dropdown Styles */
+.menu-item-dropdown .menu-link {
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.dropdown-icon {
+  font-size: 0.875rem;
+  transition: transform 0.3s ease;
+  margin-left: auto;
+}
+
+.dropdown-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  background: rgba(0, 0, 0, 0.2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.submenu.open {
+  max-height: 200px;
+}
+
+.submenu-item {
+  list-style: none;
+}
+
+.submenu-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem 0.75rem 3rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.submenu-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.submenu-link.router-link-active {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border-left-color: #60a5fa;
+}
+
+.submenu-link i {
+  font-size: 1rem;
+  width: 18px;
+  flex-shrink: 0;
+}
+
+.submenu-link span {
+  white-space: nowrap;
+}
+
+.menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0.5rem 1.5rem;
+}
+
+.menu-section-title {
+  padding: 0.75rem 1.5rem 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Main Container */

@@ -20,14 +20,16 @@ from .serializers import (
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
-    """Custom login view with user details"""
+    """Custom login view with user details and profile"""
     
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         
         if response.status_code == 200:
             user = User.objects.get(username=request.data.get('username'))
-            response.data['user'] = UserSerializer(user).data
+            # Use UserProfileSerializer to include role and permissions
+            from .serializers import UserProfileSerializer
+            response.data['user'] = UserProfileSerializer(user).data
             
         return response
 
@@ -128,39 +130,16 @@ class UserViewSet(viewsets.ModelViewSet):
         """Filter users based on permissions"""
         user = self.request.user
         
-        if user.is_staff:
-            return User.objects.all()
+        # Only admins can see all users
+        if user.is_staff or (hasattr(user, 'profile') and user.profile.role == 'ADMIN'):
+            return User.objects.all().select_related('profile')
         else:
-            return User.objects.filter(id=user.id)
+            # Regular users can only see themselves
+            return User.objects.filter(id=user.id).select_related('profile')
     
-    @action(detail=True, methods=['post'])
-    def activate(self, request, pk=None):
-        """Activate a user account"""
-        if not request.user.is_staff:
-            return Response({
-                'error': 'Permission denied'
-            }, status=status.HTTP_403_FORBIDDEN)
-        
-        user = self.get_object()
-        user.is_active = True
-        user.save()
-        
-        return Response({
-            'message': f'User {user.username} activated'
-        })
-    
-    @action(detail=True, methods=['post'])
-    def deactivate(self, request, pk=None):
-        """Deactivate a user account"""
-        if not request.user.is_staff:
-            return Response({
-                'error': 'Permission denied'
-            }, status=status.HTTP_403_FORBIDDEN)
-        
-        user = self.get_object()
-        user.is_active = False
-        user.save()
-        
-        return Response({
-            'message': f'User {user.username} deactivated'
-        })
+    def get_permissions(self):
+        """Only admins can create, update, or delete users"""
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            from .permissions import CanManageUsers
+            return [CanManageUsers()]
+        return super().get_permissions()

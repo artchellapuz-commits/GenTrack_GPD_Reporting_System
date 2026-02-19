@@ -398,3 +398,132 @@ class Testimonial(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.position}"
+
+
+class UserProfile(models.Model):
+    """Extended user profile with role-based permissions"""
+
+    ROLE_CHOICES = [
+        ('VIEWER', 'Viewer'),
+        ('OPERATOR', 'Operator'),
+        ('MANAGER', 'Manager'),
+        ('ADMIN', 'Administrator'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='VIEWER')
+    plant = models.ForeignKey(Plant, on_delete=models.SET_NULL, null=True, blank=True,
+                             help_text="Assigned plant for operators")
+    phone = models.CharField(max_length=20, blank=True)
+    department = models.CharField(max_length=100, blank=True)
+    position = models.CharField(max_length=100, blank=True)
+
+    # Notification preferences
+    email_notifications = models.BooleanField(default=True)
+    notify_on_upload = models.BooleanField(default=True)
+    notify_on_approval = models.BooleanField(default=True)
+    notify_daily_summary = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'user_profiles'
+        ordering = ['user__username']
+        indexes = [
+            models.Index(fields=['role']),
+            models.Index(fields=['plant']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.get_role_display()}"
+
+    def can_upload_data(self):
+        """Check if user can upload data"""
+        return self.role in ['OPERATOR', 'MANAGER', 'ADMIN'] or self.user.is_staff
+
+    def can_approve_data(self):
+        """Check if user can approve data"""
+        return self.role in ['MANAGER', 'ADMIN'] or self.user.is_staff
+
+    def can_manage_users(self):
+        """Check if user can manage other users"""
+        return self.role == 'ADMIN' or self.user.is_staff
+
+    def can_export_data(self):
+        """Check if user can export data"""
+        return True  # All authenticated users can export
+
+
+class AuditLog(models.Model):
+    """Audit trail for all important actions"""
+
+    ACTION_CHOICES = [
+        ('CREATE', 'Create'),
+        ('UPDATE', 'Update'),
+        ('DELETE', 'Delete'),
+        ('UPLOAD', 'Upload'),
+        ('EXPORT', 'Export'),
+        ('APPROVE', 'Approve'),
+        ('REJECT', 'Reject'),
+        ('LOGIN', 'Login'),
+        ('LOGOUT', 'Logout'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_logs')
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    model_name = models.CharField(max_length=100)
+    object_id = models.IntegerField(null=True, blank=True)
+    description = models.TextField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'audit_logs'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', 'timestamp']),
+            models.Index(fields=['action', 'timestamp']),
+            models.Index(fields=['model_name', 'object_id']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username if self.user else 'System'} - {self.action} - {self.timestamp}"
+
+
+class AuditLog(models.Model):
+    """Audit trail for all important actions"""
+    
+    ACTION_CHOICES = [
+        ('CREATE', 'Create'),
+        ('UPDATE', 'Update'),
+        ('DELETE', 'Delete'),
+        ('UPLOAD', 'Upload'),
+        ('EXPORT', 'Export'),
+        ('APPROVE', 'Approve'),
+        ('REJECT', 'Reject'),
+        ('LOGIN', 'Login'),
+        ('LOGOUT', 'Logout'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_logs')
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    model_name = models.CharField(max_length=100)
+    object_id = models.IntegerField(null=True, blank=True)
+    description = models.TextField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'audit_logs'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', 'timestamp']),
+            models.Index(fields=['action', 'timestamp']),
+            models.Index(fields=['model_name', 'object_id']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username if self.user else 'System'} - {self.action} - {self.timestamp}"

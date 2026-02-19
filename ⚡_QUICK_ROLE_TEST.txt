@@ -1,0 +1,85 @@
+========================================
+  ⚡ QUICK ROLE TEST
+========================================
+
+IMPORTANT: You're seeing Upload/Water Nomination
+because you're logged in as OPERATOR!
+
+Operators SHOULD see those items!
+
+========================================
+  TEST THIS NOW
+========================================
+
+1. LOGOUT from current session
+
+2. LOGIN AS VIEWER:
+   Username: viewer1
+   Password: test123
+
+3. CHECK SIDEBAR:
+   ❌ Upload Excel should be MISSING
+   ❌ Water Nomination should be MISSING
+   ✅ Only: Dashboard, View, Generate
+
+4. LOGOUT
+
+5. LOGIN AS OPERATOR:
+   Username: operator1
+   Password: test123
+
+6. CHECK SIDEBAR:
+   ✅ Upload Excel should be THERE
+   ✅ Water Nomination should be THERE
+
+========================================
+  EXPECTED RESULTS
+========================================
+
+VIEWER (viewer1):
+  📊 Dashboard
+  👁️ View Reports
+  📥 Generate Report
+  👤 My Profile
+  🚪 Logout
+  
+  Total: 5 items
+  Badge: Blue "Viewer"
+
+OPERATOR (operator1):
+  📊 Dashboard
+  📤 Upload Excel      ← ADDED
+  👁️ View Reports
+  📥 Generate Report
+  📅 Water Nomination  ← ADDED
+  👤 My Profile
+  🚪 Logout
+  
+  Total: 7 items
+  Badge: Green "Operator"
+
+========================================
+  IF VIEWER1 SEES UPLOAD
+========================================
+
+Then we have a problem!
+
+But if viewer1 DOESN'T see Upload,
+then it's working correctly!
+
+========================================
+  QUICK CHECK IN CONSOLE
+========================================
+
+F12 → Console → Type:
+
+localStorage.getItem('user')
+
+Should show role and permissions.
+
+========================================
+
+TRY LOGGING IN AS VIEWER1 NOW!
+That's where you'll see the difference!
+
+========================================

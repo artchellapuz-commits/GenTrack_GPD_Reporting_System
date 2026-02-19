@@ -13,6 +13,7 @@
         <img src="@/assets/NPC-logo.png" alt="NPC Logo" class="sidebar-logo" />
         <h3>NPC System</h3>
         <p class="user-info">{{ username }}</p>
+        <span class="role-badge" :class="`role-${roleBadgeColor}`">{{ roleDisplay }}</span>
       </div>
       
       <nav class="sidebar-nav">
@@ -20,24 +21,64 @@
           <i class="pi pi-chart-line"></i>
           <span class="nav-text">Dashboard</span>
         </router-link>
-        <router-link to="/upload" @click="closeSidebar" class="nav-item">
+        
+        <!-- Upload - Only for Operator, Manager, Admin -->
+        <router-link v-if="canUpload" to="/upload" @click="closeSidebar" class="nav-item">
           <i class="pi pi-upload"></i>
           <span class="nav-text">Upload Excel</span>
         </router-link>
+        
         <router-link to="/view" @click="closeSidebar" class="nav-item">
           <i class="pi pi-eye"></i>
           <span class="nav-text">View Reports</span>
         </router-link>
+        
         <router-link to="/generate" @click="closeSidebar" class="nav-item">
           <i class="pi pi-download"></i>
           <span class="nav-text">Generate Report</span>
         </router-link>
-        <router-link to="/water-nomination" @click="closeSidebar" class="nav-item">
-          <i class="pi pi-calendar"></i>
-          <span class="nav-text">Water Nomination</span>
+        
+        <!-- Water Nomination with Dropdown - Only for Operator, Manager, Admin -->
+        <div v-if="canUpload" class="nav-item-dropdown">
+          <a href="#" @click.prevent="toggleWaterNominationDropdown" class="nav-item">
+            <i class="pi pi-calendar"></i>
+            <span class="nav-text">Water Nomination</span>
+            <i class="pi pi-chevron-down dropdown-icon" :class="{ rotated: waterNominationOpen }"></i>
+          </a>
+          <div class="dropdown-menu" :class="{ open: waterNominationOpen }">
+            <router-link to="/water-nomination" class="dropdown-item">
+              <i class="pi pi-file-edit"></i>
+              <span>Manage Nominations</span>
+            </router-link>
+            <router-link v-if="canApprove" to="/approval-queue" class="dropdown-item">
+              <i class="pi pi-check-circle"></i>
+              <span>Approval Queue</span>
+            </router-link>
+          </div>
+        </div>
+        
+        <!-- Admin Section - Only for Admin -->
+        <div class="nav-divider"></div>
+        <div class="nav-section-title">Administration</div>
+        <router-link to="/user-management" @click="closeSidebar" class="nav-item">
+          <i class="pi pi-users"></i>
+          <span class="nav-text">User Management</span>
+        </router-link>
+        <a href="http://localhost:8000/admin" target="_blank" class="nav-item">
+          <i class="pi pi-cog"></i>
+          <span class="nav-text">Admin Panel</span>
+        </a>
+        <router-link to="/audit-logs" @click="closeSidebar" class="nav-item">
+          <i class="pi pi-history"></i>
+          <span class="nav-text">Audit Logs</span>
         </router-link>
         
         <div class="nav-divider"></div>
+        
+        <router-link to="/profile" @click="closeSidebar" class="nav-item">
+          <i class="pi pi-user"></i>
+          <span class="nav-text">My Profile</span>
+        </router-link>
         
         <a href="#" @click.prevent="handleLogout" class="nav-item nav-item-danger">
           <i class="pi pi-sign-out"></i>
@@ -52,25 +93,70 @@
 </template>
 
 <script>
-import { logout, getUsername } from '../utils/auth';
+import { 
+  logout, 
+  getUsername, 
+  getUserRole, 
+  getRoleDisplayName, 
+  getRoleBadgeColor,
+  canUploadData,
+  canApproveData,
+  isAdmin
+} from '../utils/auth';
 
 export default {
   name: 'Sidebar',
   data() {
     return {
       isOpen: false,
-      username: ''
+      username: '',
+      userRole: '',
+      roleDisplay: '',
+      roleBadgeColor: 'secondary',
+      canUpload: false,
+      canApprove: false,
+      isAdminUser: false,
+      waterNominationOpen: false
     };
   },
   mounted() {
-    this.username = getUsername() || 'User';
+    this.loadUserInfo();
+    this.checkCurrentRoute();
+  },
+  watch: {
+    '$route'(to) {
+      this.checkCurrentRoute();
+      // Reload user info when route changes to ensure admin status is current
+      this.loadUserInfo();
+    }
   },
   methods: {
+    checkCurrentRoute() {
+      // Auto-open dropdown if on water nomination or approval queue pages
+      const currentPath = this.$route.path;
+      if (currentPath === '/water-nomination' || currentPath === '/approval-queue') {
+        this.waterNominationOpen = true;
+      }
+    },
+    loadUserInfo() {
+      this.username = getUsername() || 'User';
+      this.userRole = getUserRole() || 'VIEWER';
+      this.roleDisplay = getRoleDisplayName(this.userRole);
+      this.roleBadgeColor = getRoleBadgeColor(this.userRole);
+      this.canUpload = canUploadData();
+      this.canApprove = canApproveData();
+      this.isAdminUser = isAdmin();
+    },
     toggleSidebar() {
       this.isOpen = !this.isOpen;
     },
     closeSidebar() {
       this.isOpen = false;
+      // Don't close the dropdown when sidebar closes
+      // this.waterNominationOpen = false;
+    },
+    toggleWaterNominationDropdown() {
+      this.waterNominationOpen = !this.waterNominationOpen;
     },
     handleLogout() {
       sessionStorage.setItem('justLoggedOut', 'true');
@@ -177,7 +263,46 @@ export default {
 .user-info {
   color: #718096;
   font-size: 0.875rem;
-  margin: 0;
+  margin: 0 0 10px 0;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.role-info {
+  background: #e6f7ff;
+  color: #0066cc;
+}
+
+.role-success {
+  background: #d4edda;
+  color: #155724;
+}
+
+.role-warning {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.role-danger {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.nav-section-title {
+  padding: 10px 25px 5px;
+  color: #a0aec0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .sidebar-nav {
@@ -219,6 +344,75 @@ export default {
 }
 
 .nav-text {
+  white-space: nowrap;
+}
+
+/* Dropdown Styles */
+.nav-item-dropdown {
+  position: relative;
+}
+
+.nav-item-dropdown .nav-item {
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.dropdown-icon {
+  font-size: 0.875rem;
+  transition: transform 0.3s ease;
+  margin-left: auto;
+}
+
+.dropdown-icon.rotated {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  background: #f7fafc;
+}
+
+.dropdown-menu.open {
+  max-height: 200px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 25px 12px 50px;
+  color: #4a5568;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  border-left: 3px solid transparent;
+  white-space: nowrap;
+}
+
+.dropdown-item:hover {
+  background: #edf2f7;
+  color: var(--npc-primary);
+  border-left-color: var(--npc-primary);
+}
+
+.dropdown-item.router-link-active {
+  background: #e2e8f0;
+  color: var(--npc-primary);
+  border-left-color: var(--npc-primary);
+  font-weight: 600;
+}
+
+.dropdown-item i {
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.dropdown-item span {
   white-space: nowrap;
 }
 

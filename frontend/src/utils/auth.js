@@ -100,6 +100,21 @@ export async function refreshAccessToken() {
 /**
  * Setup axios interceptors for automatic token refresh
  */
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
 export function setupAxiosInterceptors() {
   // Request interceptor to add token
   axios.interceptors.request.use(
@@ -123,16 +138,48 @@ export function setupAxiosInterceptors() {
 
       // If error is 401 and we haven't retried yet
       if (error.response?.status === 401 && !originalRequest._retry) {
+        
+        // Prevent infinite loop
+        if (originalRequest.url.includes('/auth/refresh/') || originalRequest.url.includes('/token/refresh/')) {
+          // Refresh token itself failed, clear auth and redirect
+          clearAuth();
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+          return Promise.reject(error);
+        }
+
+        if (isRefreshing) {
+          // If already refreshing, queue this request
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then(token => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              return axios(originalRequest);
+            })
+            .catch(err => {
+              return Promise.reject(err);
+            });
+        }
+
         originalRequest._retry = true;
+        isRefreshing = true;
 
         try {
           const newToken = await refreshAccessToken();
+          processQueue(null, newToken);
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return axios(originalRequest);
         } catch (refreshError) {
-          // Refresh failed, redirect to login
-          window.location.href = '/login';
+          processQueue(refreshError, null);
+          clearAuth();
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
           return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
         }
       }
 
@@ -151,7 +198,17 @@ export async function login(username, password) {
   });
 
   setTokens(response.data.access, response.data.refresh);
-  setUser(response.data.user);
+  
+  // Fetch full profile with permissions
+  try {
+    const profileResponse = await axios.get(`${API_URL}/auth/profile/`, {
+      headers: { Authorization: `Bearer ${response.data.access}` }
+    });
+    setUser(profileResponse.data);
+  } catch (error) {
+    // Fallback to basic user data
+    setUser(response.data.user);
+  }
 
   return response.data;
 }
@@ -218,7 +275,35 @@ export async function changePassword(oldPassword, newPassword, newPassword2) {
 }
 
 /**
- * Check if user has permission
+ * Get user role from profile
+ */
+export function getUserRole() {
+  const user = getUser();
+  if (!user) return null;
+  
+  // Check if profile data is available
+  if (user.profile && user.profile.role) {
+    return user.profile.role;
+  }
+  
+  // Fallback: admin check
+  if (user.is_staff) return 'ADMIN';
+  
+  return 'VIEWER'; // Default role
+}
+
+/**
+ * Get user permissions from profile
+ */
+export function getUserPermissions() {
+  const user = getUser();
+  if (!user || !user.profile) return {};
+  
+  return user.profile.permissions || {};
+}
+
+/**
+ * Check if user has specific permission
  */
 export function hasPermission(permissionName) {
   const user = getUser();
@@ -227,10 +312,9 @@ export function hasPermission(permissionName) {
   // Admin has all permissions
   if (user.is_staff) return true;
   
-  // Add more permission checks as needed
-  // You can check permissionName here when you implement permissions
-  console.log('Checking permission:', permissionName);
-  return false;
+  // Check profile permissions
+  const permissions = getUserPermissions();
+  return permissions[permissionName] === true;
 }
 
 /**
@@ -238,5 +322,93 @@ export function hasPermission(permissionName) {
  */
 export function isAdmin() {
   const user = getUser();
-  return user && user.is_staff;
+  return user && (user.is_staff || getUserRole() === 'ADMIN');
+}
+
+/**
+ * Check if user is manager or above
+ */
+export function isManagerOrAbove() {
+  const role = getUserRole();
+  return role === 'MANAGER' || role === 'ADMIN' || isAdmin();
+}
+
+/**
+ * Check if user is operator or above
+ */
+export function isOperatorOrAbove() {
+  const role = getUserRole();
+  return role === 'OPERATOR' || role === 'MANAGER' || role === 'ADMIN' || isAdmin();
+}
+
+/**
+ * Check if user is viewer (read-only)
+ */
+export function isViewer() {
+  const role = getUserRole();
+  return role === 'VIEWER';
+}
+
+/**
+ * Check if user can upload data
+ */
+export function canUploadData() {
+  return hasPermission('can_upload_data') || isOperatorOrAbove();
+}
+
+/**
+ * Check if user can approve data
+ */
+export function canApproveData() {
+  return hasPermission('can_approve_data') || isManagerOrAbove();
+}
+
+/**
+ * Check if user can export data
+ */
+export function canExportData() {
+  return hasPermission('can_export_data') || true; // All authenticated users
+}
+
+/**
+ * Check if user can manage users
+ */
+export function canManageUsers() {
+  return hasPermission('can_manage_users') || isAdmin();
+}
+
+/**
+ * Get user's assigned plant
+ */
+export function getUserPlant() {
+  const user = getUser();
+  if (!user || !user.profile) return null;
+  
+  return user.profile.plant || null;
+}
+
+/**
+ * Get role display name
+ */
+export function getRoleDisplayName(role) {
+  const roleNames = {
+    'VIEWER': 'Viewer',
+    'OPERATOR': 'Operator',
+    'MANAGER': 'Manager',
+    'ADMIN': 'Administrator'
+  };
+  return roleNames[role] || role;
+}
+
+/**
+ * Get role badge color
+ */
+export function getRoleBadgeColor(role) {
+  const colors = {
+    'VIEWER': 'info',
+    'OPERATOR': 'success',
+    'MANAGER': 'warning',
+    'ADMIN': 'danger'
+  };
+  return colors[role] || 'secondary';
 }

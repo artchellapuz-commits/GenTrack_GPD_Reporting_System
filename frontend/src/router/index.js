@@ -5,6 +5,10 @@ import UploadExcel from '../components/UploadExcel.vue';
 import ViewReports from '../components/ViewReports.vue';
 import GenerateReport from '../components/GenerateReport.vue';
 import WaterNomination from '../components/WaterNomination.vue';
+import ApprovalQueue from '../components/ApprovalQueue.vue';
+import AuditLogs from '../components/AuditLogs.vue';
+import UserManagement from '../components/UserManagement.vue';
+import DebugUser from '../components/DebugUser.vue';
 import LoginPage from '../components/Login.vue';
 import RegisterPage from '../components/Register.vue';
 import { isAuthenticated } from '../utils/auth';
@@ -56,6 +60,30 @@ const routes = [
     path: '/water-nomination',
     name: 'WaterNomination',
     component: WaterNomination,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/approval-queue',
+    name: 'ApprovalQueue',
+    component: ApprovalQueue,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/audit-logs',
+    name: 'AuditLogs',
+    component: AuditLogs,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/user-management',
+    name: 'UserManagement',
+    component: UserManagement,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/debug-user',
+    name: 'DebugUser',
+    component: DebugUser,
     meta: { requiresAuth: true }
   },
 ];

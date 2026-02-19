@@ -9,14 +9,14 @@ import hashlib
 import os
 import tempfile
 
-from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData, WaterNomination, ActualGeneration, Testimonial
+from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData, WaterNomination, ActualGeneration, Testimonial, AuditLog
 from .serializers import (
     PlantSerializer, UnitSerializer, UploadedFileSerializer,
     GenerationReportSerializer, GenerationReportListSerializer,
     ExcelUploadSerializer, ReportGenerationSerializer,
     PlantCapacitySerializer, HistoricalDataSerializer, HistoricalDataUploadSerializer,
     WaterNominationSerializer, ActualGenerationSerializer, NominationVarianceSerializer,
-    TestimonialSerializer
+    TestimonialSerializer, AuditLogSerializer
 )
 from .services.excel_importer import ExcelImporter
 from .services.excel_exporter import ExcelExporter
@@ -543,3 +543,38 @@ class TestimonialViewSet(viewsets.ModelViewSet):
             submitted_by=self.request.user if self.request.user.is_authenticated else None,
             is_active=False
         )
+
+
+class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API endpoint for audit logs
+    - GET: List all audit logs with filtering
+    - Requires authentication
+    """
+    queryset = AuditLog.objects.all().select_related('user')
+    serializer_class = AuditLogSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by action type
+        action = self.request.query_params.get('action')
+        if action:
+            queryset = queryset.filter(action=action)
+        
+        # Filter by username
+        username = self.request.query_params.get('username')
+        if username:
+            queryset = queryset.filter(user__username__icontains=username)
+        
+        # Filter by date range
+        start_date = self.request.query_params.get('start_date')
+        if start_date:
+            queryset = queryset.filter(timestamp__gte=start_date)
+        
+        end_date = self.request.query_params.get('end_date')
+        if end_date:
+            queryset = queryset.filter(timestamp__lte=end_date)
+        
+        return queryset

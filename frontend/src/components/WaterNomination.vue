@@ -1,88 +1,59 @@
 <template>
-  <div class="water-nomination-container">
-    <!-- Theme Customizer -->
-    <ThemeCustomizer ref="themeCustomizer" />
-    
-    <!-- Modern Header with Gradient Background -->
-    <div class="page-header">
-      <div class="header-content">
-        <div class="breadcrumb-nav">
-          <router-link to="/dashboard" class="breadcrumb-item">
-            <i class="pi pi-home"></i> Dashboard
-          </router-link>
-          <i class="pi pi-angle-right breadcrumb-separator"></i>
-          <span class="breadcrumb-item active">Water Nomination</span>
+  <AppLayout>
+    <div class="water-nomination-container">
+      <!-- Page Header -->
+      <div class="page-header-simple">
+        <h1>Water Nomination Management</h1>
+        <button @click="showCreateModal = true" class="btn-primary">
+          <i class="pi pi-plus-circle"></i>
+          <span>New Nomination</span>
+        </button>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <i class="pi pi-file"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ nominations.length }}</div>
+            <div class="stat-label">Total Nominations</div>
+          </div>
         </div>
         
-        <div class="header-title-section">
-          <div class="title-with-icon">
-            <div class="icon-wrapper">
-              <i class="pi pi-calendar"></i>
-            </div>
-            <div>
-              <h1>Water Nomination Management</h1>
-              <p class="subtitle">Plan and track hourly water dispatch schedules for hydroelectric plants</p>
-            </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">
+            <i class="pi pi-clock"></i>
           </div>
-          
-          <div class="header-actions">
-            
-             
-            <button @click="toggleDarkMode" class="btn-icon-header" :title="darkMode ? 'Light Mode' : 'Dark Mode'">
-              <i :class="darkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
-            </button>
-            <button @click="toggleThemeCustomizer" class="btn-icon-header btn-palette" :style="{ backgroundColor: currentThemeColor }" title="Theme Colors">
-              <i class="pi pi-palette"></i>
-            </button>
+          <div class="stat-content">
+            <div class="stat-value">{{ nominations.filter(n => n.status === 'DRAFT').length }}</div>
+            <div class="stat-label">Draft</div>
           </div>
         </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <i class="pi pi-check-circle"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ nominations.filter(n => n.status === 'APPROVED').length }}</div>
+            <div class="stat-label">Approved</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <i class="pi pi-send"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ nominations.filter(n => n.status === 'SUBMITTED').length }}</div>
+            <div class="stat-label">Pending Approval</div>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Stats Cards -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon blue">
-          <i class="pi pi-file"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ nominations.length }}</div>
-          <div class="stat-label">Total Nominations</div>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon orange">
-          <i class="pi pi-clock"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ nominations.filter(n => n.status === 'DRAFT').length }}</div>
-          <div class="stat-label">Draft</div>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon green">
-          <i class="pi pi-check-circle"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ nominations.filter(n => n.status === 'APPROVED').length }}</div>
-          <div class="stat-label">Approved</div>
-        </div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon purple">
-          <i class="pi pi-send"></i>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ nominations.filter(n => n.status === 'SUBMITTED').length }}</div>
-          <div class="stat-label">Pending Approval</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filters Section with Modern Design -->
+      <!-- Filters Section with Modern Design -->
     <div class="content-section">
       <div class="section-header">
         <h3><i class="pi pi-filter"></i> Filter Nominations</h3>
@@ -94,7 +65,7 @@
       </div>
       
       <div class="filters-section glass-card">
-      <div class="filters-grid">
+        <div class="filters-grid">
         <div class="filter-group">
           <label>Plant</label>
           <select v-model="filters.plant_code" @change="loadNominations">
@@ -134,7 +105,7 @@
           </button>
         </div>
       </div>
-    </div>
+      </div>
     </div>
 
     <!-- Nominations List with Modern Cards -->
@@ -150,7 +121,7 @@
           </button>
         </div>
       </div>
-    <div class="nominations-list">
+      <div class="nominations-list">
       <div v-if="loading" class="loading-state">
         <i class="pi pi-spin pi-spinner"></i> Loading nominations...
       </div>
@@ -209,14 +180,18 @@
             <button v-if="nomination.status === 'DRAFT'" @click.stop="editNomination(nomination)" class="btn-edit">
               <i class="pi pi-pencil"></i> Edit
             </button>
+            <button v-if="nomination.status === 'DRAFT'" @click.stop="deleteNomination(nomination.id)" class="btn-delete">
+              <i class="pi pi-trash"></i> Delete
+            </button>
             <button v-if="nomination.status === 'DRAFT'" @click.stop="submitNomination(nomination.id)" class="btn-submit">
               <i class="pi pi-send"></i> Submit
             </button>
-            <button v-if="nomination.status === 'SUBMITTED'" @click.stop="approveNomination(nomination.id)" class="btn-approve">
+            <button v-if="canApproveNomination(nomination)" @click.stop="approveNomination(nomination.id)" class="btn-approve">
               <i class="pi pi-check"></i> Approve
             </button>
           </div>
         </div>
+      </div>
       </div>
     </div>
 
@@ -372,22 +347,24 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
+    </div>
+  </AppLayout>
 </template>
 
 <script>
 import axios from 'axios';
-import ThemeCustomizer from './ThemeCustomizer.vue';
+import AppLayout from './AppLayout.vue';
+import { canApproveData, getUsername } from '../utils/auth';
 
 export default {
   name: 'WaterNomination',
   components: {
-    ThemeCustomizer
+    AppLayout
   },
   data() {
     return {
       nominations: [],
+      currentUsername: getUsername(),
       plants: [],
       loading: false,
       showCreateModal: false,
@@ -397,8 +374,6 @@ export default {
       selectedNomination: null,
       highlightedHour: null,
       viewMode: 'grid', // 'grid' or 'list'
-      darkMode: false,
-      themeColor: localStorage.getItem('theme-primary') || '#3b82f6',
       filters: {
         plant_code: '',
         status: '',
@@ -418,30 +393,26 @@ export default {
     maxHourlyValue() {
       if (!this.selectedNomination || !this.selectedNomination.hourly_data) return 100;
       return Math.max(...this.selectedNomination.hourly_data.map(h => h.nominated_mw), 100);
-    },
-    currentThemeColor() {
-      return this.themeColor;
     }
   },
   mounted() {
     this.loadPlants();
     this.loadNominations();
     this.initializeHourlyFields();
-    
-    // Check for theme color updates periodically
-    this.themeColorInterval = setInterval(() => {
-      const savedColor = localStorage.getItem('theme-primary');
-      if (savedColor && savedColor !== this.themeColor) {
-        this.themeColor = savedColor;
-      }
-    }, 500);
-  },
-  beforeUnmount() {
-    if (this.themeColorInterval) {
-      clearInterval(this.themeColorInterval);
-    }
   },
   methods: {
+    canApprove() {
+      return canApproveData();
+    },
+    canApproveNomination(nomination) {
+      // Can approve if:
+      // 1. User has approve permission
+      // 2. Nomination is submitted (not draft or already approved)
+      // 3. User didn't submit it (can't approve own submission)
+      return this.canApprove() && 
+             nomination.status === 'SUBMITTED' &&
+             nomination.submitted_by_username !== this.currentUsername;
+    },
     initializeHourlyFields() {
       for (let i = 0; i < 24; i++) {
         const field = `hour_${String(i).padStart(2, '0')}`;
@@ -530,11 +501,44 @@ export default {
       } catch (error) {
         console.error('Full error:', error);
         console.error('Error response:', error.response);
-        const errorMsg = error.response?.data?.error 
-          || error.response?.data?.detail
-          || (error.response?.data ? JSON.stringify(error.response.data) : '')
-          || error.message;
-        alert('Failed to save nomination:\n' + errorMsg);
+        
+        // Build user-friendly error message
+        let errorMsg = '';
+        
+        if (error.response?.data) {
+          const data = error.response.data;
+          
+          // Handle unique constraint error
+          if (data.non_field_errors) {
+            const errors = Array.isArray(data.non_field_errors) ? data.non_field_errors : [data.non_field_errors];
+            if (errors.some(e => String(e).includes('unique set'))) {
+              alert('A nomination already exists for this plant, date, and type combination.\n\nPlease either:\n1. Choose a different date\n2. Edit the existing nomination\n3. Delete the existing nomination first');
+              return;
+            }
+            errorMsg = errors.join(', ');
+          }
+          // Handle field-specific errors
+          else if (typeof data === 'object' && !Array.isArray(data)) {
+            const fieldErrors = [];
+            for (const [field, messages] of Object.entries(data)) {
+              const msgArray = Array.isArray(messages) ? messages : [messages];
+              fieldErrors.push(`${field}: ${msgArray.join(', ')}`);
+            }
+            errorMsg = fieldErrors.join('\n');
+          }
+          // Handle string error
+          else if (data.error || data.detail) {
+            errorMsg = data.error || data.detail;
+          }
+          // Fallback to JSON string
+          else {
+            errorMsg = JSON.stringify(data);
+          }
+        } else {
+          errorMsg = error.message || 'Unknown error occurred';
+        }
+        
+        alert('Failed to save nomination:\n\n' + errorMsg);
       }
     },
     async submitNomination(id) {
@@ -547,6 +551,18 @@ export default {
       } catch (error) {
         console.error('Error submitting nomination:', error);
         alert('Failed to submit nomination');
+      }
+    },
+    async deleteNomination(id) {
+      if (!confirm('Are you sure you want to delete this draft nomination?')) return;
+      
+      try {
+        await axios.delete(`http://localhost:8000/api/water-nominations/${id}/`);
+        alert('Nomination deleted successfully');
+        this.loadNominations();
+      } catch (error) {
+        console.error('Error deleting nomination:', error);
+        alert('Failed to delete nomination: ' + (error.response?.data?.error || error.message));
       }
     },
     async approveNomination(id) {
@@ -716,20 +732,6 @@ export default {
       const hourlyData = this.selectedNomination.hourly_data;
       const sum = hourlyData.reduce((acc, h) => acc + (h.nominated_mw || 0), 0);
       return (sum / 24).toFixed(2);
-    },
-    toggleDarkMode() {
-      this.darkMode = !this.darkMode;
-      const container = document.querySelector('.water-nomination-container');
-      if (this.darkMode) {
-        container.classList.add('dark-mode');
-      } else {
-        container.classList.remove('dark-mode');
-      }
-    },
-    toggleThemeCustomizer() {
-      if (this.$refs.themeCustomizer) {
-        this.$refs.themeCustomizer.toggleCustomizer();
-      }
     }
   }
 };
@@ -738,11 +740,28 @@ export default {
 <style scoped>
 /* Modern Container */
 .water-nomination-container {
-  padding: 0;
+  padding: 20px;
   max-width: 100%;
   margin: 0;
-  background: #f8fafc;
+  background: transparent;
   min-height: 100vh;
+}
+
+/* Simple Page Header */
+.page-header-simple {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.page-header-simple h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
 }
 
 /* Page Header with Gradient */
@@ -861,9 +880,9 @@ export default {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 20px;
-  max-width: 1400px;
-  margin: 0 auto 30px;
-  padding: 0 40px;
+  max-width: 100%;
+  margin: 0 0 30px 0;
+  padding: 0;
 }
 
 @media (max-width: 1200px) {
@@ -942,9 +961,9 @@ export default {
 
 /* Content Sections */
 .content-section {
-  max-width: 1400px;
-  margin: 0 auto 30px;
-  padding: 0 40px;
+  max-width: 100%;
+  margin: 0 0 30px 0;
+  padding: 0;
 }
 
 .section-header {
@@ -1036,7 +1055,7 @@ export default {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.btn-primary, .btn-secondary, .btn-view, .btn-edit, .btn-submit, .btn-approve, .btn-info {
+.btn-primary, .btn-secondary, .btn-view, .btn-edit, .btn-delete, .btn-submit, .btn-approve, .btn-info {
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -1050,7 +1069,7 @@ export default {
   overflow: hidden;
 }
 
-.btn-primary::before, .btn-secondary::before, .btn-view::before, .btn-edit::before, 
+.btn-primary::before, .btn-secondary::before, .btn-view::before, .btn-edit::before, .btn-delete::before,
 .btn-submit::before, .btn-approve::before, .btn-info::before {
   content: '';
   position: absolute;
@@ -1065,7 +1084,7 @@ export default {
 }
 
 .btn-primary:hover::before, .btn-secondary:hover::before, .btn-view:hover::before, 
-.btn-edit:hover::before, .btn-submit:hover::before, .btn-approve:hover::before, .btn-info:hover::before {
+.btn-edit:hover::before, .btn-delete:hover::before, .btn-submit:hover::before, .btn-approve:hover::before, .btn-info:hover::before {
   width: 300px;
   height: 300px;
 }
@@ -1134,6 +1153,16 @@ export default {
   background: #f39c12;
   color: white;
   padding: 8px 16px;
+}
+
+.btn-delete {
+  background: #e74c3c;
+  color: white;
+  padding: 8px 16px;
+}
+
+.btn-delete:hover {
+  background: #c0392b;
 }
 
 .btn-submit {

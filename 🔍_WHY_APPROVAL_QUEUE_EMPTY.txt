@@ -1,0 +1,161 @@
+========================================
+🔍 WHY APPROVAL QUEUE IS EMPTY
+========================================
+
+The Approval Queue shows nominations with status = "SUBMITTED"
+
+Currently EMPTY because:
+❌ No water nominations have been submitted yet
+❌ Or all nominations are still in DRAFT status
+❌ Or all nominations are already APPROVED
+
+========================================
+HOW TO TEST APPROVAL QUEUE
+========================================
+
+STEP 1: Create a Nomination (as operator1)
+-------------------------------------------
+1. Login as: operator1 / test123
+2. Go to: Water Nomination
+3. Click: "New Nomination"
+4. Fill in:
+   - Plant: Agus 1
+   - Date: Tomorrow's date
+   - Type: Day-Ahead
+   - Fill some hourly values (e.g., 50 MW for all hours)
+5. Click: "Save" (this creates DRAFT)
+6. Find the nomination in the list
+7. Click: "Submit" button
+8. Status changes: DRAFT → SUBMITTED
+
+STEP 2: View in Approval Queue (as manager1)
+---------------------------------------------
+1. Logout
+2. Login as: manager1 / test123
+3. Go to: Approval Queue
+4. ✅ You should now see the submitted nomination!
+
+========================================
+QUICK TEST COMMANDS
+========================================
+
+Option 1: Use Water Nomination Page
+------------------------------------
+- Login as operator1
+- Create and submit a nomination
+- Login as manager1
+- Check Approval Queue
+
+Option 2: Check Database Directly
+----------------------------------
+cd backend
+python manage.py shell
+
+from reports.models import WaterNomination
+nominations = WaterNomination.objects.filter(status='SUBMITTED')
+print(f"Pending nominations: {nominations.count()}")
+for n in nominations:
+    print(f"- {n.plant.name} on {n.nomination_date}")
+
+========================================
+TROUBLESHOOTING
+========================================
+
+Problem: Still empty after submitting
+--------------------------------------
+Check browser console (F12):
+- Look for API errors
+- Check network tab for /api/water-nominations/ request
+- Verify response data
+
+Check backend:
+- Is Django server running?
+- Check terminal for errors
+- Try accessing: http://localhost:8000/api/water-nominations/?status=SUBMITTED
+
+Problem: Can't submit nomination
+---------------------------------
+- Make sure you're logged in as operator1
+- Check that nomination is in DRAFT status
+- Look for "Submit" button (not "Approve")
+
+Problem: Don't see Approval Queue menu
+---------------------------------------
+- Make sure you're logged in as manager1 or admin
+- Viewer and Operator cannot see this menu
+- Check role in sidebar badge
+
+========================================
+EXPECTED WORKFLOW
+========================================
+
+1. OPERATOR creates nomination
+   Status: DRAFT
+   
+2. OPERATOR clicks "Submit"
+   Status: DRAFT → SUBMITTED
+   
+3. MANAGER sees in Approval Queue
+   Pending count: 1
+   
+4. MANAGER clicks "Approve"
+   Status: SUBMITTED → APPROVED
+   
+5. Approval Queue becomes empty again
+   (nomination no longer pending)
+
+========================================
+CREATE TEST DATA SCRIPT
+========================================
+
+Want to quickly create test data?
+
+cd backend
+python manage.py shell
+
+# Run this:
+from reports.models import WaterNomination, Plant
+from django.contrib.auth.models import User
+from datetime import date, timedelta
+
+# Get operator user
+operator = User.objects.get(username='operator1')
+
+# Get plant
+plant = Plant.objects.get(code='AGUS1')
+
+# Create a submitted nomination
+nomination = WaterNomination.objects.create(
+    plant=plant,
+    nomination_date=date.today() + timedelta(days=1),
+    nomination_type='DAY_AHEAD',
+    status='SUBMITTED',
+    submitted_by=operator,
+    hour_00=50, hour_01=50, hour_02=50,
+    hour_03=50, hour_04=50, hour_05=50,
+    hour_06=50, hour_07=50, hour_08=50,
+    hour_09=50, hour_10=50, hour_11=50,
+    hour_12=50, hour_13=50, hour_14=50,
+    hour_15=50, hour_16=50, hour_17=50,
+    hour_18=50, hour_19=50, hour_20=50,
+    hour_21=50, hour_22=50, hour_23=50
+)
+
+print(f"Created nomination ID: {nomination.id}")
+print("Now check Approval Queue!")
+
+========================================
+SUMMARY
+========================================
+
+Approval Queue is empty = GOOD NEWS!
+It means there are no pending approvals.
+
+To test it:
+1. Login as operator1
+2. Create and submit a water nomination
+3. Login as manager1
+4. Check Approval Queue
+5. You'll see the pending nomination!
+
+========================================
