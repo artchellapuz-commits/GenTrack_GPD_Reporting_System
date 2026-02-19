@@ -6,6 +6,11 @@ from .views import (
     WaterNominationViewSet, ActualGenerationViewSet, TestimonialViewSet, AuditLogViewSet
 )
 from .auth_views import AuthViewSet, UserViewSet
+from .views_scheduled import ScheduledReportViewSet, ReportExecutionViewSet
+from .views_analytics import (
+    performance_trends, plant_comparison, predictive_insights,
+    anomaly_detection, efficiency_analysis, water_nomination_analysis
+)
 
 router = DefaultRouter()
 router.register(r'plants', PlantViewSet, basename='plant')
@@ -20,7 +25,16 @@ router.register(r'testimonials', TestimonialViewSet, basename='testimonial')
 router.register(r'audit-logs', AuditLogViewSet, basename='auditlog')
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'users', UserViewSet, basename='user')
+router.register(r'scheduled-reports', ScheduledReportViewSet, basename='scheduledreport')
+router.register(r'report-executions', ReportExecutionViewSet, basename='reportexecution')
 
 urlpatterns = [
     path('', include(router.urls)),
+    # Analytics endpoints
+    path('analytics/trends/', performance_trends, name='analytics-trends'),
+    path('analytics/comparison/', plant_comparison, name='analytics-comparison'),
+    path('analytics/predictions/', predictive_insights, name='analytics-predictions'),
+    path('analytics/anomalies/', anomaly_detection, name='analytics-anomalies'),
+    path('analytics/efficiency/', efficiency_analysis, name='analytics-efficiency'),
+    path('analytics/water-nomination/', water_nomination_analysis, name='analytics-water-nomination'),
 ]

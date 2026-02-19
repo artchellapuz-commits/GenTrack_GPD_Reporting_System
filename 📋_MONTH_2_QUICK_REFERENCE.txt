@@ -1,0 +1,253 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                    MONTH 2 - QUICK REFERENCE CARD                    ║
+║              PWA + Automated Reports + Advanced Analytics            ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 📱 MOBILE PWA                                                        │
+├──────────────────────────────────────────────────────────────────────┤
+│ Files:                                                               │
+│   • frontend/public/service-worker.js                                │
+│   • frontend/public/manifest.json                                    │
+│   • frontend/src/utils/pwaUtils.js                                   │
+│   • frontend/src/components/PWAInstallPrompt.vue                     │
+│                                                                      │
+│ Features:                                                            │
+│   ✓ Offline caching                                                  │
+│   ✓ Install to home screen                                           │
+│   ✓ Background sync                                                  │
+│   ✓ Push notifications                                               │
+│                                                                      │
+│ Usage:                                                               │
+│   import pwaUtils from '@/utils/pwaUtils';                           │
+│   pwaUtils.cacheData('key', data);                                   │
+│   const cached = pwaUtils.getCachedData('key');                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ ⏰ AUTOMATED REPORTS                                                 │
+├──────────────────────────────────────────────────────────────────────┤
+│ Files:                                                               │
+│   • backend/reports/models_scheduled.py                              │
+│   • backend/reports/services/automated_reports.py                    │
+│   • backend/reports/views_scheduled.py                               │
+│   • backend/reports/management/commands/run_scheduled_reports.py     │
+│   • frontend/src/components/ScheduledReports.vue                     │
+│                                                                      │
+│ API Endpoints:                                                       │
+│   GET    /api/scheduled-reports/                                     │
+│   POST   /api/scheduled-reports/                                     │
+│   GET    /api/scheduled-reports/{id}/                                │
+│   PUT    /api/scheduled-reports/{id}/                                │
+│   POST   /api/scheduled-reports/{id}/run/                            │
+│   GET    /api/scheduled-reports/{id}/executions/                     │
+│                                                                      │
+│ CLI Commands:                                                        │
+│   python manage.py run_scheduled_reports                             │
+│   python manage.py run_scheduled_reports --report-id=1               │
+│                                                                      │
+│ Report Types:                                                        │
+│   • GENERATION_SUMMARY                                               │
+│   • CAPACITY_FACTOR                                                  │
+│   • AVAILABILITY                                                     │
+│   • WATER_NOMINATION                                                 │
+│   • PERFORMANCE_METRICS                                              │
+│   • COMPARATIVE_ANALYSIS                                             │
+│                                                                      │
+│ Frequencies:                                                         │
+│   • DAILY                                                            │
+│   • WEEKLY                                                           │
+│   • MONTHLY                                                          │
+│   • QUARTERLY                                                        │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 📊 ADVANCED ANALYTICS                                                │
+├──────────────────────────────────────────────────────────────────────┤
+│ Files:                                                               │
+│   • backend/reports/services/analytics_service.py                    │
+│   • backend/reports/views_analytics.py                               │
+│   • frontend/src/components/AdvancedAnalytics.vue                    │
+│                                                                      │
+│ API Endpoints:                                                       │
+│   GET /api/analytics/trends/                                         │
+│       ?plant_id=1&days=30                                            │
+│                                                                      │
+│   GET /api/analytics/comparison/                                     │
+│       ?start_date=2026-01-01&end_date=2026-02-01                    │
+│                                                                      │
+│   GET /api/analytics/predictions/                                    │
+│       ?plant_id=1&days_ahead=7                                       │
+│                                                                      │
+│   GET /api/analytics/anomalies/                                      │
+│       ?plant_id=1&days=30                                            │
+│                                                                      │
+│   GET /api/analytics/efficiency/                                     │
+│       ?plant_id=1&days=30                                            │
+│                                                                      │
+│   GET /api/analytics/water-nomination/                               │
+│       ?plant_id=1&days=30                                            │
+│                                                                      │
+│ Features:                                                            │
+│   ✓ Performance trends with moving averages                          │
+│   ✓ Plant comparison with scoring                                    │
+│   ✓ 7-day predictive forecasting                                     │
+│   ✓ Anomaly detection with severity                                  │
+│   ✓ Efficiency analysis with recommendations                         │
+│   ✓ Water nomination accuracy tracking                               │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 🚀 SETUP COMMANDS                                                    │
+├──────────────────────────────────────────────────────────────────────┤
+│ Quick Setup:                                                         │
+│   > SETUP_MONTH_2.bat                                                │
+│                                                                      │
+│ Manual Setup:                                                        │
+│   > cd backend                                                       │
+│   > python manage.py migrate                                         │
+│   > python manage.py collectstatic --noinput                         │
+│                                                                      │
+│ Test Commands:                                                       │
+│   > python manage.py run_scheduled_reports                           │
+│   > python manage.py sendtestemail user@example.com                  │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ ⚙️ CONFIGURATION                                                     │
+├──────────────────────────────────────────────────────────────────────┤
+│ Email (settings.py):                                                 │
+│   EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'     │
+│   EMAIL_HOST = 'smtp.gmail.com'                                      │
+│   EMAIL_PORT = 587                                                   │
+│   EMAIL_USE_TLS = True                                               │
+│   EMAIL_HOST_USER = 'your-email@gmail.com'                           │
+│   EMAIL_HOST_PASSWORD = 'your-app-password'                          │
+│                                                                      │
+│ Task Scheduler (Windows):                                            │
+│   Program: python                                                    │
+│   Arguments: manage.py run_scheduled_reports                         │
+│   Start in: C:\path\to\backend                                       │
+│   Trigger: Daily at 8:00 AM                                          │
+│                                                                      │
+│ Cron (Linux):                                                        │
+│   0 * * * * cd /path/to/backend && python manage.py run_scheduled_reports
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 🎯 FRONTEND INTEGRATION                                              │
+├──────────────────────────────────────────────────────────────────────┤
+│ Router (router/index.js):                                            │
+│   {                                                                  │
+│     path: '/scheduled-reports',                                      │
+│     component: () => import('../components/ScheduledReports.vue')    │
+│   },                                                                 │
+│   {                                                                  │
+│     path: '/analytics',                                              │
+│     component: () => import('../components/AdvancedAnalytics.vue')   │
+│   }                                                                  │
+│                                                                      │
+│ Sidebar (Sidebar.vue):                                               │
+│   {                                                                  │
+│     label: 'Automated Reports',                                      │
+│     icon: 'pi pi-clock',                                             │
+│     to: '/scheduled-reports'                                         │
+│   },                                                                 │
+│   {                                                                  │
+│     label: 'Advanced Analytics',                                     │
+│     icon: 'pi pi-chart-line',                                        │
+│     to: '/analytics'                                                 │
+│   }                                                                  │
+│                                                                      │
+│ App Layout (AppLayout.vue):                                          │
+│   <PWAInstallPrompt />                                               │
+│   import PWAInstallPrompt from './components/PWAInstallPrompt.vue';  │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 📝 CODE EXAMPLES                                                     │
+├──────────────────────────────────────────────────────────────────────┤
+│ Create Scheduled Report:                                             │
+│   const report = await axios.post('/api/scheduled-reports/', {      │
+│     name: 'Daily Generation Summary',                                │
+│     report_type: 'GENERATION_SUMMARY',                               │
+│     frequency: 'DAILY',                                              │
+│     schedule_time: '08:00',                                          │
+│     format: 'EXCEL',                                                 │
+│     date_range_days: 1,                                              │
+│     recipients: [1, 2, 3],                                           │
+│     status: 'ACTIVE'                                                 │
+│   });                                                                │
+│                                                                      │
+│ Get Analytics:                                                       │
+│   const trends = await axios.get('/api/analytics/trends/', {        │
+│     params: { plant_id: 1, days: 30 }                                │
+│   });                                                                │
+│                                                                      │
+│ Use PWA Utils:                                                       │
+│   import pwaUtils from '@/utils/pwaUtils';                           │
+│   if (pwaUtils.isOnline()) {                                         │
+│     await submitData();                                              │
+│   } else {                                                           │
+│     pwaUtils.queueOfflineAction({ type: 'submit', data });           │
+│   }                                                                  │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 🐛 TROUBLESHOOTING                                                   │
+├──────────────────────────────────────────────────────────────────────┤
+│ PWA not installing:                                                  │
+│   • Must use HTTPS                                                   │
+│   • Check manifest.json accessible                                   │
+│   • Clear browser cache                                              │
+│                                                                      │
+│ Reports not sending:                                                 │
+│   • Verify email settings                                            │
+│   • Check SMTP credentials                                           │
+│   • Test: python manage.py sendtestemail                             │
+│                                                                      │
+│ Analytics empty:                                                     │
+│   • Need 7+ days of data                                             │
+│   • Check date ranges                                                │
+│   • Verify plant IDs                                                 │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ 📚 DOCUMENTATION                                                     │
+├──────────────────────────────────────────────────────────────────────┤
+│ • MONTH_2_IMPLEMENTATION_GUIDE.md - Complete guide                   │
+│ • ⚡_MONTH_2_QUICK_START.txt - Quick start                           │
+│ • ✅_MONTH_2_COMPLETE.md - Implementation summary                    │
+│ • 🎨_MONTH_2_VISUAL_GUIDE.md - Visual guide                          │
+│ • 📋_MONTH_2_QUICK_REFERENCE.txt - This file                         │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ ✅ TESTING CHECKLIST                                                 │
+├──────────────────────────────────────────────────────────────────────┤
+│ PWA:                                                                 │
+│   □ Install prompt appears                                           │
+│   □ App installs to home screen                                      │
+│   □ Works offline                                                    │
+│   □ Background sync works                                            │
+│                                                                      │
+│ Automated Reports:                                                   │
+│   □ Create report                                                    │
+│   □ Run manually                                                     │
+│   □ Receive email                                                    │
+│   □ View history                                                     │
+│                                                                      │
+│ Analytics:                                                           │
+│   □ View trends                                                      │
+│   □ Compare plants                                                   │
+│   □ See predictions                                                  │
+│   □ Detect anomalies                                                 │
+│   □ Check efficiency                                                 │
+└──────────────────────────────────────────────────────────────────────┘
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                         ALL FEATURES READY! 🎉                       ║
+║                                                                      ║
+║  Run SETUP_MONTH_2.bat to get started in 5 minutes                  ║
+║  See MONTH_2_IMPLEMENTATION_GUIDE.md for full details               ║
+╚══════════════════════════════════════════════════════════════════════╝

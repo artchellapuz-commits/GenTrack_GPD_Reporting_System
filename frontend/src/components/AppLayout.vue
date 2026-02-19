@@ -1,5 +1,8 @@
 <template>
   <div class="layout-wrapper" :class="{ 'layout-static-inactive': !sidebarActive }">
+    <!-- PWA Install Prompt -->
+    <PWAInstallPrompt />
+    
     <!-- Sidebar -->
     <div class="layout-sidebar">
       <div class="sidebar-header">
@@ -63,6 +66,22 @@
                 </router-link>
               </li>
             </ul>
+          </li>
+          
+          <!-- Analytics & Reports Section -->
+          <li class="menu-divider"></li>
+          <li class="menu-section-title">Analytics & Automation</li>
+          <li class="menu-item">
+            <router-link to="/analytics" class="menu-link">
+              <i class="pi pi-chart-line"></i>
+              <span>Advanced Analytics</span>
+            </router-link>
+          </li>
+          <li class="menu-item" v-if="canApprove">
+            <router-link to="/scheduled-reports" class="menu-link">
+              <i class="pi pi-clock"></i>
+              <span>Automated Reports</span>
+            </router-link>
           </li>
           
           <!-- Admin Section - Only for Admin -->
@@ -170,12 +189,14 @@ import {
 } from '../utils/auth';
 import ThemeCustomizer from './ThemeCustomizer.vue';
 import QuickSearch from './QuickSearch.vue';
+import PWAInstallPrompt from './PWAInstallPrompt.vue';
 
 export default {
   name: 'AppLayout',
   components: {
     ThemeCustomizer,
-    QuickSearch
+    QuickSearch,
+    PWAInstallPrompt
   },
   data() {
     return {
@@ -212,7 +233,9 @@ export default {
         '/water-nomination': 'Manage Nominations',
         '/approval-queue': 'Approval Queue',
         '/audit-logs': 'Audit Logs',
-        '/user-management': 'User Management'
+        '/user-management': 'User Management',
+        '/analytics': 'Advanced Analytics',
+        '/scheduled-reports': 'Automated Reports'
       };
       return titles[route] || 'NPC System';
     }

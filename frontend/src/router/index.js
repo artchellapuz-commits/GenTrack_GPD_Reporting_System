@@ -86,6 +86,18 @@ const routes = [
     component: DebugUser,
     meta: { requiresAuth: true }
   },
+  {
+    path: '/scheduled-reports',
+    name: 'ScheduledReports',
+    component: () => import('../components/ScheduledReports.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/analytics',
+    name: 'AdvancedAnalytics',
+    component: () => import('../components/AdvancedAnalytics.vue'),
+    meta: { requiresAuth: true }
+  },
 ];
 
 const router = createRouter({

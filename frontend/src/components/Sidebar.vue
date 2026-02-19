@@ -57,6 +57,18 @@
           </div>
         </div>
         
+        <!-- Analytics & Automation Section -->
+        <div class="nav-divider"></div>
+        <div class="nav-section-title">Analytics & Automation</div>
+        <router-link to="/analytics" @click="closeSidebar" class="nav-item">
+          <i class="pi pi-chart-line"></i>
+          <span class="nav-text">Advanced Analytics</span>
+        </router-link>
+        <router-link v-if="canApprove" to="/scheduled-reports" @click="closeSidebar" class="nav-item">
+          <i class="pi pi-clock"></i>
+          <span class="nav-text">Automated Reports</span>
+        </router-link>
+        
         <!-- Admin Section - Only for Admin -->
         <div class="nav-divider"></div>
         <div class="nav-section-title">Administration</div>
