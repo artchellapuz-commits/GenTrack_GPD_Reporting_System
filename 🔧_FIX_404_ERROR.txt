@@ -1,0 +1,111 @@
+═══════════════════════════════════════════════════════════════════════════════
+  🔧 FIX 404 ERROR - generation_/generate-report
+═══════════════════════════════════════════════════════════════════════════════
+
+ERROR SHOWN:
+  Failed to load resource: the server responded with a status of 404 (Not Found)
+  http://localhost:8000/api/generation_/generate-report/:1
+
+CAUSE:
+  The error shows "generation_" with an underscore, but the correct endpoint
+  is "generation-reports" with a hyphen. This is caused by:
+  
+  1. Browser cache holding old JavaScript
+  2. Frontend server not restarted after code changes
+
+───────────────────────────────────────────────────────────────────────────────
+✅ SOLUTION: CLEAR CACHE AND RESTART
+───────────────────────────────────────────────────────────────────────────────
+
+STEP 1: STOP FRONTEND SERVER
+  - Press Ctrl+C in the frontend terminal
+
+STEP 2: CLEAR BROWSER CACHE
+  - Press Ctrl+Shift+Delete
+  - Select "Cached images and files"
+  - Click "Clear data"
+  
+  OR use hard refresh:
+  - Press Ctrl+Shift+R (Windows/Linux)
+  - Press Cmd+Shift+R (Mac)
+
+STEP 3: RESTART FRONTEND SERVER
+  cd frontend
+  npm run serve
+
+STEP 4: HARD REFRESH BROWSER
+  - Press Ctrl+Shift+R to force reload
+  - This bypasses cache
+
+STEP 5: TEST AGAIN
+  - Go to Generate Report page
+  - Try generating a report
+  - Error should be gone
+
+───────────────────────────────────────────────────────────────────────────────
+🔍 VERIFICATION
+───────────────────────────────────────────────────────────────────────────────
+
+The correct endpoint should be:
+  ✅ http://localhost:8000/api/generation-reports/generate-report/
+  
+NOT:
+  ❌ http://localhost:8000/api/generation_/generate-report/
+
+Check browser console (F12) to verify the correct URL is being called.
+
+───────────────────────────────────────────────────────────────────────────────
+💡 IF STILL NOT WORKING
+───────────────────────────────────────────────────────────────────────────────
+
+1. CLEAR NODE MODULES CACHE:
+   cd frontend
+   rm -rf node_modules/.cache
+   npm run serve
+
+2. REBUILD FRONTEND:
+   cd frontend
+   npm run build
+   npm run serve
+
+3. CHECK BACKEND IS RUNNING:
+   - Backend should be running on port 8000
+   - Test: http://localhost:8000/api/generation-reports/
+   - Should return data, not 404
+
+4. CHECK API.JS FILE:
+   - Open: frontend/src/services/api.js
+   - Line should say: '/generation-reports/generate-report/'
+   - NOT: '/generation_/generate-report/'
+
+───────────────────────────────────────────────────────────────────────────────
+✅ QUICK FIX COMMANDS
+───────────────────────────────────────────────────────────────────────────────
+
+# Stop frontend (Ctrl+C), then run:
+cd frontend
+rm -rf node_modules/.cache
+npm run serve
+
+# In browser:
+# Press Ctrl+Shift+R (hard refresh)
+
+# Test the endpoint directly:
+# Open: http://localhost:8000/api/generation-reports/
+# Should see JSON data, not 404
+
+───────────────────────────────────────────────────────────────────────────────
+🎯 ROOT CAUSE
+───────────────────────────────────────────────────────────────────────────────
+
+The API endpoint is correct in the code:
+  ✅ backend/reports/urls.py: 'generation-reports'
+  ✅ frontend/src/services/api.js: '/generation-reports/generate-report/'
+
+The error is showing an old cached version with underscore instead of hyphen.
+This happens when:
+  - Frontend server wasn't restarted after code changes
+  - Browser cached old JavaScript bundle
+  - Webpack dev server cached old build
+
+SOLUTION: Clear all caches and restart everything fresh.

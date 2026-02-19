@@ -10,6 +10,51 @@
       </p>
     </div>
 
+    <!-- Download Templates Section -->
+    <div class="card glass-card glass-fade-in">
+      <div class="card-header">
+        <h3 class="card-title">
+          <i class="pi pi-download"></i>
+          Download Excel Templates
+        </h3>
+      </div>
+      <div class="card-body">
+        <p class="template-description">
+          Download pre-formatted Excel templates to ensure your data is uploaded correctly. Each template includes instructions and sample data.
+        </p>
+        <div class="template-grid">
+          <button @click="downloadTemplate('daily-generation')" class="template-btn glass-button">
+            <i class="pi pi-file-excel"></i>
+            <div class="template-info">
+              <span class="template-name">Daily Generation</span>
+              <span class="template-desc">For daily generation reports</span>
+            </div>
+          </button>
+          <button @click="downloadTemplate('water-nomination')" class="template-btn glass-button">
+            <i class="pi pi-file-excel"></i>
+            <div class="template-info">
+              <span class="template-name">Water Nomination</span>
+              <span class="template-desc">For water nomination data</span>
+            </div>
+          </button>
+          <button @click="downloadTemplate('historical-data')" class="template-btn glass-button">
+            <i class="pi pi-file-excel"></i>
+            <div class="template-info">
+              <span class="template-name">Historical Data</span>
+              <span class="template-desc">For bulk historical imports</span>
+            </div>
+          </button>
+          <button @click="downloadTemplate('plant-capacity')" class="template-btn glass-button">
+            <i class="pi pi-file-excel"></i>
+            <div class="template-info">
+              <span class="template-name">Plant Capacity</span>
+              <span class="template-desc">For plant capacity records</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Upload Form Card -->
     <div class="card glass-card glass-fade-in">
       <div class="card-body">
@@ -648,6 +693,44 @@ export default {
         this.showMessage(errorMsg, 'error');
       } finally {
         this.deleting = null;
+      }
+    },
+    
+    async downloadTemplate(templateType) {
+      try {
+        this.$toast.info('Downloading template...');
+        
+        // Construct URL - VUE_APP_API_URL already includes /api
+        const baseURL = process.env.VUE_APP_API_URL || 'http://localhost:8000/api';
+        const url = `${baseURL}/uploaded-files/download-template/${templateType}/`;
+        
+        // Use fetch to download the file
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error('Failed to download template');
+        }
+        
+        // Get the blob from response
+        const blob = await response.blob();
+        
+        // Create object URL and trigger download
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${templateType.replace(/-/g, '_')}_template.xlsx`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up the object URL
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        this.$toast.success('Template downloaded successfully!');
+      } catch (error) {
+        console.error('Error downloading template:', error);
+        this.$toast.error('Failed to download template');
       }
     }
   },
@@ -1509,5 +1592,61 @@ td:has(.btn-delete) {
 .action-buttons :deep(.p-button-rounded .p-button-icon) {
   font-size: 1.125rem;
   transition: all 0.25s ease;
+}
+
+/* Template Download Section */
+.template-description {
+  color: var(--gray-600);
+  margin-bottom: 1.5rem;
+  font-size: 0.9375rem;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.template-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.template-btn:hover {
+  border-color: var(--npc-primary);
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 61, 130, 0.15);
+}
+
+.template-btn i {
+  font-size: 2rem;
+  color: var(--npc-secondary);
+  flex-shrink: 0;
+}
+
+.template-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.template-name {
+  font-weight: 600;
+  color: var(--gray-900);
+  font-size: 1rem;
+}
+
+.template-desc {
+  font-size: 0.8125rem;
+  color: var(--gray-600);
 }
 </style>

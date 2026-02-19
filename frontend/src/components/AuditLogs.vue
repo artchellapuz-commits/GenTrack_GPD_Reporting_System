@@ -40,6 +40,9 @@
             <button @click="clearFilters" class="btn-secondary">
               <i class="pi pi-times"></i> Clear
             </button>
+            <button @click="exportLogs" class="btn-export">
+              <i class="pi pi-download"></i> Export
+            </button>
             <button @click="loadLogs" class="btn-primary">
               <i class="pi pi-search"></i> Search
             </button>
@@ -151,6 +154,32 @@ export default {
         date_to: ''
       };
       this.loadLogs();
+    },
+    async exportLogs() {
+      try {
+        const params = {};
+        if (this.filters.action) params.action = this.filters.action;
+        if (this.filters.username) params.username = this.filters.username;
+        if (this.filters.date_from) params.start_date = this.filters.date_from;
+        if (this.filters.date_to) params.end_date = this.filters.date_to;
+
+        const queryString = new URLSearchParams(params).toString();
+        const url = `http://localhost:8000/api/audit-logs/export/?${queryString}`;
+        
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `Audit_Logs_${new Date().toISOString().split('T')[0]}.xlsx`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        alert('Audit logs exported successfully!');
+      } catch (error) {
+        console.error('Error exporting audit logs:', error);
+        alert('Failed to export audit logs');
+      }
     },
     formatDateTime(datetime) {
       return new Date(datetime).toLocaleString('en-US', {
@@ -390,6 +419,26 @@ h1 {
 
 .btn-secondary:hover {
   background: #cbd5e1;
+}
+
+.btn-export {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  background: #00a651;
+  color: white;
+}
+
+.btn-export:hover {
+  background: #008a42;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 166, 81, 0.3);
 }
 
 .loading-state, .empty-state {

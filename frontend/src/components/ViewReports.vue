@@ -12,79 +12,13 @@
       </p>
     </div>
 
-    <!-- Filters Card -->
-    <div class="card glass-card glass-fade-in">
-      <div class="card-body">
-        <div class="filters-form">
-          <!-- Plant Selection -->
-          <div class="form-section">
-            <label class="section-label">
-              <i class="pi pi-building"></i>
-              Select Plants
-            </label>
-            <div class="plants-grid">
-              <label 
-                v-for="plant in plants" 
-                :key="plant.code"
-                class="plant-checkbox"
-                :class="{ 'selected': filters.plantCodes.includes(plant.code) }"
-              >
-                <input 
-                  type="checkbox" 
-                  :value="plant.code" 
-                  v-model="filters.plantCodes"
-                  class="checkbox-input"
-                />
-                <div class="plant-info">
-                  <span class="plant-name">{{ plant.name }}</span>
-                  <span class="plant-code">{{ plant.code }}</span>
-                </div>
-                <i v-if="filters.plantCodes.includes(plant.code)" class="pi pi-check check-icon"></i>
-              </label>
-            </div>
-          </div>
-
-          <!-- Date Range -->
-          <div class="form-row">
-            <div class="form-field">
-              <label class="field-label">
-                <i class="pi pi-calendar"></i>
-                Start Date
-              </label>
-              <input 
-                type="date" 
-                v-model="filters.startDate" 
-                class="date-input glass-input"
-              />
-            </div>
-
-            <div class="form-field">
-              <label class="field-label">
-                <i class="pi pi-calendar"></i>
-                End Date
-              </label>
-              <input 
-                type="date" 
-                v-model="filters.endDate" 
-                class="date-input glass-input"
-              />
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="filter-actions">
-            <button @click="loadReports" class="btn btn-primary glass-button">
-              <i class="pi pi-filter"></i>
-              Apply Filters
-            </button>
-            <button @click="loadSummary" class="btn btn-secondary glass-button">
-              <i class="pi pi-chart-bar"></i>
-              View Summary
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Advanced Filter Component -->
+    <AdvancedFilter 
+      :plants="plants"
+      :showNumericFilters="true"
+      :initialFilters="filters"
+      @filter-change="onFilterChange"
+    />
 
     <!-- Summary Statistics -->
     <div v-if="summary" class="card glass-card summary-card glass-fade-in">
@@ -216,12 +150,14 @@
 <script>
 import api from '../services/api';
 import AppLayout from './AppLayout.vue';
+import AdvancedFilter from './AdvancedFilter.vue';
 import Paginator from 'primevue/paginator';
 
 export default {
   name: 'ViewReports',
   components: {
     AppLayout,
+    AdvancedFilter,
     Paginator,
   },
   data() {
@@ -261,6 +197,13 @@ export default {
         console.log('Loaded plants:', this.plants);
       } catch (error) {
         console.error('Error loading plants:', error);
+      }
+    },
+    onFilterChange(newFilters) {
+      this.filters = { ...this.filters, ...newFilters };
+      this.loadReports();
+      if (newFilters.plantCodes && newFilters.plantCodes.length > 0) {
+        this.loadSummary();
       }
     },
     async loadReports() {

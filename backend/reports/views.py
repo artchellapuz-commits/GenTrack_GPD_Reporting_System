@@ -21,6 +21,7 @@ from .serializers import (
 from .services.excel_importer import ExcelImporter
 from .services.excel_exporter import ExcelExporter
 from .services.historical_data_importer import HistoricalDataImporter
+from .services.template_generator import TemplateGenerator
 
 
 class PlantViewSet(viewsets.ReadOnlyModelViewSet):
@@ -47,6 +48,30 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UploadedFile.objects.all().select_related('plant', 'uploaded_by')
     serializer_class = UploadedFileSerializer
     permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
+    
+    @action(detail=False, methods=['get'], url_path='download-template/daily-generation')
+    def download_daily_generation_template(self, request):
+        """Download Daily Generation Report template"""
+        wb = TemplateGenerator.generate_daily_generation_template()
+        return TemplateGenerator.create_http_response(wb, 'Daily_Generation_Template.xlsx')
+    
+    @action(detail=False, methods=['get'], url_path='download-template/water-nomination')
+    def download_water_nomination_template(self, request):
+        """Download Water Nomination template"""
+        wb = TemplateGenerator.generate_water_nomination_template()
+        return TemplateGenerator.create_http_response(wb, 'Water_Nomination_Template.xlsx')
+    
+    @action(detail=False, methods=['get'], url_path='download-template/historical-data')
+    def download_historical_data_template(self, request):
+        """Download Historical Data Import template"""
+        wb = TemplateGenerator.generate_historical_data_template()
+        return TemplateGenerator.create_http_response(wb, 'Historical_Data_Template.xlsx')
+    
+    @action(detail=False, methods=['get'], url_path='download-template/plant-capacity')
+    def download_plant_capacity_template(self, request):
+        """Download Plant Capacity template"""
+        wb = TemplateGenerator.generate_plant_capacity_template()
+        return TemplateGenerator.create_http_response(wb, 'Plant_Capacity_Template.xlsx')
     
     @action(detail=True, methods=['delete'])
     def delete_upload(self, request, pk=None):
@@ -577,4 +602,69 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         if end_date:
             queryset = queryset.filter(timestamp__lte=end_date)
         
-        return queryset
+        return queryset.order_by('-timestamp')
+    
+    @action(detail=False, methods=['get'], url_path='export')
+    def export_logs(self, request):
+        """Export audit logs to Excel"""
+        queryset = self.get_queryset()
+        
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Audit Logs"
+        
+        # Headers
+        headers = ['Timestamp', 'User', 'Action', 'Model', 'Description', 'IP Address']
+        ws.append(headers)
+        
+        # Style headers
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF")
+        
+        for col_num, _ in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+        
+        # Data rows
+        for log in queryset:
+            ws.append([
+                log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                log.user.username if log.user else 'System',
+                log.action,
+                log.model_name,
+                log.description,
+                log.ip_address or 'N/A'
+            ])
+        
+        # Auto-size columns
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Create response
+        import io
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        from django.http import HttpResponse
+        response = HttpResponse(
+            output.read(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="Audit_Logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
+        
+        return response
