@@ -17,6 +17,7 @@ from .serializers import (
     UserProfileSerializer,
     ChangePasswordSerializer
 )
+from .utils import get_location_from_ip, get_client_ip
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -30,6 +31,20 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             # Use UserProfileSerializer to include role and permissions
             from .serializers import UserProfileSerializer
             response.data['user'] = UserProfileSerializer(user).data
+            
+            # Create audit log for successful login
+            from .models import AuditLog
+            ip_address = get_client_ip(request)
+            location = get_location_from_ip(ip_address)
+            
+            AuditLog.objects.create(
+                user=user,
+                action='LOGIN',
+                model_name='User',
+                description=f'User {user.username} logged in successfully',
+                ip_address=ip_address,
+                location=location
+            )
             
         return response
 
@@ -62,6 +77,20 @@ class AuthViewSet(viewsets.ViewSet):
     def logout(self, request):
         """Logout user by blacklisting refresh token"""
         try:
+            # Create audit log for logout
+            from .models import AuditLog
+            ip_address = get_client_ip(request)
+            location = get_location_from_ip(ip_address)
+            
+            AuditLog.objects.create(
+                user=request.user,
+                action='LOGOUT',
+                model_name='User',
+                description=f'User {request.user.username} logged out',
+                ip_address=ip_address,
+                location=location
+            )
+            
             refresh_token = request.data.get('refresh_token')
             token = RefreshToken(refresh_token)
             token.blacklist()

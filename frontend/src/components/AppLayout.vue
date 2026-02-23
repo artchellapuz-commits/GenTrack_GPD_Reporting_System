@@ -7,8 +7,8 @@
     <div class="layout-sidebar">
       <div class="sidebar-header">
         <router-link to="/dashboard" class="logo">
-          <img src="@/assets/NPC-logo.png" alt="NPC Logo" class="logo-image" />
-          <span class="logo-text">NPC System</span>
+          <img src="@/assets/NPC-logo.png" alt="GPD Logo" class="logo-image" />
+          <span class="logo-text">GPD System</span>
         </router-link>
         <div class="user-role-badge" v-if="userRole">
           <span class="role-badge" :class="`role-${roleBadgeColor}`">{{ roleDisplay }}</span>
@@ -237,7 +237,7 @@ export default {
         '/analytics': 'Advanced Analytics',
         '/scheduled-reports': 'Automated Reports'
       };
-      return titles[route] || 'NPC System';
+      return titles[route] || 'GPD System';
     }
   },
   mounted() {

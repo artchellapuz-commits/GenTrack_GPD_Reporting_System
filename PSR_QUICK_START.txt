@@ -1,77 +1,112 @@
-╔══════════════════════════════════════════════════════════════════════╗
-║                    PSR REPORT IMPORT - QUICK START                   ║
-╚══════════════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║   PSR REPORT - QUICK START GUIDE                            ║
+║   Plant Status Report Generation                            ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
 
-📋 WHAT IS PSR REPORT?
-   Plant Status Report - Complex Excel format with plant generation data
+✅ STATUS: READY TO USE!
 
-🎯 QUICK IMPORT (3 STEPS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-   1. Place your PSR Excel file in: REPORTS\8. PSR\
-   
-   2. Double-click: IMPORT_PSR_REPORT.bat
-   
-   3. Check the results in the dashboard!
+📋 WHAT IS PSR?
 
-📁 SUPPORTED FILES
-   ✓ MGG-IMS-004.F01, Report Review Rev. 0.xlsx
-   ✓ PSR REPORT-8AM.xlsx
-   ✓ Any PSR format with plant codes in column A
+Plant Status Report - Official format for Mindanao Generation
+(PSALM Portfolio) showing plant status, capacity, load, and remarks.
 
-📊 WHAT GETS IMPORTED
-   • Plant codes (AGUS1, AGUS2, etc.)
-   • Generation data
-   • Plant capacity (if available)
-   • Report date
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-⚡ COMMAND LINE OPTIONS
+🚀 HOW TO GENERATE (3 WAYS):
 
-   Default file:
-   > IMPORT_PSR_REPORT.bat
+┌──────────────────────────────────────────────────────────────┐
+│ METHOD 1: Frontend (Easiest)                                 │
+└──────────────────────────────────────────────────────────────┘
 
-   Custom file:
-   > IMPORT_PSR_REPORT.bat "path\to\your\file.xlsx"
+1. Open: http://localhost:8080
+2. Click "Generate Report" in sidebar
+3. Select plants: AGUS1, AGUS2, AGUS4, AGUS5, AGUS6, AGUS7, PULANGI4
+4. Choose date (single day recommended)
+5. Select "Plant Status Report (PSR)"
+6. Click "Generate Report"
+7. File downloads as: PSR_REPORT_YYYYMMDD.xlsx
 
-   Python script:
-   > python IMPORT_PSR_REPORT.py "path\to\file.xlsx"
+┌──────────────────────────────────────────────────────────────┐
+│ METHOD 2: Test Script                                        │
+└──────────────────────────────────────────────────────────────┘
 
-✅ EXPECTED RESULTS
-   ✓ Plants imported/updated: 20-30 plants
-   ✓ Data records imported: 100-500 records
-   ✓ Time: 5-30 seconds
+Run: python test_psr_generation.py
 
-⚠️  COMMON ISSUES
+This will:
+- Find available data
+- Generate PSR report
+- Show file location
+- Display preview
 
-   "File not found"
-   → Check file path is correct
-   → Use quotes for paths with spaces
+┌──────────────────────────────────────────────────────────────┐
+│ METHOD 3: Quick Access                                       │
+└──────────────────────────────────────────────────────────────┘
 
-   "Could not find plant data"
-   → Verify plant codes in column A
-   → Check file format matches PSR structure
+Double-click: OPEN_PSR_REPORT.bat
 
-   "No date found"
-   → Add date in file headers
-   → Or accept today's date as default
+Opens the most recent PSR report in Excel
 
-🔍 VERIFY IMPORT
-   1. Open dashboard: http://localhost:8080
-   2. Check plant list
-   3. View generation data
-   4. Verify dates are correct
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📖 FULL DOCUMENTATION
-   See: 📊_PSR_IMPORT_GUIDE.md
+📁 FILE LOCATIONS:
 
-💡 TIPS
-   • Keep original file format
-   • Don't modify plant codes
-   • Include date in file headers
-   • Remove summary rows before import
+Generated Reports:
+  backend/media/exports/PSR_REPORT_YYYYMMDD.xlsx
 
-🆘 NEED HELP?
-   1. Read 📊_PSR_IMPORT_GUIDE.md
-   2. Check TROUBLESHOOTING.md
-   3. Contact system administrator
+Sample Report:
+  backend/media/exports/PSR_REPORT_20260213.xlsx
 
-═══════════════════════════════════════════════════════════════════════
+Template Used:
+  REPORTS/8. PSR/PSR REPORT-8AM.xlsx
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 WHAT'S INCLUDED:
+
+✓ Header: "MINDANAO GENERATION (PSALM PORTFOLIO)"
+✓ Date: "as of 0800H [Day, Date Month Year]"
+✓ Plant sections:
+  • AGUS 1 (2 units @ 40 MW)
+  • AGUS 2 (3 units @ 60 MW)
+  • AGUS 4 (3 units @ 52.7 MW)
+  • AGUS 5 (2 units @ 27.5 MW)
+  • AGUS 6 (5 units, varying capacity)
+  • AGUS 7 (2 units @ 27 MW)
+  • TOTAL AGUS
+  • PULANGI IV (3 units @ 85 MW)
+  • TOTAL HYDRO
+✓ Columns: Plant Name, Capacity, Nominated, Available, 
+           Outflow, Load, Remarks
+✓ Footer: Signatures (DRB CAIRO, JMM MATA, DB ESMADE JR.)
+✓ Formatting: Colors, fonts, merged cells - exact match!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 TIPS:
+
+• Use single day for PSR (not date range)
+• Select all AGUS and PULANGI4 plants
+• Generated file matches template exactly
+• Data comes from GenerationReport table
+• Same data as Dashboard and View Reports
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📖 MORE INFO:
+
+Detailed Guide:     ✅_PSR_REPORT_UPDATED.md
+Complete Summary:   🎉_PSR_COMPLETE.md
+Quick Reference:    ⚡_PSR_READY_TO_USE.txt
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎉 READY TO USE!
+
+The PSR report feature is complete and tested.
+Generate your first report now!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

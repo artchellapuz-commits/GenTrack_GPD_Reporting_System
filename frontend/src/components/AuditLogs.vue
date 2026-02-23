@@ -64,38 +64,72 @@
         <p>No activities match your search criteria</p>
       </div>
 
-      <div v-else class="table-container">
-        <table class="audit-table">
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>User</th>
-              <th>Action</th>
-              <th>Model</th>
-              <th>Description</th>
-              <th>IP Address</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="log in logs" :key="log.id">
-              <td>{{ formatDateTime(log.timestamp) }}</td>
-              <td>
-                <div class="user-cell">
-                  <i class="pi pi-user"></i>
-                  {{ log.user ? log.user.username : 'System' }}
-                </div>
-              </td>
-              <td>
-                <span :class="['action-badge', getActionClass(log.action)]">
-                  {{ log.action }}
-                </span>
-              </td>
-              <td>{{ log.model_name }}</td>
-              <td class="description-cell">{{ log.description }}</td>
-              <td>{{ log.ip_address || 'N/A' }}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-else class="table-wrapper">
+        <!-- Table Header with Entries Selector -->
+        <div class="table-header">
+          <div class="entries-selector">
+            <label>Show</label>
+            <select v-model.number="entriesPerPage" @change="changeEntriesPerPage" class="entries-dropdown">
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+            <label>entries</label>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Model</th>
+                <th>Description</th>
+                <th>IP Address</th>
+                <th>Location</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="log in logs" :key="log.id">
+                <td>{{ formatDateTime(log.timestamp) }}</td>
+                <td>
+                  <div class="user-cell">
+                    <i class="pi pi-user"></i>
+                    {{ log.user ? log.user.username : 'System' }}
+                  </div>
+                </td>
+                <td>
+                  <span :class="['action-badge', getActionClass(log.action)]">
+                    {{ log.action }}
+                  </span>
+                </td>
+                <td>{{ log.model_name }}</td>
+                <td class="description-cell">{{ log.description }}</td>
+                <td>{{ log.ip_address || 'N/A' }}</td>
+                <td>
+                  <div class="location-cell">
+                    <i class="pi pi-map-marker"></i>
+                    {{ log.location || 'Unknown' }}
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <Paginator 
+          :rows="entriesPerPage" 
+          :totalRecords="totalEntries" 
+          :first="(currentPage - 1) * entriesPerPage"
+          @page="onPageChange($event)"
+          template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+          :pageLinkSize="5"
+        />
       </div>
     </div>
   </div>
@@ -105,11 +139,13 @@
 <script>
 import axios from 'axios';
 import AppLayout from './AppLayout.vue';
+import Paginator from 'primevue/paginator';
 
 export default {
   name: 'AuditLogs',
   components: {
-    AppLayout
+    AppLayout,
+    Paginator
   },
   data() {
     return {
@@ -120,8 +156,23 @@ export default {
         username: '',
         date_from: '',
         date_to: ''
-      }
+      },
+      // Pagination
+      currentPage: 1,
+      entriesPerPage: 10,
+      totalEntries: 0
     };
+  },
+  computed: {
+    totalPages() {
+      return Math.ceil(this.totalEntries / this.entriesPerPage);
+    },
+    startEntry() {
+      return this.logs.length === 0 ? 0 : (this.currentPage - 1) * this.entriesPerPage + 1;
+    },
+    endEntry() {
+      return Math.min(this.currentPage * this.entriesPerPage, this.totalEntries);
+    }
   },
   mounted() {
     this.loadLogs();
@@ -130,21 +181,42 @@ export default {
     async loadLogs() {
       this.loading = true;
       try {
-        const params = {};
+        const params = {
+          page: this.currentPage,
+          page_size: this.entriesPerPage
+        };
         if (this.filters.action) params.action = this.filters.action;
         if (this.filters.username) params.username = this.filters.username;
         if (this.filters.date_from) params.date_from = this.filters.date_from;
         if (this.filters.date_to) params.date_to = this.filters.date_to;
 
         const response = await axios.get('http://localhost:8000/api/audit-logs/', { params });
-        this.logs = response.data.results || response.data || [];
+        
+        // Handle paginated response
+        if (response.data.results) {
+          this.logs = response.data.results;
+          this.totalEntries = response.data.count || 0;
+        } else {
+          // Fallback for non-paginated response
+          this.logs = response.data || [];
+          this.totalEntries = this.logs.length;
+        }
       } catch (error) {
         console.error('Error loading audit logs:', error);
         alert('Failed to load audit logs');
         this.logs = [];
+        this.totalEntries = 0;
       } finally {
         this.loading = false;
       }
+    },
+    onPageChange(event) {
+      this.currentPage = event.page + 1; // PrimeVue uses 0-based index
+      this.loadLogs();
+    },
+    changeEntriesPerPage() {
+      this.currentPage = 1; // Reset to first page
+      this.loadLogs();
     },
     clearFilters() {
       this.filters = {
@@ -153,6 +225,7 @@ export default {
         date_from: '',
         date_to: ''
       };
+      this.currentPage = 1;
       this.loadLogs();
     },
     async exportLogs() {
@@ -187,7 +260,9 @@ export default {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
       });
     },
     getActionClass(action) {
@@ -495,6 +570,17 @@ h1 {
   gap: 8px;
 }
 
+.location-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+}
+
+.location-cell i {
+  color: #667eea;
+}
+
 .action-badge {
   display: inline-block;
   padding: 4px 12px;
@@ -539,5 +625,161 @@ h1 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Table Wrapper */
+.table-wrapper {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Table Header with Entries Selector */
+.table-header {
+  padding: 20px 25px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fafbfc;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.entries-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.entries-selector label {
+  font-weight: 500;
+}
+
+.entries-dropdown {
+  padding: 6px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.entries-dropdown:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.entries-dropdown:hover {
+  border-color: #cbd5e1;
+}
+
+/* Sakai-Style Pagination */
+:deep(.p-paginator) {
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last),
+:deep(.p-paginator .p-paginator-page) {
+  min-width: 2.5rem;
+  height: 2.5rem;
+  margin: 0.125rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+:deep(.p-paginator .p-paginator-first:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-prev:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-next:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-last:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-page:not(.p-highlight):hover) {
+  background: #f1f5f9;
+  color: #667eea;
+}
+
+:deep(.p-paginator .p-paginator-page.p-highlight) {
+  background: #667eea;
+  color: white;
+  font-weight: 600;
+}
+
+:deep(.p-paginator .p-disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+:deep(.p-paginator .p-paginator-icon) {
+  font-size: 0.875rem;
+}
+
+/* Rows Per Page Dropdown */
+:deep(.p-paginator .p-dropdown) {
+  margin-left: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  height: 2.5rem;
+  min-width: 4rem;
+}
+
+:deep(.p-paginator .p-dropdown:hover) {
+  border-color: #667eea;
+}
+
+:deep(.p-paginator .p-dropdown .p-dropdown-label) {
+  padding: 0.5rem;
+  font-size: 0.9rem;
+}
+
+:deep(.p-paginator .p-dropdown-trigger) {
+  width: 2rem;
+}
+
+/* Dropdown Panel */
+:deep(.p-dropdown-panel) {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+}
+
+:deep(.p-dropdown-items) {
+  padding: 0.25rem 0;
+}
+
+:deep(.p-dropdown-item) {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #475569;
+}
+
+:deep(.p-dropdown-item:hover) {
+  background: #f1f5f9;
+  color: #667eea;
+}
+
+:deep(.p-dropdown-item.p-highlight) {
+  background: #667eea;
+  color: white;
 }
 </style>

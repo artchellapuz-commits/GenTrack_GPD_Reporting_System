@@ -1,0 +1,147 @@
+═══════════════════════════════════════════════════════════════════════
+  NPC PLANT STATUS WEB SCRAPER - QUICK START
+═══════════════════════════════════════════════════════════════════════
+
+📋 WHAT IT DOES:
+   Automatically scrapes the NPC website for Agus-Pulangi plant status
+   - Plant names
+   - Water levels
+   - Generation status
+   - Current generation (MW)
+   - Capacity (MW)
+
+═══════════════════════════════════════════════════════════════════════
+⚡ QUICK START (3 STEPS)
+═══════════════════════════════════════════════════════════════════════
+
+STEP 1: Install Dependencies
+────────────────────────────────────────────────────────────────────────
+pip install requests beautifulsoup4
+
+STEP 2: Run the Scraper
+────────────────────────────────────────────────────────────────────────
+python scrape_npc_plant_status.py
+
+STEP 3: Check Results
+────────────────────────────────────────────────────────────────────────
+- Results printed to console
+- Saved to: npc_plant_status.json
+
+═══════════════════════════════════════════════════════════════════════
+📁 FILES CREATED
+═══════════════════════════════════════════════════════════════════════
+
+✓ scrape_npc_plant_status.py    - Main scraper script
+✓ test_npc_scraper.py            - Test suite
+✓ NPC_WEB_SCRAPER_GUIDE.md       - Complete documentation
+✓ ⚡_NPC_SCRAPER_QUICK_START.txt - This file
+
+═══════════════════════════════════════════════════════════════════════
+🧪 TESTING
+═══════════════════════════════════════════════════════════════════════
+
+Run tests:
+python test_npc_scraper.py
+
+═══════════════════════════════════════════════════════════════════════
+💡 USAGE EXAMPLES
+═══════════════════════════════════════════════════════════════════════
+
+Example 1: Basic Usage
+────────────────────────────────────────────────────────────────────────
+python scrape_npc_plant_status.py
+
+Example 2: From Python Code
+────────────────────────────────────────────────────────────────────────
+from scrape_npc_plant_status import NPCPlantStatusScraper
+
+scraper = NPCPlantStatusScraper()
+result = scraper.scrape()
+
+if result['success']:
+    for plant in result['plants']:
+        print(f"{plant['plant_name']}: {plant['generation_status']}")
+
+Example 3: Custom Timeout
+────────────────────────────────────────────────────────────────────────
+scraper = NPCPlantStatusScraper(timeout=60)
+result = scraper.scrape()
+
+═══════════════════════════════════════════════════════════════════════
+📊 OUTPUT FORMAT
+═══════════════════════════════════════════════════════════════════════
+
+{
+  "success": true,
+  "timestamp": "2026-02-23T10:30:00",
+  "source_url": "https://www.napocor.gov.ph/plant-status",
+  "plants": [
+    {
+      "plant_name": "AGUS 1",
+      "water_level": "701.50 m.a.s.l",
+      "generation_status": "OPERATIONAL",
+      "capacity_mw": 100.0,
+      "current_generation_mw": 85.5,
+      "remarks": "Normal operation",
+      "timestamp": "2026-02-23T10:30:00"
+    }
+  ],
+  "error": null
+}
+
+═══════════════════════════════════════════════════════════════════════
+🔧 CONFIGURATION
+═══════════════════════════════════════════════════════════════════════
+
+Update URLs in scrape_npc_plant_status.py if needed:
+
+BASE_URL = "https://www.napocor.gov.ph"
+PLANT_STATUS_URL = "https://www.napocor.gov.ph/plant-status"
+
+═══════════════════════════════════════════════════════════════════════
+⚠️  IMPORTANT NOTES
+═══════════════════════════════════════════════════════════════════════
+
+1. Requires internet connection
+2. NPC website must be accessible
+3. Website structure may change (requires updates)
+4. Don't scrape too frequently (recommended: every 15-30 min)
+5. Check NPC's terms of service
+
+═══════════════════════════════════════════════════════════════════════
+🐛 TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════
+
+Problem: "Failed to connect"
+Solution: Check internet connection, verify NPC website is up
+
+Problem: "No plant data found"
+Solution: Website structure changed, update URLs in script
+
+Problem: "Timeout error"
+Solution: Increase timeout value
+
+Problem: "SSL certificate error"
+Solution: Update requests library or disable SSL verification
+
+═══════════════════════════════════════════════════════════════════════
+📚 MORE INFORMATION
+═══════════════════════════════════════════════════════════════════════
+
+Read the complete guide:
+NPC_WEB_SCRAPER_GUIDE.md
+
+═══════════════════════════════════════════════════════════════════════
+✅ NEXT STEPS
+═══════════════════════════════════════════════════════════════════════
+
+1. Test the scraper: python test_npc_scraper.py
+2. Run the scraper: python scrape_npc_plant_status.py
+3. Check output: cat npc_plant_status.json
+4. Integrate with Django (see guide)
+5. Schedule automated scraping (optional)
+
+═══════════════════════════════════════════════════════════════════════
+
+Created: February 23, 2026
+Status: ✅ Ready to use

@@ -141,28 +141,22 @@ export default {
       selectedPlants: [],
       startDate: '',
       endDate: '',
-      reportType: 'daily',
+      reportType: 'psr',
       generating: false,
       message: '',
       messageType: '',
       reportTypes: [
         {
-          value: 'daily',
-          label: 'Daily Report',
-          description: 'Detailed daily generation data',
+          value: 'psr',
+          label: 'Plant Status Report (PSR)',
+          description: 'Official PSR format for Mindanao plants',
+          icon: 'pi pi-file-excel'
+        },
+        {
+          value: 'daily_status',
+          label: 'Daily Plant Status Report',
+          description: 'Daily status with capacity, load, and lake elevations',
           icon: 'pi pi-calendar'
-        },
-        {
-          value: 'monthly',
-          label: 'Monthly Summary',
-          description: 'Aggregated monthly statistics',
-          icon: 'pi pi-chart-bar'
-        },
-        {
-          value: 'consolidated',
-          label: 'Consolidated Report',
-          description: 'Complete overview of all data',
-          icon: 'pi pi-table'
         }
       ]
     };
@@ -205,7 +199,17 @@ export default {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `NPC_Report_${this.reportType}_${Date.now()}.xlsx`);
+        
+        // Set filename based on report type
+        const dateStr = this.startDate.replace(/-/g, '');
+        let filename;
+        if (this.reportType === 'daily_status') {
+          filename = `DAILY_PLANT_STATUS_${dateStr}.xlsx`;
+        } else {
+          filename = `PLANT_STATUS_${dateStr}.xlsx`;
+        }
+        
+        link.setAttribute('download', filename);
         document.body.appendChild(link);
         link.click();
         link.remove();

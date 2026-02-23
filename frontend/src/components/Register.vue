@@ -14,7 +14,7 @@
         <!-- Logo and Title -->
         <div class="register-header">
           <div class="logo-icon">
-            <img src="@/assets/NPC-logo.png" alt="NPC Logo" />
+            <img src="@/assets/NPC-logo.png" alt="GPD Logo" />
           </div>
           <h2>Create an Account</h2>
           <p>Sign up to get started</p>

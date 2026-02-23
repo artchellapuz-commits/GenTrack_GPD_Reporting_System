@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Automated Reports API</title>
+</head>
+<body>
+    <h1>Testing Automated Reports API</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                // Test 1: Check if backend is running
+                resultDiv.innerHTML += '<h3>Test 1: Backend Health Check</h3>';
+                const healthResponse = await fetch('http://localhost:8000/api/plants/');
+                resultDiv.innerHTML += `<p>Status: ${healthResponse.status}</p>`;
+                
+                // Test 2: Check scheduled reports endpoint
+                resultDiv.innerHTML += '<h3>Test 2: Scheduled Reports Endpoint</h3>';
+                const token = localStorage.getItem('access_token');
+                resultDiv.innerHTML += `<p>Token found: ${token ? 'Yes' : 'No'}</p>`;
+                
+                const reportsResponse = await fetch('http://localhost:8000/api/scheduled-reports/', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                resultDiv.innerHTML += `<p>Status: ${reportsResponse.status}</p>`;
+                
+                if (reportsResponse.ok) {
+                    const data = await reportsResponse.json();
+                    resultDiv.innerHTML += `<p>Reports found: ${data.length}</p>`;
+                    resultDiv.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    const errorText = await reportsResponse.text();
+                    resultDiv.innerHTML += `<p>Error: ${errorText}</p>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

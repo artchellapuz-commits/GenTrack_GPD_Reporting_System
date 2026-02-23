@@ -6,6 +6,7 @@ from django.db import models
 from .models_scheduled import ScheduledReport, ReportExecution
 from .serializers_scheduled import ScheduledReportSerializer, ReportExecutionSerializer
 from .services.automated_reports import AutomatedReportService
+from .utils import get_location_from_ip, get_client_ip
 import logging
 
 logger = logging.getLogger(__name__)
@@ -39,24 +40,38 @@ class ScheduledReportViewSet(viewsets.ModelViewSet):
         """Manually trigger report execution"""
         try:
             scheduled_report = self.get_object()
+            logger.info(f"Manual execution requested for report: {scheduled_report.name}")
+            
             service = AutomatedReportService()
+            service.execute_report(scheduled_report)
             
-            success = service.execute_report(scheduled_report)
+            # Create audit log for manual report execution
+            from .models import AuditLog
+            ip_address = get_client_ip(request)
+            location = get_location_from_ip(ip_address)
             
-            if success:
-                return Response({
-                    'message': 'Report execution started successfully',
-                    'report_id': scheduled_report.id
-                })
-            else:
-                return Response({
-                    'error': 'Report execution failed'
-                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            AuditLog.objects.create(
+                user=request.user,
+                action='EXPORT',
+                model_name='ScheduledReport',
+                description=f'Manually executed scheduled report: {scheduled_report.name} ({scheduled_report.report_type})',
+                ip_address=ip_address,
+                location=location
+            )
+            
+            return Response({
+                'success': True,
+                'message': 'Report generated successfully!',
+                'report_id': scheduled_report.id,
+                'report_name': scheduled_report.name
+            })
                 
         except Exception as e:
-            logger.error(f"Manual report execution error: {str(e)}")
+            logger.error(f"Manual report execution error: {str(e)}", exc_info=True)
             return Response({
-                'error': str(e)
+                'success': False,
+                'error': f'Report execution failed: {str(e)}',
+                'details': 'Check backend logs for more information'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=True, methods=['get'])
@@ -97,3 +112,44 @@ class ReportExecutionViewSet(viewsets.ReadOnlyModelViewSet):
             models.Q(scheduled_report__created_by=user) | 
             models.Q(scheduled_report__recipients=user)
         ).distinct()
+    
+    @action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        """Download the generated report file"""
+        from django.http import FileResponse
+        import os
+        
+        try:
+            execution = self.get_object()
+            
+            if not execution.file_path:
+                return Response({
+                    'error': 'No file available for this execution'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Normalize path (convert backslashes to forward slashes)
+            file_path = execution.file_path.replace('\\', '/')
+            
+            # Check if file exists
+            if not os.path.exists(file_path):
+                return Response({
+                    'error': f'File not found: {file_path}'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Get filename from path
+            filename = os.path.basename(file_path)
+            
+            # Serve file
+            response = FileResponse(
+                open(file_path, 'rb'),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            return response
+            
+        except Exception as e:
+            logger.error(f"Download error: {str(e)}", exc_info=True)
+            return Response({
+                'error': f'Download failed: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

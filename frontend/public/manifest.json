@@ -1,6 +1,6 @@
 {
-  "name": "NPC Reporting System",
-  "short_name": "NPC Reports",
+  "name": "GPD Reporting System",
+  "short_name": "GPD Reports",
   "description": "National Power Corporation Hydroelectric Plant Reporting System",
   "start_url": "/",
   "display": "standalone",

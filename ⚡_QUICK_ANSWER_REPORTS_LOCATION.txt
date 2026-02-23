@@ -1,0 +1,72 @@
+========================================
+QUICK ANSWER: WHERE ARE THE REPORTS?
+========================================
+
+Q: After clicking "Run Now", where is the output?
+
+A: Excel files are saved here:
+   📂 backend\media\automated_reports\
+
+========================================
+FASTEST WAY TO OPEN:
+========================================
+
+Double-click: OPEN_REPORTS_FOLDER.bat
+
+This will open the folder in File Explorer.
+
+========================================
+MANUAL WAY:
+========================================
+
+1. Open File Explorer
+2. Go to your project folder
+3. Navigate: backend → media → automated_reports
+4. You'll see .xlsx files
+5. Double-click to open in Excel
+
+========================================
+FILES YOU'LL SEE:
+========================================
+
+✅ GENERATION_SUMMARY_20260220_091904.xlsx
+✅ CAPACITY_FACTOR_20260220_091852.xlsx
+✅ AVAILABILITY_20260220_091934.xlsx
+✅ PERFORMANCE_METRICS_20260220_091852.xlsx
+
+(Timestamps will be different based on when you ran them)
+
+========================================
+WHAT'S IN THE FILES:
+========================================
+
+Each Excel file contains:
+  - Report header with name and date
+  - Data table with columns
+  - Generation data from last 30 days
+  - Formatted with colors and borders
+
+========================================
+HOW TO CHECK:
+========================================
+
+1. Click "History" button in Scheduled Reports page
+2. You'll see execution details including filename
+3. Go to automated_reports folder
+4. Find that file
+5. Open it
+
+========================================
+YES, IT WORKS AUTOMATICALLY!
+========================================
+
+When you click "Run Now":
+  ✅ Backend generates Excel file
+  ✅ Saves to automated_reports folder
+  ✅ Records execution in database
+  ✅ Shows success message
+  ✅ File is ready to open
+
+No manual steps needed!
+
+========================================

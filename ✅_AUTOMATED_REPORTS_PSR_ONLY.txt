@@ -1,0 +1,98 @@
+========================================
+✅ AUTOMATED REPORTS - PSR ONLY
+========================================
+
+COMPLETED TASK:
+Updated Automated Reports system to only generate Plant Status Reports (PSR).
+
+WHAT WAS CHANGED:
+================
+
+1. BACKEND - models_scheduled.py
+   - Updated REPORT_TYPE_CHOICES to only include 'PSR'
+   - Removed: Generation Summary, Capacity Factor, Availability, Performance Metrics
+   - Now only: Plant Status Report (PSR)
+
+2. BACKEND - automated_reports.py
+   - Removed all old report generation methods
+   - Added _get_psr_data() method
+   - Updated _create_report_file() to use PSRExporter
+   - Generated reports now use official PSR format with:
+     * Proper headers and formatting
+     * Plant and unit data
+     * IPP section
+     * Charts (pie and bar)
+     * Signature footer
+   - Added _create_empty_psr_report() for when no data exists
+
+3. FRONTEND - ScheduledReports.vue
+   - Updated report type dropdown to only show PSR
+   - Changed default report_type from 'GENERATION_SUMMARY' to 'PSR'
+   - Updated all references to use PSR as default
+
+4. DATABASE MIGRATION
+   - Created migration 0011_update_report_types_to_psr.py
+   - Automatically updates all existing scheduled reports to PSR type
+
+HOW TO UPDATE:
+==============
+
+Run: UPDATE_AUTOMATED_REPORTS.bat
+
+Or manually:
+1. cd backend
+2. python manage.py migrate reports 0011_update_report_types_to_psr
+3. Restart backend if running
+
+WHAT USERS WILL SEE:
+====================
+
+In Automated Reports page:
+- When creating new scheduled report
+- Report Type dropdown shows only: "Plant Status Report (PSR)"
+- All generated reports will be in official PSR format
+- Downloaded files named: PSR_AUTOMATED_YYYYMMDD_HHMMSS.xlsx
+
+REPORT FORMAT:
+==============
+
+Generated PSR reports include:
+- NPC/GPD header with logo
+- Report date and time
+- Plant status table with:
+  * Plant name and units
+  * Rated capacity
+  * Dependable capacity
+  * Load at report time
+  * Remarks
+- IPP section (STEAG units)
+- Total NPC and Total IPP rows
+- Forecasted load (yellow row)
+- Pie chart (generation distribution)
+- Bar chart (capacity comparison)
+- Notes section
+- Lake elevations
+- Signature footer
+
+BENEFITS:
+=========
+
+1. Consistency: All automated reports use same PSR format
+2. Official Format: Matches NPC's standard PSR REPORT-8AM.xlsx
+3. Simplicity: One report type, easier to understand
+4. Professional: Proper formatting with charts and signatures
+5. Automated: Scheduled reports generate and email automatically
+
+TESTING:
+========
+
+1. Go to Automated Reports page
+2. Click "Schedule New Report"
+3. See only PSR option in Report Type
+4. Create a scheduled report
+5. Click "Run Now"
+6. Check execution history
+7. Download generated PSR report
+8. Verify it matches official PSR format
+
+STATUS: ✅ COMPLETE AND READY TO USE!

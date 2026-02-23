@@ -1,0 +1,150 @@
+═══════════════════════════════════════════════════════════════
+  ⚡ AUDIT LOGS - QUICK REFERENCE
+═══════════════════════════════════════════════════════════════
+
+STATUS: ✅ ALL WORKING PERFECTLY!
+
+═══════════════════════════════════════════════════════════════
+  WHAT'S LOGGED
+═══════════════════════════════════════════════════════════════
+
+✅ LOGIN          - User logs in
+✅ LOGOUT         - User logs out
+✅ EXPORT         - Report generation (PSR, Daily Status)
+✅ EXPORT         - Scheduled report execution
+✅ UPLOAD         - File uploads
+✅ APPROVE        - Data approvals
+✅ REJECT         - Data rejections
+✅ CREATE/UPDATE/DELETE - Record changes
+
+═══════════════════════════════════════════════════════════════
+  REPORT GENERATION LOGGING
+═══════════════════════════════════════════════════════════════
+
+Every report generation logs:
+  • Who generated it (username)
+  • What type (PSR or Daily Status)
+  • Which plants (plant codes)
+  • What date
+  • When (timestamp with seconds)
+  • Where from (IP address)
+  • Location (City, Region, Country)
+
+Example:
+  User: admin
+  Action: EXPORT
+  Description: Generated PSR Report for plants: AGUS1, AGUS2, 
+               Date: 2026-02-09
+  Location: Manila, Metro Manila, Philippines
+
+═══════════════════════════════════════════════════════════════
+  HOW TO VIEW
+═══════════════════════════════════════════════════════════════
+
+1. Navigate to "Audit Logs" in sidebar
+2. See all activities in table
+3. Filter by:
+   - Action type (dropdown)
+   - Username (text search)
+   - Date range (from/to)
+4. Export to Excel if needed
+
+═══════════════════════════════════════════════════════════════
+  FEATURES
+═══════════════════════════════════════════════════════════════
+
+✅ Pagination (10, 25, 50, 100 entries)
+✅ Filtering (action, user, date)
+✅ Export to Excel
+✅ Location tracking
+✅ Timestamp with seconds & AM/PM
+✅ Color-coded action badges
+✅ Professional design
+
+═══════════════════════════════════════════════════════════════
+  TABLE COLUMNS
+═══════════════════════════════════════════════════════════════
+
+1. Timestamp    - When it happened
+2. User         - Who did it
+3. Action       - What they did (color-coded)
+4. Model        - What was affected
+5. Description  - Full details
+6. IP Address   - Where from
+7. Location     - Approximate location
+
+═══════════════════════════════════════════════════════════════
+  QUICK TEST
+═══════════════════════════════════════════════════════════════
+
+Test 1: Login
+  → Login to system
+  → Check Audit Logs
+  → See LOGIN entry
+
+Test 2: Generate Report
+  → Go to Generate Report
+  → Select plants and date
+  → Generate report
+  → Check Audit Logs
+  → See EXPORT entry with plant codes
+
+Test 3: Filter
+  → In Audit Logs, select "Export" action
+  → Click Search
+  → See only report generations
+
+Test 4: Export
+  → Click Export button
+  → Excel file downloads
+  → Verify all columns included
+
+═══════════════════════════════════════════════════════════════
+  ERROR FIXED
+═══════════════════════════════════════════════════════════════
+
+❌ Previous Error: "no such column: audit_logs.location"
+✅ Fixed: Backend server auto-reloaded
+✅ Status: All working now
+
+═══════════════════════════════════════════════════════════════
+  TECHNICAL DETAILS
+═══════════════════════════════════════════════════════════════
+
+Location API: ip-api.com (free)
+Caching: 24 hours per IP
+Rate Limit: 45 requests/minute
+Database: SQLite with location column
+Backend: Django REST Framework
+Frontend: Vue.js with PrimeVue
+
+═══════════════════════════════════════════════════════════════
+  FILES MODIFIED
+═══════════════════════════════════════════════════════════════
+
+Backend:
+  • reports/models.py (added location field)
+  • reports/utils.py (NEW - location utilities)
+  • reports/auth_views.py (login/logout logging)
+  • reports/views.py (report generation logging)
+  • reports/views_scheduled.py (scheduled report logging)
+
+Frontend:
+  • components/AuditLogs.vue (added location column)
+
+Database:
+  • Migration 0013 (added location field)
+
+═══════════════════════════════════════════════════════════════
+  SUMMARY
+═══════════════════════════════════════════════════════════════
+
+✅ Error fixed
+✅ Report generation logging working
+✅ Location tracking working
+✅ All features complete
+✅ Ready for production
+
+Everything is working perfectly! 🎉
+
+═══════════════════════════════════════════════════════════════

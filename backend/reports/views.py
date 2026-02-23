@@ -18,10 +18,13 @@ from .serializers import (
     WaterNominationSerializer, ActualGenerationSerializer, NominationVarianceSerializer,
     TestimonialSerializer, AuditLogSerializer
 )
+from .pagination import CustomPageNumberPagination
 from .services.excel_importer import ExcelImporter
-from .services.excel_exporter import ExcelExporter
+from .services.psr_exporter import PSRExporter
 from .services.historical_data_importer import HistoricalDataImporter
 from .services.template_generator import TemplateGenerator
+from .services.daily_status_exporter import generate_daily_status_report
+from .utils import get_location_from_ip, get_client_ip
 
 
 class PlantViewSet(viewsets.ReadOnlyModelViewSet):
@@ -224,6 +227,7 @@ class GenerationReportViewSet(mixins.ListModelMixin,
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         data = serializer.validated_data
+        report_type = data.get('report_type', 'psr')
         
         # Get filtered data
         reports = GenerationReport.objects.filter(
@@ -238,14 +242,42 @@ class GenerationReportViewSet(mixins.ListModelMixin,
         
         # Generate Excel file
         try:
-            exporter = ExcelExporter(reports, data['report_type'])
-            file_path = exporter.generate()
+            report_date = data['start_date']
+            
+            if report_type == 'daily_status':
+                # Generate Daily Status Report
+                filename = f"DAILY_PLANT_STATUS_{report_date.strftime('%Y%m%d')}.xlsx"
+                file_path = generate_daily_status_report(report_date, filename)
+                report_name = "Daily Status Report"
+            else:
+                # Generate PSR report (default)
+                exporter = PSRExporter(reports, report_date)
+                file_path = exporter.generate()
+                filename = f"PLANT_STATUS_{report_date.strftime('%Y%m%d')}.xlsx"
+                report_name = "PSR Report"
+            
+            # Create audit log for report generation
+            try:
+                plant_names = ', '.join([code for code in data['plant_codes']])
+                ip_address = get_client_ip(request)
+                location = get_location_from_ip(ip_address)
+                
+                AuditLog.objects.create(
+                    user=request.user,
+                    action='EXPORT',
+                    model_name='GenerationReport',
+                    description=f'Generated {report_name} for plants: {plant_names}, Date: {report_date.strftime("%Y-%m-%d")}',
+                    ip_address=ip_address,
+                    location=location
+                )
+            except Exception as audit_error:
+                # Log the error but don't fail the report generation
+                print(f"Audit log error: {audit_error}")
             
             response = FileResponse(
                 open(file_path, 'rb'),
                 content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
-            filename = f"NPC_Report_{data['report_type']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
             
             return response
@@ -579,6 +611,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AuditLog.objects.all().select_related('user')
     serializer_class = AuditLogSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomPageNumberPagination
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -617,7 +650,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         ws.title = "Audit Logs"
         
         # Headers
-        headers = ['Timestamp', 'User', 'Action', 'Model', 'Description', 'IP Address']
+        headers = ['Timestamp', 'User', 'Action', 'Model', 'Description', 'IP Address', 'Location']
         ws.append(headers)
         
         # Style headers
@@ -638,7 +671,8 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
                 log.action,
                 log.model_name,
                 log.description,
-                log.ip_address or 'N/A'
+                log.ip_address or 'N/A',
+                log.location or 'Unknown'
             ])
         
         # Auto-size columns

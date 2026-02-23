@@ -1,0 +1,53 @@
+========================================
+DOWNLOAD FEATURE FIXED!
+========================================
+
+ISSUE:
+The download button was trying to use the full Windows path
+instead of just the filename.
+
+FIXED:
+Updated the downloadFile() function to:
+1. Extract filename from Windows paths (with backslashes)
+2. Handle both forward slashes (/) and backslashes (\)
+3. Construct correct URL with just the filename
+
+========================================
+HOW IT WORKS NOW:
+========================================
+
+Database stores:
+  C:\Users\...\backend\media\automated_reports\PERFORMANCE_METRICS_20260220_052454.xlsx
+
+Frontend extracts filename:
+  PERFORMANCE_METRICS_20260220_052454.xlsx
+
+Constructs URL:
+  http://localhost:8000/media/automated_reports/PERFORMANCE_METRICS_20260220_052454.xlsx
+
+Opens file in browser!
+
+========================================
+TRY IT NOW:
+========================================
+
+1. Refresh the page: http://localhost:8080/scheduled-reports
+2. Click "History" button
+3. Click "Download" button
+4. File should download now!
+
+========================================
+WHAT WAS CHANGED:
+========================================
+
+OLD CODE:
+  const filename = filePath.split('/').pop();
+
+NEW CODE:
+  const filename = filePath.split(/[/\\]/).pop();
+
+This handles both:
+  - Unix paths: /path/to/file.xlsx
+  - Windows paths: C:\path\to\file.xlsx
+
+========================================

@@ -1,0 +1,30 @@
+========================================
+FIX "RUN NOW" BUTTON - DO THIS NOW
+========================================
+
+STEP 1: Stop backend server
+   Press Ctrl+C in the backend terminal
+
+STEP 2: Run this file
+   Double-click: CLEAR_CACHE_AND_FIX.bat
+
+STEP 3: Start backend again
+   Double-click: START_BACKEND.bat
+
+STEP 4: Test it
+   Go to: http://localhost:8080/scheduled-reports
+   Click "Run Now" button
+   Should work now!
+
+========================================
+
+WHY THIS FIXES IT:
+Python was using old cached files with wrong model definition.
+Clearing cache forces Python to reload the correct code.
+
+========================================
+
+IF IT STILL DOESN'T WORK:
+Run the full fix instead: FIX_RUN_NOW_ERROR.bat
+
+========================================

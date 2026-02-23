@@ -10,8 +10,8 @@
     <!-- Sidebar -->
     <div class="sidebar" :class="{ open: isOpen }">
       <div class="sidebar-header">
-        <img src="@/assets/NPC-logo.png" alt="NPC Logo" class="sidebar-logo" />
-        <h3>NPC System</h3>
+        <img src="@/assets/NPC-logo.png" alt="GPD Logo" class="sidebar-logo" />
+        <h3>GPD System</h3>
         <p class="user-info">{{ username }}</p>
         <span class="role-badge" :class="`role-${roleBadgeColor}`">{{ roleDisplay }}</span>
       </div>

@@ -1,0 +1,8 @@
+Plant Name,Plant Code,Capacity (MW),Date,Generation (MWh),Units Count,Status,Remarks,Timestamp
+"Agus 1 Hydroelectric Power Plant","AGUS1",100.0,"2026-02-10",108.0,4,"OPERATIONAL","Normal operation","2026-02-16T07:13:16.439664+00:00"
+"Agus 2 Hydroelectric Power Plant","AGUS2",180.0,"2026-02-10",108.0,4,"OPERATIONAL","Normal operation","2026-02-18T07:58:02.934319+00:00"
+"Agus 4 Hydroelectric Power Plant","AGUS4",200.0,"",,0,"NO DATA","No data available for the last 30 day(s)","2026-02-23T03:02:01.752828+00:00"
+"Agus 5 Hydroelectric Power Plant","AGUS5",52.0,"",,0,"NO DATA","No data available for the last 30 day(s)","2026-02-23T03:02:01.753595+00:00"
+"Agus 6 Hydroelectric Power Plant","AGUS6",200.0,"",,0,"NO DATA","No data available for the last 30 day(s)","2026-02-23T03:02:01.754302+00:00"
+"Agus 7 Hydroelectric Power Plant","AGUS7",200.0,"",,0,"NO DATA","No data available for the last 30 day(s)","2026-02-23T03:02:01.754923+00:00"
+"Pulangi 4 Hydroelectric Power Plant","PULANGI4",255.0,"2026-02-13",5700.0,3,"OPERATIONAL","Excellent operation","2026-02-19T06:17:28.630447+00:00"

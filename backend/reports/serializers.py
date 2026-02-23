@@ -220,7 +220,7 @@ class ReportGenerationSerializer(serializers.Serializer):
     )
     start_date = serializers.DateField()
     end_date = serializers.DateField()
-    report_type = serializers.ChoiceField(choices=['daily', 'monthly', 'consolidated'])
+    report_type = serializers.ChoiceField(choices=['psr', 'daily_status'])
     
     def validate(self, data):
         if data['start_date'] > data['end_date']:

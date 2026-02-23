@@ -11,10 +11,10 @@
       <div class="container">
         <div class="hero-content">
           <div class="logo-hero">
-            <img src="@/assets/NPC-logo.png" alt="NPC Logo" class="hero-logo" />
+            <img src="@/assets/NPC-logo.png" alt="GPD Logo" class="hero-logo" />
           </div>
-          <h1 class="hero-title">NPC Reporting System</h1>
-          <p class="hero-subtitle">Agus-Pulangi Hydro-Electric Power Plants</p>
+          <h1 class="hero-title">GPD Reporting System</h1>
+          <p class="hero-subtitle">Generation and Performance Division - Agus-Pulangi Hydro-Electric Power Plants</p>
           <p class="hero-tagline">Streamline your power generation reporting with real-time analytics</p>
           
           <div class="cta-buttons">
@@ -163,7 +163,7 @@
     <section id="live-stats" class="live-stats-section">
       <div class="container">
         <h2 class="section-title">Live System Statistics</h2>
-        <p class="section-subtitle">Real-time monitoring of the NPC Reporting System</p>
+        <p class="section-subtitle">Real-time monitoring of the GPD Reporting System</p>
         
         <div class="live-stats-grid">
           <div class="live-stat-card">
@@ -225,7 +225,7 @@
     <section id="testimonials" class="testimonials-section">
       <div class="container">
         <h2 class="section-title">What Our Users Say</h2>
-        <p class="section-subtitle">Trusted by NPC personnel across all power plants</p>
+        <p class="section-subtitle">Trusted by GPD personnel across all power plants</p>
         
         <div class="feedback-cta">
           <button @click="showFeedbackModal = true" class="btn-feedback">
@@ -313,7 +313,7 @@
               
               <div class="form-group">
                 <label>Your Testimonial *</label>
-                <textarea v-model="feedbackForm.testimonial" rows="4" placeholder="Share your experience with the NPC Reporting System..." required></textarea>
+                <textarea v-model="feedbackForm.testimonial" rows="4" placeholder="Share your experience with the GPD Reporting System..." required></textarea>
               </div>
             </div>
             
@@ -330,7 +330,7 @@
     <section id="video-demo" class="video-demo-section">
       <div class="container">
         <h2 class="section-title">See It In Action</h2>
-        <p class="section-subtitle">Watch how the NPC Reporting System simplifies your workflow</p>
+        <p class="section-subtitle">Watch how the GPD Reporting System simplifies your workflow</p>
         
         <div class="video-container" @click="openVideoModal">
           <div class="video-thumbnail">
@@ -349,7 +349,7 @@
     <section id="timeline" class="timeline-section">
       <div class="container">
         <h2 class="section-title">Our Journey</h2>
-        <p class="section-subtitle">Evolution of the NPC Reporting System</p>
+        <p class="section-subtitle">Evolution of the GPD Reporting System</p>
         
         <div class="timeline">
           <div 
@@ -373,7 +373,7 @@
     <section id="comparison" class="comparison-section">
       <div class="container">
         <h2 class="section-title">Before vs After</h2>
-        <p class="section-subtitle">See the transformation with NPC Reporting System</p>
+        <p class="section-subtitle">See the transformation with GPD Reporting System</p>
         
         <div class="comparison-table">
           <div class="comparison-header">
@@ -436,7 +436,7 @@
     <section id="faq" class="faq-section">
       <div class="container">
         <h2 class="section-title">Frequently Asked Questions</h2>
-        <p class="section-subtitle">Everything you need to know about the NPC Reporting System</p>
+        <p class="section-subtitle">Everything you need to know about the GPD Reporting System</p>
         
         <div class="faq-grid">
           <div 
@@ -511,7 +511,7 @@
         <div class="cta-banner-content">
           <div class="cta-banner-text">
             <strong>Ready to streamline your reporting?</strong>
-            <span>Get started with NPC Reporting System today!</span>
+            <span>Get started with GPD Reporting System today!</span>
           </div>
           <div class="cta-banner-actions">
             <router-link to="/register" class="cta-banner-btn">
@@ -569,9 +569,9 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-brand">
-            <img src="@/assets/NPC-logo.png" alt="NPC Logo" class="footer-logo" />
-            <p>National Power Corporation</p>
-            <p class="footer-tagline">Powering the Nation</p>
+            <img src="@/assets/NPC-logo.png" alt="GPD Logo" class="footer-logo" />
+            <p>Generation and Performance Division</p>
+            <p class="footer-tagline">Powering Excellence in Reporting</p>
           </div>
           
           <div class="footer-links">
@@ -584,7 +584,7 @@
             
             <div class="footer-column">
               <h4>Company</h4>
-              <a href="#">About NPC</a>
+              <a href="#">About GPD</a>
               <a href="#">Contact Us</a>
               <a href="#">Careers</a>
             </div>
@@ -706,7 +706,7 @@ export default {
         {
           date: 'Q1 2025',
           title: 'Project Inception',
-          description: 'Initial planning and requirements gathering for the NPC Reporting System'
+          description: 'Initial planning and requirements gathering for the GPD Reporting System'
         },
         {
           date: 'Q2 2025',
@@ -778,8 +778,8 @@ export default {
       activeFaq: null,
       faqs: [
         {
-          question: 'What is the NPC Reporting System?',
-          answer: 'The NPC Reporting System is a comprehensive platform designed to streamline the management and reporting of power generation data from the Agus-Pulangi hydroelectric power plants. It provides real-time monitoring, data analytics, and automated report generation.'
+          question: 'What is the GPD Reporting System?',
+          answer: 'The GPD Reporting System is a comprehensive platform designed to streamline the management and reporting of power generation data from the Agus-Pulangi hydroelectric power plants. It provides real-time monitoring, data analytics, and automated report generation for the Generation and Performance Division.'
         },
         {
           question: 'How do I upload daily reports?',
@@ -795,7 +795,7 @@ export default {
         },
         {
           question: 'Is the system accessible on mobile devices?',
-          answer: 'Yes, the NPC Reporting System is fully responsive and optimized for mobile devices. You can access all features including dashboard monitoring, report viewing, and data uploads from your smartphone or tablet.'
+          answer: 'Yes, the GPD Reporting System is fully responsive and optimized for mobile devices. You can access all features including dashboard monitoring, report viewing, and data uploads from your smartphone or tablet.'
         },
         {
           question: 'How often is the data updated?',
@@ -803,11 +803,11 @@ export default {
         },
         {
           question: 'Who can access the system?',
-          answer: 'The system is designed for NPC personnel and authorized stakeholders. Access is controlled through secure authentication, and different user roles have appropriate permissions for viewing, uploading, and managing data.'
+          answer: 'The system is designed for GPD personnel and authorized stakeholders. Access is controlled through secure authentication, and different user roles have appropriate permissions for viewing, uploading, and managing data.'
         },
         {
           question: 'What support is available if I encounter issues?',
-          answer: 'Comprehensive documentation is available within the system, including user guides and troubleshooting tips. For technical support, you can contact the NPC IT support team through the designated channels provided in your user account.'
+          answer: 'Comprehensive documentation is available within the system, including user guides and troubleshooting tips. For technical support, you can contact the GPD IT support team through the designated channels provided in your user account.'
         }
       ]
     };
@@ -885,9 +885,9 @@ export default {
         // If no testimonials, use fallback
         if (this.testimonials.length === 0) {
           this.testimonials = [{
-            name: 'NPC User',
+            name: 'GPD User',
             role: 'Power Plant Personnel',
-            text: 'The NPC Reporting System has transformed how we manage daily reports.',
+            text: 'The GPD Reporting System has transformed how we manage daily reports.',
             rating: 5
           }];
         }
@@ -895,9 +895,9 @@ export default {
         console.error('Error loading testimonials:', error);
         // Fallback to default testimonial if API fails
         this.testimonials = [{
-          name: 'NPC User',
+          name: 'GPD User',
           role: 'Power Plant Personnel',
-          text: 'The NPC Reporting System has transformed how we manage daily reports.',
+          text: 'The GPD Reporting System has transformed how we manage daily reports.',
           rating: 5
         }];
       }

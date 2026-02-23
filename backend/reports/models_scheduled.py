@@ -14,12 +14,7 @@ class ScheduledReport(models.Model):
     ]
     
     REPORT_TYPE_CHOICES = [
-        ('GENERATION_SUMMARY', 'Generation Summary'),
-        ('CAPACITY_FACTOR', 'Capacity Factor Analysis'),
-        ('AVAILABILITY', 'Availability Report'),
-        ('WATER_NOMINATION', 'Water Nomination Report'),
-        ('PERFORMANCE_METRICS', 'Performance Metrics'),
-        ('COMPARATIVE_ANALYSIS', 'Comparative Analysis'),
+        ('PSR', 'Plant Status Report (PSR)'),
     ]
     
     FORMAT_CHOICES = [

@@ -457,43 +457,6 @@ class UserProfile(models.Model):
 
 class AuditLog(models.Model):
     """Audit trail for all important actions"""
-
-    ACTION_CHOICES = [
-        ('CREATE', 'Create'),
-        ('UPDATE', 'Update'),
-        ('DELETE', 'Delete'),
-        ('UPLOAD', 'Upload'),
-        ('EXPORT', 'Export'),
-        ('APPROVE', 'Approve'),
-        ('REJECT', 'Reject'),
-        ('LOGIN', 'Login'),
-        ('LOGOUT', 'Logout'),
-    ]
-
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_logs')
-    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
-    model_name = models.CharField(max_length=100)
-    object_id = models.IntegerField(null=True, blank=True)
-    description = models.TextField()
-    ip_address = models.GenericIPAddressField(null=True, blank=True)
-    user_agent = models.TextField(blank=True)
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        db_table = 'audit_logs'
-        ordering = ['-timestamp']
-        indexes = [
-            models.Index(fields=['user', 'timestamp']),
-            models.Index(fields=['action', 'timestamp']),
-            models.Index(fields=['model_name', 'object_id']),
-        ]
-
-    def __str__(self):
-        return f"{self.user.username if self.user else 'System'} - {self.action} - {self.timestamp}"
-
-
-class AuditLog(models.Model):
-    """Audit trail for all important actions"""
     
     ACTION_CHOICES = [
         ('CREATE', 'Create'),
@@ -513,6 +476,7 @@ class AuditLog(models.Model):
     object_id = models.IntegerField(null=True, blank=True)
     description = models.TextField()
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    location = models.CharField(max_length=200, blank=True, help_text="Approximate location based on IP")
     user_agent = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     
@@ -527,3 +491,4 @@ class AuditLog(models.Model):
     
     def __str__(self):
         return f"{self.user.username if self.user else 'System'} - {self.action} - {self.timestamp}"
+

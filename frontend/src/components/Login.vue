@@ -14,9 +14,9 @@
         <!-- Logo and Title -->
         <div class="login-header">
           <div class="logo-icon">
-            <img src="@/assets/NPC-logo.png" alt="NPC Logo" />
+            <img src="@/assets/NPC-logo.png" alt="GPD Logo" />
           </div>
-          <h2>Welcome to NPC Reporting System!</h2>
+          <h2>Welcome to GPD Reporting System!</h2>
           <p>Sign in to continue</p>
         </div>
 

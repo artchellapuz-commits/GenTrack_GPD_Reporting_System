@@ -206,14 +206,12 @@ POST /api/generation-reports/generate_report/
   "plant_codes": ["AGUS1", "AGUS2"],
   "start_date": "2024-01-01",
   "end_date": "2024-01-31",
-  "report_type": "daily"
+  "report_type": "psr"
 }
 ```
 
 **Report Types:**
-- `daily`: Daily detailed report
-- `monthly`: Monthly summary report
-- `consolidated`: Consolidated report across plants
+- `psr`: Plant Status Report (PSR) - Official PSR format for Mindanao plants
 
 **Response:**
 - Content-Type: `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`

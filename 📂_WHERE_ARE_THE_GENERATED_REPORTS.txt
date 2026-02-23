@@ -1,0 +1,193 @@
+========================================
+WHERE TO FIND GENERATED REPORTS
+========================================
+
+QUESTION: After clicking "Run Now", where is the output?
+
+ANSWER: Excel files are automatically generated here:
+
+📂 LOCATION:
+  npc-reporting-system/backend/media/automated_reports/
+
+========================================
+HOW TO ACCESS THE FILES:
+========================================
+
+METHOD 1: File Explorer (Easiest)
+  1. Open File Explorer
+  2. Navigate to your project folder
+  3. Go to: npc-reporting-system\backend\media\automated_reports\
+  4. You'll see Excel files like:
+     - GENERATION_SUMMARY_20260220_091904.xlsx
+     - CAPACITY_FACTOR_20260220_091852.xlsx
+     - AVAILABILITY_20260220_091934.xlsx
+     - PERFORMANCE_METRICS_20260220_091852.xlsx
+
+METHOD 2: From Project Root
+  1. Open: npc-reporting-system folder
+  2. Navigate: backend → media → automated_reports
+  3. Double-click any .xlsx file to open in Excel
+
+METHOD 3: View in Browser (Coming Soon)
+  - Will add download button in next update
+  - Click "History" to see list of files
+  - Click filename to download
+
+========================================
+FILE NAMING FORMAT:
+========================================
+
+Files are named with this pattern:
+  [REPORT_TYPE]_[DATE]_[TIME].xlsx
+
+Examples:
+  GENERATION_SUMMARY_20260220_091904.xlsx
+    ↓              ↓        ↓
+  Report Type    Date     Time
+  
+  CAPACITY_FACTOR_20260220_143022.xlsx
+  AVAILABILITY_20260220_150315.xlsx
+  PERFORMANCE_METRICS_20260220_152045.xlsx
+
+Date format: YYYYMMDD (20260220 = Feb 20, 2026)
+Time format: HHMMSS (091904 = 09:19:04 AM)
+
+========================================
+WHAT'S IN THE FILES:
+========================================
+
+GENERATION_SUMMARY:
+  - Date, Plant, Unit
+  - Generation (kWh)
+  - Operating Hours
+  - Capacity Factor
+  - Availability Factor
+
+CAPACITY_FACTOR:
+  - Plant name
+  - Average capacity factor
+  - Total generation (MWh)
+  - Average operating hours
+
+AVAILABILITY:
+  - Plant name
+  - Average availability
+  - Total forced outage hours
+  - Total scheduled outage hours
+
+PERFORMANCE_METRICS:
+  - Plant name
+  - Capacity (MW)
+  - Average capacity factor
+  - Average availability
+  - Total generation (MWh)
+  - Total operating hours
+  - Days reported
+
+========================================
+HOW TO VIEW EXECUTION HISTORY:
+========================================
+
+In the Scheduled Reports page:
+  1. Click "History" button on any report
+  2. You'll see a popup showing:
+     - Execution date/time
+     - Status (Completed/Failed)
+     - Records processed
+     - Filename
+  3. Note the filename
+  4. Go to automated_reports folder
+  5. Open that file
+
+========================================
+QUICK ACCESS PATH:
+========================================
+
+Full path from project root:
+  npc-reporting-system\backend\media\automated_reports\
+
+Absolute path (example):
+  C:\Users\YourName\Projects\npc-reporting-system\backend\media\automated_reports\
+
+========================================
+CHECKING IF FILES EXIST:
+========================================
+
+Option 1: File Explorer
+  - Navigate to folder
+  - Check if .xlsx files exist
+  - Check file timestamps
+
+Option 2: Command Line
+  cd npc-reporting-system\backend\media\automated_reports
+  dir
+
+Option 3: Backend Console
+  - Look for log message:
+    "Created report file: .../automated_reports/GENERATION_SUMMARY_20260220_091904.xlsx"
+
+========================================
+TROUBLESHOOTING:
+========================================
+
+Q: Folder doesn't exist?
+A: Run "Run Now" button once to create it
+
+Q: No files in folder?
+A: Check backend console for errors
+   Make sure you have generation data in database
+
+Q: Can't open Excel file?
+A: Make sure you have Excel or compatible software installed
+   Try opening with Google Sheets or LibreOffice
+
+Q: File is empty or has no data?
+A: Check if you have generation reports in database
+   Upload some data first using Upload Excel feature
+
+========================================
+CURRENT FILES (Example):
+========================================
+
+As of now, you have these files:
+  ✅ GENERATION_SUMMARY_20260220_091904.xlsx
+  ✅ PERFORMANCE_METRICS_20260220_091852.xlsx
+  ✅ PERFORMANCE_METRICS_20260220_091934.xlsx
+
+These were generated when you clicked "Run Now"!
+
+========================================
+NEXT STEPS:
+========================================
+
+1. Open File Explorer
+2. Navigate to: npc-reporting-system\backend\media\automated_reports\
+3. Double-click any .xlsx file
+4. View the report in Excel
+5. Verify data is correct
+
+========================================
+COMING SOON:
+========================================
+
+We'll add these features:
+  ✅ Download button in UI
+  ✅ View files in browser
+  ✅ Email reports automatically
+  ✅ Schedule reports to run daily/weekly
+  ✅ Export to PDF format
+
+========================================
+SUMMARY:
+========================================
+
+✅ Files ARE generated automatically
+✅ Location: backend/media/automated_reports/
+✅ Format: Excel (.xlsx)
+✅ Named with timestamp
+✅ Contains generation data
+✅ Ready to open in Excel
+
+Just navigate to the folder and open the files!
+
+========================================

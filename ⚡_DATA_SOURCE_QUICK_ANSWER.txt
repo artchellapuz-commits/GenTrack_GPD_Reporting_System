@@ -1,0 +1,119 @@
+========================================
+WHERE AUTOMATED REPORTS DATA COMES FROM
+========================================
+
+QUICK ANSWER:
+The data comes from the GenerationReport table in your database.
+
+This is the SAME data you see in:
+  ✅ Dashboard
+  ✅ View Reports page
+  ✅ Charts
+  ✅ Analytics
+
+========================================
+DATA FLOW:
+========================================
+
+1. YOU UPLOAD DATA
+   → Go to Upload Excel page
+   → Upload daily generation Excel files
+   → Data saved to database
+
+2. DATABASE STORES IT
+   → Table: GenerationReport
+   → Fields: date, plant, unit, generation, hours, etc.
+
+3. AUTOMATED REPORTS USE IT
+   → Click "Run Now"
+   → Queries last 30 days from database
+   → Creates Excel report
+
+========================================
+WHAT DATA IS INCLUDED:
+========================================
+
+Date Range: Last 30 days (default)
+  - Can be changed when creating report
+  - Options: 7, 30, 90, 365 days
+
+Plants: All active plants (default)
+  - Can select specific plants
+  - AGUS1, AGUS2, AGUS3, etc.
+
+Fields:
+  - Report Date
+  - Plant Name
+  - Unit Number
+  - Generation (kWh)
+  - Operating Hours
+  - Capacity Factor (%)
+  - Availability Factor (%)
+  - Outage Hours
+
+========================================
+HOW TO CHECK YOUR DATA:
+========================================
+
+Method 1: Dashboard
+  → http://localhost:8080/dashboard
+  → See current data
+
+Method 2: View Reports
+  → http://localhost:8080/reports
+  → See all generation reports
+
+Method 3: Backend Console
+  → When you click "Run Now"
+  → Look for: "Generated X records"
+  → X = number of records found
+
+========================================
+IF NO DATA IN REPORTS:
+========================================
+
+Problem: Report shows "0 records processed"
+
+Solution 1: Upload Data
+  → Go to Upload Excel page
+  → Upload generation data files
+  → Try "Run Now" again
+
+Solution 2: Import Historical Data
+  → Run: IMPORT_HISTORICAL_DATA.bat
+  → Loads sample data
+  → Try "Run Now" again
+
+Solution 3: Check Date Range
+  → Your data might be older than 30 days
+  → Edit report and increase date_range_days
+  → Try again
+
+========================================
+EXAMPLE:
+========================================
+
+Today: February 20, 2026
+Report Type: Generation Summary
+Date Range: 30 days
+
+System queries:
+  SELECT * FROM GenerationReport
+  WHERE report_date BETWEEN '2026-01-21' AND '2026-02-20'
+  AND plant IN (selected_plants)
+
+Result: 120 records found
+Output: Excel file with 120 rows of data
+
+========================================
+KEY POINTS:
+========================================
+
+✅ Data comes from YOUR database
+✅ Same data as Dashboard/Reports
+✅ Real-time (no cache)
+✅ Last 30 days by default
+✅ All plants by default
+✅ Upload data first if empty
+
+========================================
