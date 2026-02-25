@@ -47,7 +47,7 @@
             <div class="form-field">
               <label class="field-label">
                 <i class="pi pi-calendar"></i>
-                Start Date
+                {{ reportType === 'daily_status' ? 'Report Date' : 'Start Date' }}
               </label>
               <input 
                 type="date" 
@@ -55,9 +55,13 @@
                 class="date-input glass-input"
                 required
               />
+              <p v-if="reportType === 'daily_status'" class="field-hint">
+                <i class="pi pi-info-circle"></i>
+                Daily report will be generated for this specific date
+              </p>
             </div>
 
-            <div class="form-field">
+            <div v-if="reportType !== 'daily_status'" class="form-field">
               <label class="field-label">
                 <i class="pi pi-calendar"></i>
                 End Date
@@ -163,6 +167,11 @@ export default {
   },
   computed: {
     canGenerate() {
+      // For daily status report, only start date is required
+      if (this.reportType === 'daily_status') {
+        return this.selectedPlants.length > 0 && this.startDate;
+      }
+      // For other reports, both dates are required
       return this.selectedPlants.length > 0 && this.startDate && this.endDate;
     },
   },
@@ -188,10 +197,13 @@ export default {
       this.message = '';
 
       try {
+        // For daily status report, automatically set end_date = start_date
+        const endDateToUse = this.reportType === 'daily_status' ? this.startDate : this.endDate;
+        
         const response = await api.generateReport({
           plant_codes: this.selectedPlants,
           start_date: this.startDate,
-          end_date: this.endDate,
+          end_date: endDateToUse,
           report_type: this.reportType,
         });
 
@@ -404,6 +416,22 @@ export default {
   outline: none;
   border-color: var(--npc-primary);
   box-shadow: 0 0 0 3px rgba(0, 61, 130, 0.1);
+}
+
+/* Field Hint */
+.field-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  color: #718096;
+  font-style: italic;
+}
+
+.field-hint i {
+  color: var(--npc-primary);
+  font-size: 0.875rem;
 }
 
 /* Report Types */

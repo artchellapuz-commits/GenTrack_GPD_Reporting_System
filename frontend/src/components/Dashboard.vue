@@ -101,16 +101,6 @@
               Plants Overview
             </h3>
             <div class="filter-controls">
-              <div class="search-box">
-                <i class="pi pi-search"></i>
-                <input 
-                  v-model="searchQuery" 
-                  type="text" 
-                  placeholder="Search plants..."
-                  @input="filterPlants"
-                  class="glass-input"
-                />
-              </div>
               <select v-model="sortBy" @change="sortPlants" class="sort-select glass-select">
                 <option value="name">Sort by Name</option>
                 <option value="generation">Sort by Generation</option>
@@ -513,7 +503,6 @@ export default {
       recentUploads: [],
       showModal: false,
       selectedPlant: null,
-      searchQuery: '',
       sortBy: 'name',
       sortOrder: 'asc',
       viewMode: 'grid',
@@ -787,20 +776,6 @@ export default {
       this.selectedPlant = null;
     },
     
-    filterPlants() {
-      let filtered = [...this.plantsData];
-      
-      if (this.searchQuery) {
-        const query = this.searchQuery.toLowerCase();
-        filtered = filtered.filter(plant => 
-          plant.name.toLowerCase().includes(query) || 
-          plant.code.toLowerCase().includes(query)
-        );
-      }
-      
-      this.filteredPlants = filtered;
-      this.sortPlants();
-    },
     
     sortPlants() {
       this.filteredPlants.sort((a, b) => {
@@ -826,14 +801,15 @@ export default {
     },
     
     clearFilters() {
-      this.searchQuery = '';
       this.activeFilters = [];
-      this.filterPlants();
+      this.filteredPlants = [...this.plantsData];
+      this.sortPlants();
     },
     
     removeFilter(filter) {
       this.activeFilters = this.activeFilters.filter(f => f !== filter);
-      this.filterPlants();
+      this.filteredPlants = [...this.plantsData];
+      this.sortPlants();
     },
     
     getProgressColor(value) {
@@ -1320,39 +1296,18 @@ export default {
   gap: 1rem;
 }
 
+.card-header-content h3 {
+  margin: 0;
+  flex-shrink: 0;
+}
+
 .filter-controls {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
-}
-
-.search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-box i {
-  position: absolute;
-  left: 0.75rem;
-  color: #94a3b8;
-  font-size: 0.875rem;
-}
-
-.search-box input {
-  padding: 0.5rem 0.75rem 0.5rem 2.25rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  width: 200px;
-  transition: all 0.2s ease;
-}
-
-.search-box input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .sort-select {
@@ -1364,6 +1319,8 @@ export default {
   color: #475569;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  min-width: 150px;
 }
 
 .sort-select:focus {
@@ -2039,7 +1996,6 @@ export default {
   grid-template-columns: 200px repeat(auto-fit, minmax(180px, 1fr));
   gap: 1.25rem;
   margin-bottom: 2.5rem;
-  overflow-x: auto;
   padding-bottom: 1rem;
 }
 

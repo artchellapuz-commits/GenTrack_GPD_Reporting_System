@@ -33,6 +33,51 @@ const routes = [
     meta: { requiresGuest: true }
   },
   {
+    path: '/about',
+    name: 'AboutGPD',
+    component: () => import('../components/AboutGPD.vue')
+  },
+  {
+    path: '/features',
+    name: 'Features',
+    component: () => import('../components/Features.vue')
+  },
+  {
+    path: '/documentation',
+    name: 'Documentation',
+    component: () => import('../components/Documentation.vue')
+  },
+  {
+    path: '/support',
+    name: 'Support',
+    component: () => import('../components/Support.vue')
+  },
+  {
+    path: '/contact',
+    name: 'ContactUs',
+    component: () => import('../components/ContactUs.vue')
+  },
+  {
+    path: '/careers',
+    name: 'Careers',
+    component: () => import('../components/Careers.vue')
+  },
+  {
+    path: '/privacy',
+    name: 'PrivacyPolicy',
+    component: () => import('../components/PrivacyPolicy.vue')
+  },
+  {
+    path: '/terms',
+    name: 'TermsOfService',
+    component: () => import('../components/TermsOfService.vue')
+  },
+  {
+    path: '/security',
+    name: 'Security',
+    component: () => import('../components/Security.vue')
+  },
+  {
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
@@ -103,6 +148,14 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // Always scroll to top when navigating to a new page
+    if (savedPosition) {
+      return savedPosition;
+    } else {
+      return { top: 0, behavior: 'smooth' };
+    }
+  }
 });
 
 // Navigation guards

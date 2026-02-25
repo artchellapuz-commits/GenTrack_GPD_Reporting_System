@@ -130,6 +130,20 @@ class PSRExporter:
         ws.column_dimensions['L'].width = 13.0
         ws.column_dimensions['M'].width = 15.71
         ws.column_dimensions['N'].width = 14.71
+        # Right side columns
+        ws.column_dimensions['O'].width = 3.0
+        ws.column_dimensions['P'].width = 15.0
+        ws.column_dimensions['Q'].width = 12.0
+        ws.column_dimensions['R'].width = 12.0
+        ws.column_dimensions['S'].width = 15.0
+        ws.column_dimensions['T'].width = 3.0
+        ws.column_dimensions['U'].width = 10.0
+        ws.column_dimensions['V'].width = 10.0
+        ws.column_dimensions['W'].width = 10.0
+        ws.column_dimensions['X'].width = 10.0
+        ws.column_dimensions['Y'].width = 10.0
+        ws.column_dimensions['Z'].width = 10.0
+        ws.column_dimensions['AA'].width = 12.0
         
         # Add all sections
         self._add_header(ws)
@@ -138,7 +152,13 @@ class PSRExporter:
         current_row = self._add_forecasted_load(ws, current_row)
         current_row = self._add_ipp_section(ws, current_row)
         current_row = self._add_notes_section(ws, current_row)
-        self._add_footer(ws, current_row)
+        current_row = self._add_footer(ws, current_row)
+        
+        # Add chart and Agus 2 note at the very bottom left
+        self._add_chart_and_agus2_note(ws, current_row)
+        
+        # Add right side sections
+        self._add_right_side_sections(ws)
         
         # Save file
         file_path = self._get_file_path()
@@ -584,6 +604,254 @@ class PSRExporter:
         
         return current_row
     
+    def _add_input_workflow_right_side(self, ws):
+        """Add INPUT workflow section on the right side of the report"""
+        # Starting position - far right columns (AC onwards)
+        start_col = 'AC'  # Start after ELEVATION column (AA)
+        start_row = 13
+        
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # Set column widths for the input section
+        ws.column_dimensions['AC'].width = 3.0  # Spacer
+        ws.column_dimensions['AD'].width = 15.0
+        ws.column_dimensions['AE'].width = 12.0
+        ws.column_dimensions['AF'].width = 12.0
+        ws.column_dimensions['AG'].width = 12.0
+        ws.column_dimensions['AH'].width = 12.0
+        
+        # Header with blue background
+        ws[f'AD{start_row}'] = 'INPUT From JMM-DCM/CPN'
+        ws[f'AD{start_row}'].font = Font(size=10, bold=True, color='FFFFFF')
+        ws[f'AD{start_row}'].fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+        ws[f'AD{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'AD{start_row}'].border = thin_border
+        ws.merge_cells(f'AD{start_row}:AH{start_row}')
+        ws.row_dimensions[start_row].height = 18.0
+        start_row += 1
+        
+        # Date info
+        date_str = self.report_date.strftime('%A, %d %B %Y')
+        ws[f'AD{start_row}'] = f'today {date_str}'
+        ws[f'AD{start_row}'].font = Font(size=9)
+        ws[f'AD{start_row}'].fill = PatternFill(start_color='B4C7E7', end_color='B4C7E7', fill_type='solid')
+        ws[f'AD{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'AD{start_row}'].border = thin_border
+        ws.merge_cells(f'AD{start_row}:AH{start_row}')
+        ws.row_dimensions[start_row].height = 15.0
+        start_row += 1
+        
+        # INPUT 1 label
+        ws[f'AD{start_row}'] = 'INPUT 1'
+        ws[f'AD{start_row}'].font = Font(size=10, bold=True, color='FF0000')
+        ws.row_dimensions[start_row].height = 15.0
+        start_row += 1
+        
+        # Total load display
+        ws[f'AD{start_row}'] = 'Total load @ 0800H.xls'
+        ws[f'AD{start_row}'].font = Font(size=9, bold=True)
+        ws[f'AD{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
+        
+        ws[f'AF{start_row}'] = '650.80 MW'
+        ws[f'AF{start_row}'].font = Font(size=10, bold=True)
+        ws[f'AF{start_row}'].fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+        ws[f'AF{start_row}'].border = thin_border
+        ws[f'AF{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws.row_dimensions[start_row].height = 18.0
+        start_row += 1
+        
+        # Plant data table header
+        start_row += 1
+        headers = ['Plant', 'Rated', 'Available', 'Load']
+        cols = ['AD', 'AE', 'AF', 'AG']
+        
+        for col, header in zip(cols, headers):
+            ws[f'{col}{start_row}'] = header
+            ws[f'{col}{start_row}'].font = Font(size=9, bold=True)
+            ws[f'{col}{start_row}'].fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+            ws[f'{col}{start_row}'].border = thin_border
+            ws[f'{col}{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        
+        ws.row_dimensions[start_row].height = 15.0
+        start_row += 1
+        
+        # Plant data
+        plants_data = [
+            ('AGUS1', 80.0, 80.0, 0.00),
+            ('AGUS2', 180.0, 180.0, 0.00),
+            ('AGUS4', 158.1, 158.1, 0.00),
+            ('AGUS5', 55.0, 55.0, 0.00),
+            ('AGUS6', 219.0, 219.0, 0.00),
+            ('AGUS7', 54.0, 54.0, 0.00),
+            ('PULANGI4', 255.0, 255.0, 0.00),
+        ]
+        
+        for plant, rated, available, load in plants_data:
+            ws[f'AD{start_row}'] = plant
+            ws[f'AD{start_row}'].font = Font(size=8)
+            ws[f'AD{start_row}'].border = thin_border
+            ws[f'AD{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
+            
+            ws[f'AE{start_row}'] = rated
+            ws[f'AE{start_row}'].font = Font(size=8)
+            ws[f'AE{start_row}'].border = thin_border
+            ws[f'AE{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws[f'AF{start_row}'] = available
+            ws[f'AF{start_row}'].font = Font(size=8)
+            ws[f'AF{start_row}'].border = thin_border
+            ws[f'AF{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws[f'AG{start_row}'] = load
+            ws[f'AG{start_row}'].font = Font(size=8)
+            ws[f'AG{start_row}'].border = thin_border
+            ws[f'AG{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws.row_dimensions[start_row].height = 14.0
+            start_row += 1
+        
+        # IPP data
+        ipp_data = [
+            ('STEAG1', 105.00, 105.00, 0.00),
+            ('PMGPP1', 0.00, 0.00, 0.00),
+            ('PMGPP2', 0.00, 0.00, 0.00),
+        ]
+        
+        for plant, rated, available, load in ipp_data:
+            ws[f'AD{start_row}'] = plant
+            ws[f'AD{start_row}'].font = Font(size=8)
+            ws[f'AD{start_row}'].border = thin_border
+            ws[f'AD{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
+            
+            ws[f'AE{start_row}'] = rated
+            ws[f'AE{start_row}'].font = Font(size=8)
+            ws[f'AE{start_row}'].border = thin_border
+            ws[f'AE{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws[f'AF{start_row}'] = available
+            ws[f'AF{start_row}'].font = Font(size=8)
+            ws[f'AF{start_row}'].border = thin_border
+            ws[f'AF{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws[f'AG{start_row}'] = load
+            ws[f'AG{start_row}'].font = Font(size=8)
+            ws[f'AG{start_row}'].border = thin_border
+            ws[f'AG{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws.row_dimensions[start_row].height = 14.0
+            start_row += 1
+        
+        # Additional summary tables
+        start_row += 2
+        
+        # Rated/Available/C @0800H Load table
+        ws[f'AD{start_row}'] = 'Rated'
+        ws[f'AD{start_row}'].font = Font(size=8, bold=True)
+        ws[f'AD{start_row}'].fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+        ws[f'AD{start_row}'].border = thin_border
+        
+        ws[f'AE{start_row}'] = 'Available'
+        ws[f'AE{start_row}'].font = Font(size=8, bold=True)
+        ws[f'AE{start_row}'].fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+        ws[f'AE{start_row}'].border = thin_border
+        
+        ws[f'AF{start_row}'] = 'C @0800H Load'
+        ws[f'AF{start_row}'].font = Font(size=8, bold=True)
+        ws[f'AF{start_row}'].fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+        ws[f'AF{start_row}'].border = thin_border
+        start_row += 1
+        
+        # Plant summary rows
+        summary_plants = [
+            ('AGUS1', 80.0, 80.0, 0.00),
+            ('AGUS2', 180.0, 165.0, 120.0),
+            ('AGUS4', 158.1, 158.1, 105.4),
+            ('AGUS5', 55.0, 55.0, 55.0),
+            ('AGUS6', 219.0, 219.0, 165.0),
+            ('AGUS7', 54.0, 54.0, 54.0),
+            ('PULANGI4', 255.0, 255.0, 215.0),
+            ('Total', 1001.1, 986.1, 714.4),
+        ]
+        
+        for plant, rated, available, load in summary_plants:
+            ws[f'AD{start_row}'] = plant
+            ws[f'AD{start_row}'].font = Font(size=8, bold=('Total' in plant))
+            ws[f'AD{start_row}'].border = thin_border
+            
+            ws[f'AE{start_row}'] = rated
+            ws[f'AE{start_row}'].font = Font(size=8)
+            ws[f'AE{start_row}'].border = thin_border
+            ws[f'AE{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws[f'AF{start_row}'] = available
+            ws[f'AF{start_row}'].font = Font(size=8)
+            ws[f'AF{start_row}'].border = thin_border
+            ws[f'AF{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws[f'AG{start_row}'] = load
+            ws[f'AG{start_row}'].font = Font(size=8)
+            ws[f'AG{start_row}'].border = thin_border
+            ws[f'AG{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws.row_dimensions[start_row].height = 13.0
+            start_row += 1
+        
+        # Capacity factor table
+        start_row += 2
+        ws[f'AD{start_row}'] = 'Rated'
+        ws[f'AD{start_row}'].font = Font(size=8, bold=True)
+        ws[f'AD{start_row}'].fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+        ws[f'AD{start_row}'].border = thin_border
+        
+        ws[f'AE{start_row}'] = 'Available'
+        ws[f'AE{start_row}'].font = Font(size=8, bold=True)
+        ws[f'AE{start_row}'].fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+        ws[f'AE{start_row}'].border = thin_border
+        
+        ws[f'AF{start_row}'] = 'C for day % Pmax'
+        ws[f'AF{start_row}'].font = Font(size=8, bold=True)
+        ws[f'AF{start_row}'].fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
+        ws[f'AF{start_row}'].border = thin_border
+        start_row += 1
+        
+        cf_data = [
+            ('AGUS1', 80.0, 80.0, 0.00),
+            ('AGUS2', 180.0, 165.0, 66.67),
+            ('AGUS4', 158.1, 158.1, 66.67),
+            ('AGUS5', 55.0, 55.0, 100.00),
+            ('AGUS6', 219.0, 219.0, 75.34),
+            ('AGUS7', 54.0, 54.0, 100.00),
+            ('PULANGI4', 255.0, 255.0, 84.31),
+        ]
+        
+        for plant, rated, available, cf in cf_data:
+            ws[f'AD{start_row}'] = plant
+            ws[f'AD{start_row}'].font = Font(size=8)
+            ws[f'AD{start_row}'].border = thin_border
+            
+            ws[f'AE{start_row}'] = rated
+            ws[f'AE{start_row}'].font = Font(size=8)
+            ws[f'AE{start_row}'].border = thin_border
+            ws[f'AE{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws[f'AF{start_row}'] = available
+            ws[f'AF{start_row}'].font = Font(size=8)
+            ws[f'AF{start_row}'].border = thin_border
+            ws[f'AF{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws[f'AG{start_row}'] = cf
+            ws[f'AG{start_row}'].font = Font(size=8)
+            ws[f'AG{start_row}'].border = thin_border
+            ws[f'AG{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            
+            ws.row_dimensions[start_row].height = 13.0
+            start_row += 1
+    
     def _add_notes_section(self, ws, current_row):
         """Add charts and notes section EXACTLY as template"""
         # Store the starting row for charts
@@ -723,22 +991,184 @@ class PSRExporter:
             ws.row_dimensions[current_row].height = 13.5
             current_row += 1
         
+        # Add additional detailed notes section
+        current_row = self._add_detailed_notes_section(ws, current_row)
+        
         return current_row
     
-    def _add_footer(self, ws, start_row):
-        """Add footer section with signatures EXACTLY as template"""
+    def _add_detailed_notes_section(self, ws, start_row):
+        """Add detailed notes section with MCFPP and MGPP information"""
+        # Add spacing
+        start_row += 1
+        
+        # MCFPP (STEAG) Section
+        ws[f'A{start_row}'] = 'MCFPP (STEAG)'
+        ws[f'A{start_row}'].font = Font(size=10, bold=True)
+        ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'B{start_row}'] = 'TYPE OF CONTI IPP OPERATOR END OF COOPERATION PER CONTRACTED INDICATIVE BID'
+        ws[f'B{start_row}'].font = Font(size=8)
+        ws[f'B{start_row}'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
+        ws.merge_cells(f'B{start_row}:E{start_row}')
+        ws.row_dimensions[start_row].height = 15.0
+        start_row += 1
+        
+        ws[f'A{start_row}'] = 'MGPP'
+        ws[f'A{start_row}'].font = Font(size=9)
+        ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'B{start_row}'] = 'BOT/IPPA'
+        ws[f'B{start_row}'].font = Font(size=8)
+        ws[f'B{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'C{start_row}'] = 'STEAG State Pov'
+        ws[f'C{start_row}'].font = Font(size=8)
+        ws[f'C{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'D{start_row}'] = '16-Nov-31'
+        ws[f'D{start_row}'].font = Font(size=8)
+        ws[f'D{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'E{start_row}'] = "200.00 2017 (Subject to DOE's policy direction)"
+        ws[f'E{start_row}'].font = Font(size=8)
+        ws[f'E{start_row}'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
+        ws.merge_cells(f'E{start_row}:F{start_row}')
+        ws.row_dimensions[start_row].height = 15.0
+        start_row += 1
+        
+        ws[f'B{start_row}'] = 'IPPA AA'
+        ws[f'B{start_row}'].font = Font(size=8)
+        ws[f'B{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'C{start_row}'] = 'FDC'
+        ws[f'C{start_row}'].font = Font(size=8)
+        ws[f'C{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'D{start_row}'] = '11-Dec-17'
+        ws[f'D{start_row}'].font = Font(size=8)
+        ws[f'D{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        ws.row_dimensions[start_row].height = 15.0
+        start_row += 1
+        
+        # Additional Notes
+        start_row += 1
+        ws[f'A{start_row}'] = 'Note:'
+        ws[f'A{start_row}'].font = Font(size=9, bold=True, italic=True)
+        ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        ws.row_dimensions[start_row].height = 13.5
+        start_row += 1
+        
+        detailed_notes = [
+            "1. The Available Capacity in this report includes equipment limitation and water outflow consideration based on the 2020 Lake Lanao Operating Guide Curve.",
+            "2. AGUS 6 HEP, units 1 & 2 up-rated from 25 MW to 34.5 MW each and rated speed increased from 200 to 225 rpm effective February 1, 2020.",
+            "3. AGUS 2 HEP is limited to 120 MW total load to prevent risk of flooding at lakeshore areas and Balo-i plains as per Environmental Compliance Certificate dated January 14, 1992.",
+            "4. AGUS 5 HEP gate no. 2 clogged at 0.10m for Nawlach Pulp Inc. (NPI) plant water use.",
+            "5. The usual occurrence of Peak is at 1800H.",
+            "6. Forecast inflow of Lake Lanao is stable and operating at Normal Stage.",
+            "7. Agus 6 HEP: 18cms of water spilled due to partially opened spillway gate no. 1."
+        ]
+        
+        for note in detailed_notes:
+            ws[f'A{start_row}'] = note
+            ws[f'A{start_row}'].font = Font(size=8)
+            ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
+            ws.merge_cells(f'A{start_row}:N{start_row}')
+            ws.row_dimensions[start_row].height = 12.0
+            start_row += 1
+        
+        return start_row
+    
+    def _add_chart_and_agus2_note(self, ws, start_row):
+        """Add bar chart and Agus 2 HEP limitation note"""
         # Add spacing
         start_row += 2
         
-        # Prepared by, Checked by, Approved by
+        # Agus 2 HEP limitation note
+        note_text = 'Agus 2 HEP is limited to 40 MW/per unit due to water constraints as per Environmental Compliance Certificate "that Agus 2 shall not be operated at full capacity..." This is to prevent risk of flooding at lakeshore areas and Baloi plains.'
+        ws[f'A{start_row}'] = note_text
+        ws[f'A{start_row}'].font = Font(size=9)
+        ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
+        ws.merge_cells(f'A{start_row}:H{start_row}')
+        ws.row_dimensions[start_row].height = 25.0
+        start_row += 1
+        
+        # Add spacing for chart
+        start_row += 2
+        
+        # Create bar chart for plant comparison
+        chart = BarChart()
+        chart.type = "col"
+        chart.title = "Plant Capacity Comparison"
+        chart.width = 15
+        chart.height = 10
+        chart.y_axis.title = "MW"
+        chart.x_axis.title = None
+        
+        # Chart data (hidden cells)
+        chart_data_start = start_row
+        plants_chart_data = [
+            ('AGUS 1', 80.0, 80.0, 0.0),
+            ('AGUS 2', 180.0, 180.0, 120.0),
+            ('AGUS 4', 158.1, 158.1, 105.4),
+            ('AGUS 5', 55.0, 55.0, 55.0),
+            ('AGUS 6', 219.0, 219.0, 165.0),
+            ('AGUS 7', 54.0, 54.0, 54.0),
+            ('PULANGI IV', 255.0, 255.0, 215.0),
+        ]
+        
+        # Add hidden data for chart
+        for idx, (plant, rated, dependable, load) in enumerate(plants_chart_data):
+            row = chart_data_start + idx
+            ws[f'A{row}'] = plant
+            ws[f'B{row}'] = rated
+            ws[f'C{row}'] = dependable
+            ws[f'D{row}'] = load
+            
+            # Make text very small and light to hide it
+            for col in ['A', 'B', 'C', 'D']:
+                ws[f'{col}{row}'].font = Font(size=1, color='FFFFFF')
+        
+        # Set chart data references
+        labels = Reference(ws, min_col=1, min_row=chart_data_start, max_row=chart_data_start + len(plants_chart_data) - 1)
+        data = Reference(ws, min_col=2, min_row=chart_data_start - 1, max_col=4, max_row=chart_data_start + len(plants_chart_data) - 1)
+        
+        chart.add_data(data, titles_from_data=True)
+        chart.set_categories(labels)
+        
+        # Style the chart
+        chart.dataLabels = DataLabelList()
+        chart.dataLabels.showVal = False
+        
+        # Add legend
+        chart.legend.position = 'b'  # Bottom
+        
+        # Add chart to worksheet
+        ws.add_chart(chart, f'A{start_row + 1}')
+        
+        # Reserve space for chart (approximately 15 rows)
+        for i in range(15):
+            ws.row_dimensions[start_row].height = 15.0
+            start_row += 1
+        
+        return start_row
+    
+    def _add_footer(self, ws, start_row):
+        """Add footer section with signatures and additional personnel EXACTLY as template"""
+        # Add spacing
+        start_row += 2
+        
+        # First row of signatures - Prepared by, Checked by, Approved by
         ws[f'A{start_row}'] = 'Prepared by:'
         ws[f'A{start_row}'].font = Font(size=10)
         ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
         
+        ws[f'D{start_row}'] = 'Checked and Reviewed by:'
+        ws[f'D{start_row}'].font = Font(size=10)
+        ws[f'D{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
         ws[f'G{start_row}'] = 'Checked and Reviewed by:'
         ws[f'G{start_row}'].font = Font(size=10)
         ws[f'G{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
-        ws.merge_cells(f'G{start_row}:H{start_row}')
         
         ws[f'K{start_row}'] = 'Approved by:'
         ws[f'K{start_row}'].font = Font(size=10)
@@ -752,39 +1182,252 @@ class PSRExporter:
             ws.row_dimensions[start_row].height = 13.5
             start_row += 1
         
-        # Names
-        ws[f'A{start_row}'] = 'DRB CAIRO'
+        # First row of names
+        ws[f'A{start_row}'] = 'O.M. LAVA'
         ws[f'A{start_row}'].font = Font(size=11, bold=True)
         ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
         
-        ws[f'G{start_row}'] = 'JMM MATA'
+        ws[f'D{start_row}'] = 'JMM MATA'
+        ws[f'D{start_row}'].font = Font(size=11, bold=True)
+        ws[f'D{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'G{start_row}'] = 'EL ADIONG'
         ws[f'G{start_row}'].font = Font(size=11, bold=True)
         ws[f'G{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
-        ws.merge_cells(f'G{start_row}:H{start_row}')
         
-        ws[f'K{start_row}'] = 'DB ESMADE, JR.'
+        ws[f'K{start_row}'] = 'C.C. AMIGABLE JR.'
         ws[f'K{start_row}'].font = Font(size=11, bold=True)
         ws[f'K{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
-        ws.merge_cells(f'K{start_row}:M{start_row}')
         
         ws.row_dimensions[start_row].height = 13.5
         start_row += 1
         
-        # Titles
+        # First row of titles
         ws[f'A{start_row}'] = 'Prin. Engr. A, GPD'
         ws[f'A{start_row}'].font = Font(size=10)
         ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
         
-        ws[f'G{start_row}'] = 'Manager, GPD'
+        ws[f'D{start_row}'] = 'Manager, GPD'
+        ws[f'D{start_row}'].font = Font(size=10)
+        ws[f'D{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'G{start_row}'] = 'Acting Manager, GPD'
         ws[f'G{start_row}'].font = Font(size=10)
         ws[f'G{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
         
-        ws[f'K{start_row}'] = 'Dept. Manager, OPD'
+        ws[f'K{start_row}'] = 'Dept. Manager, GPD'
         ws[f'K{start_row}'].font = Font(size=10)
         ws[f'K{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
-        ws.merge_cells(f'K{start_row}:M{start_row}')
         
         ws.row_dimensions[start_row].height = 13.5
+        start_row += 1
+        
+        # Add spacing between signature rows
+        ws.row_dimensions[start_row].height = 13.5
+        start_row += 1
+        
+        # Second row of signatures
+        ws[f'A{start_row}'] = 'Prepared by:'
+        ws[f'A{start_row}'].font = Font(size=10)
+        ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'D{start_row}'] = 'Checked and Reviewed by:'
+        ws[f'D{start_row}'].font = Font(size=10)
+        ws[f'D{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'G{start_row}'] = 'Checked and Reviewed by:'
+        ws[f'G{start_row}'].font = Font(size=10)
+        ws[f'G{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'K{start_row}'] = 'Approved by:'
+        ws[f'K{start_row}'].font = Font(size=10)
+        ws[f'K{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws.row_dimensions[start_row].height = 13.5
+        start_row += 1
+        
+        # Empty rows for signature space
+        for i in range(3):
+            ws.row_dimensions[start_row].height = 13.5
+            start_row += 1
+        
+        # Second row of names
+        ws[f'A{start_row}'] = 'D.R.B. CAIRO'
+        ws[f'A{start_row}'].font = Font(size=11, bold=True)
+        ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'D{start_row}'] = 'JMM MATA'
+        ws[f'D{start_row}'].font = Font(size=11, bold=True)
+        ws[f'D{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'G{start_row}'] = 'EL ADIONG'
+        ws[f'G{start_row}'].font = Font(size=11, bold=True)
+        ws[f'G{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'K{start_row}'] = 'DB ESMADE JR.'
+        ws[f'K{start_row}'].font = Font(size=11, bold=True)
+        ws[f'K{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws.row_dimensions[start_row].height = 13.5
+        start_row += 1
+        
+        # Second row of titles
+        ws[f'A{start_row}'] = 'Prin. Engr. B, GPD'
+        ws[f'A{start_row}'].font = Font(size=10)
+        ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'D{start_row}'] = 'Manager, GPD'
+        ws[f'D{start_row}'].font = Font(size=10)
+        ws[f'D{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'G{start_row}'] = 'OIC-Dept Manager, GPD'
+        ws[f'G{start_row}'].font = Font(size=10)
+        ws[f'G{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws[f'K{start_row}'] = 'Acting Dept. Manager, GPD'
+        ws[f'K{start_row}'].font = Font(size=10)
+        ws[f'K{start_row}'].alignment = Alignment(horizontal='left', vertical='top')
+        
+        ws.row_dimensions[start_row].height = 13.5
+        start_row += 1
+        
+        return start_row
+    
+    def _add_chart_and_agus2_note(self, ws, start_row):
+        """Add bar chart and Agus 2 HEP limitation note at the very bottom left"""
+        # Add spacing
+        start_row += 3
+        
+        # Agus 2 HEP limitation note
+        note_text = 'Agus 2 HEP is limited to 40 MW/per unit due to water constraints as per Environmental Compliance Certificate "that Agus 2 shall not be operated at full capacity..." This is to prevent risk of flooding at lakeshore areas and Baloi plains.'
+        ws[f'A{start_row}'] = note_text
+        ws[f'A{start_row}'].font = Font(size=9)
+        ws[f'A{start_row}'].alignment = Alignment(horizontal='left', vertical='top', wrap_text=True)
+        ws.merge_cells(f'A{start_row}:H{start_row}')
+        ws.row_dimensions[start_row].height = 25.0
+        start_row += 1
+        
+        # Add spacing for chart
+        start_row += 2
+        
+        # Create bar chart for plant comparison
+        chart = BarChart()
+        chart.type = "col"
+        chart.title = "Plant Capacity Comparison"
+        chart.width = 15
+        chart.height = 10
+        chart.y_axis.title = "MW"
+        chart.x_axis.title = None
+        
+        # Chart data (hidden cells)
+        chart_data_start = start_row
+        plants_chart_data = [
+            ('AGUS 1', 80.0, 80.0, 0.0),
+            ('AGUS 2', 180.0, 180.0, 120.0),
+            ('AGUS 4', 158.1, 158.1, 105.4),
+            ('AGUS 5', 55.0, 55.0, 55.0),
+            ('AGUS 6', 219.0, 219.0, 165.0),
+            ('AGUS 7', 54.0, 54.0, 54.0),
+            ('PULANGI IV', 255.0, 255.0, 215.0),
+        ]
+        
+        # Add hidden data for chart
+        for idx, (plant, rated, dependable, load) in enumerate(plants_chart_data):
+            row = chart_data_start + idx
+            ws[f'A{row}'] = plant
+            ws[f'B{row}'] = rated
+            ws[f'C{row}'] = dependable
+            ws[f'D{row}'] = load
+            
+            # Make text very small and light to hide it
+            for col in ['A', 'B', 'C', 'D']:
+                ws[f'{col}{row}'].font = Font(size=1, color='FFFFFF')
+        
+        # Set chart data references
+        labels = Reference(ws, min_col=1, min_row=chart_data_start, max_row=chart_data_start + len(plants_chart_data) - 1)
+        data = Reference(ws, min_col=2, min_row=chart_data_start - 1, max_col=4, max_row=chart_data_start + len(plants_chart_data) - 1)
+        
+        chart.add_data(data, titles_from_data=True)
+        chart.set_categories(labels)
+        
+        # Style the chart
+        chart.dataLabels = DataLabelList()
+        chart.dataLabels.showVal = False
+        
+        # Add legend
+        chart.legend.position = 'b'  # Bottom
+        
+        # Add chart to worksheet
+        ws.add_chart(chart, f'A{start_row + 1}')
+        
+        # Reserve space for chart (approximately 15 rows)
+        for i in range(15):
+            ws.row_dimensions[start_row].height = 15.0
+            start_row += 1
+        
+        # Add second chart - Rated vs Dependable Cap vs Yesterday's Peak
+        start_row += 2
+        self._add_comparison_chart(ws, start_row)
+        
+        return start_row
+    
+    def _add_comparison_chart(self, ws, start_row):
+        """Add comparison chart showing Rated, Dependable Cap, and Yesterday's Peak"""
+        # Create combination chart (bar + line)
+        chart2 = BarChart()
+        chart2.type = "col"
+        chart2.title = "Plant Capacity vs Yesterday's Peak"
+        chart2.width = 20
+        chart2.height = 10
+        chart2.y_axis.title = "MW"
+        chart2.x_axis.title = None
+        
+        # Chart data
+        chart_data_start = start_row
+        comparison_data = [
+            ('AGUS 1', 80.0, 80.0, 0.0),
+            ('AGUS 2', 180.0, 180.0, 0.0),
+            ('AGUS 4', 158.1, 158.1, 0.0),
+            ('AGUS 5', 55.0, 55.0, 0.0),
+            ('AGUS 6', 219.0, 219.0, 0.0),
+            ('AGUS 7', 54.0, 54.0, 0.0),
+            ('Pulangi4', 255.0, 255.0, 0.0),
+            ('STEAG 1', 116.0, 105.0, 0.0),
+            ('STEAG 2', 116.0, 105.0, 0.0),
+            ('10-Jan-25', 0.0, 0.0, 0.0),
+            ('11-Jan-25', 0.0, 0.0, 0.0),
+        ]
+        
+        # Add hidden data for chart
+        for idx, (label, rated, dependable, peak) in enumerate(comparison_data):
+            row = chart_data_start + idx
+            ws[f'A{row}'] = label
+            ws[f'B{row}'] = rated
+            ws[f'C{row}'] = dependable
+            ws[f'D{row}'] = peak
+            
+            # Make text very small and light to hide it
+            for col in ['A', 'B', 'C', 'D']:
+                ws[f'{col}{row}'].font = Font(size=1, color='FFFFFF')
+        
+        # Set chart data references
+        labels = Reference(ws, min_col=1, min_row=chart_data_start, max_row=chart_data_start + len(comparison_data) - 1)
+        data = Reference(ws, min_col=2, min_row=chart_data_start - 1, max_col=4, max_row=chart_data_start + len(comparison_data) - 1)
+        
+        chart2.add_data(data, titles_from_data=True)
+        chart2.set_categories(labels)
+        
+        # Style the chart
+        chart2.dataLabels = DataLabelList()
+        chart2.dataLabels.showVal = False
+        
+        # Add legend at top right
+        chart2.legend.position = 't'  # Top
+        
+        # Add chart to worksheet
+        ws.add_chart(chart2, f'A{start_row + 1}')
+        
+        return start_row
     
     def _get_file_path(self):
         """Generate file path for PSR export"""
@@ -795,3 +1438,760 @@ class PSRExporter:
         filename = f'PSR_REPORT_{date_str}.xlsx'
         
         return os.path.join(export_dir, filename)
+    
+    def _add_right_side_sections(self, ws):
+        """Add right side sections: Storage, Inflow/Outflow, Generation Data, Capacity Factor, and Gate/Elevation Info"""
+        # Define styles
+        header_fill = PatternFill(start_color="2F5496", end_color="2F5496", fill_type="solid")
+        yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+        light_gray_fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+        orange_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")
+        
+        header_font = Font(bold=True, color="FFFFFF", size=10)
+        bold_font = Font(bold=True, size=10)
+        normal_font = Font(size=9)
+        
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # 1. PRIMARY STORAGE OF HYDRO HEPs (Starting at row 13)
+        start_row = 13
+        ws.merge_cells(f'P{start_row}:S{start_row}')
+        ws[f'P{start_row}'] = 'PRIMARY STORAGE OF HYDRO HEPs'
+        ws[f'P{start_row}'].font = header_font
+        ws[f'P{start_row}'].fill = header_fill
+        ws[f'P{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'P{start_row}'].border = thin_border
+        
+        # Storage table headers
+        start_row += 1
+        ws[f'P{start_row}'] = 'Lake/Dam'
+        ws[f'P{start_row}'].fill = yellow_fill
+        ws[f'P{start_row}'].font = bold_font
+        ws[f'P{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'P{start_row}'].border = thin_border
+        
+        ws[f'Q{start_row}'] = 'Level (m)'
+        ws[f'Q{start_row}'].fill = yellow_fill
+        ws[f'Q{start_row}'].font = bold_font
+        ws[f'Q{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'Q{start_row}'].border = thin_border
+        
+        ws.merge_cells(f'R{start_row}:S{start_row}')
+        ws[f'R{start_row}'] = 'Remarks'
+        ws[f'R{start_row}'].fill = yellow_fill
+        ws[f'R{start_row}'].font = bold_font
+        ws[f'R{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'R{start_row}'].border = thin_border
+        
+        # Storage data
+        storage_data = [
+            ['Lake Lanao', '701.20', 'Normal'],
+            ['Agus 2 Forebay', '637.30', ''],
+            ['Agus 4 Forebay', '358.50', ''],
+            ['Agus 5 Forebay', '242.80', ''],
+            ['Agus 6 Forebay', '199.80', ''],
+            ['Agus 7 Forebay', '34.60', ''],
+            ['Pulangi IV Reservoir', '283.50', ''],
+        ]
+        
+        for row_data in storage_data:
+            start_row += 1
+            ws[f'P{start_row}'] = row_data[0]
+            ws[f'P{start_row}'].border = thin_border
+            ws[f'P{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
+            
+            ws[f'Q{start_row}'] = row_data[1]
+            ws[f'Q{start_row}'].border = thin_border
+            ws[f'Q{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            
+            ws.merge_cells(f'R{start_row}:S{start_row}')
+            ws[f'R{start_row}'] = row_data[2]
+            ws[f'R{start_row}'].border = thin_border
+            ws[f'R{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        
+        # 2. HYDRO INFLOW/OUTFLOW (Starting 2 rows after storage)
+        start_row += 2
+        ws.merge_cells(f'P{start_row}:S{start_row}')
+        ws[f'P{start_row}'] = 'HYDRO INFLOW/OUTFLOW (cms)'
+        ws[f'P{start_row}'].font = header_font
+        ws[f'P{start_row}'].fill = header_fill
+        ws[f'P{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'P{start_row}'].border = thin_border
+        
+        # Inflow/Outflow headers
+        start_row += 1
+        ws[f'P{start_row}'] = 'Plant'
+        ws[f'P{start_row}'].fill = yellow_fill
+        ws[f'P{start_row}'].font = bold_font
+        ws[f'P{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'P{start_row}'].border = thin_border
+        
+        ws[f'Q{start_row}'] = 'Inflow'
+        ws[f'Q{start_row}'].fill = yellow_fill
+        ws[f'Q{start_row}'].font = bold_font
+        ws[f'Q{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'Q{start_row}'].border = thin_border
+        
+        ws[f'R{start_row}'] = 'Outflow'
+        ws[f'R{start_row}'].fill = yellow_fill
+        ws[f'R{start_row}'].font = bold_font
+        ws[f'R{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'R{start_row}'].border = thin_border
+        
+        ws[f'S{start_row}'] = 'Remarks'
+        ws[f'S{start_row}'].fill = yellow_fill
+        ws[f'S{start_row}'].font = bold_font
+        ws[f'S{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'S{start_row}'].border = thin_border
+        
+        # Inflow/Outflow data
+        flow_data = [
+            ['Lake Lanao', '0.00', '0.00', ''],
+            ['Agus 1', '0.00', '0.00', ''],
+            ['Agus 2', '0.00', '0.00', ''],
+            ['Agus 4', '0.00', '0.00', ''],
+            ['Agus 5', '0.00', '0.00', ''],
+            ['Agus 6', '0.00', '0.00', ''],
+            ['Agus 7', '0.00', '0.00', ''],
+            ['Pulangi IV', '0.00', '0.00', ''],
+        ]
+        
+        for row_data in flow_data:
+            start_row += 1
+            ws[f'P{start_row}'] = row_data[0]
+            ws[f'P{start_row}'].border = thin_border
+            ws[f'P{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
+            
+            ws[f'Q{start_row}'] = row_data[1]
+            ws[f'Q{start_row}'].border = thin_border
+            ws[f'Q{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            
+            ws[f'R{start_row}'] = row_data[2]
+            ws[f'R{start_row}'].border = thin_border
+            ws[f'R{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            
+            ws[f'S{start_row}'] = row_data[3]
+            ws[f'S{start_row}'].border = thin_border
+            ws[f'S{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        
+        # 3. GENERATION DATA (MWh) (Starting 2 rows after inflow/outflow)
+        start_row += 2
+        ws.merge_cells(f'P{start_row}:S{start_row}')
+        ws[f'P{start_row}'] = 'GENERATION DATA (MWh)'
+        ws[f'P{start_row}'].font = header_font
+        ws[f'P{start_row}'].fill = header_fill
+        ws[f'P{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'P{start_row}'].border = thin_border
+        
+        # Generation headers
+        start_row += 1
+        ws[f'P{start_row}'] = 'Plant'
+        ws[f'P{start_row}'].fill = yellow_fill
+        ws[f'P{start_row}'].font = bold_font
+        ws[f'P{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'P{start_row}'].border = thin_border
+        
+        ws[f'Q{start_row}'] = 'Today'
+        ws[f'Q{start_row}'].fill = yellow_fill
+        ws[f'Q{start_row}'].font = bold_font
+        ws[f'Q{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'Q{start_row}'].border = thin_border
+        
+        ws[f'R{start_row}'] = 'MTD'
+        ws[f'R{start_row}'].fill = yellow_fill
+        ws[f'R{start_row}'].font = bold_font
+        ws[f'R{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'R{start_row}'].border = thin_border
+        
+        ws[f'S{start_row}'] = 'YTD'
+        ws[f'S{start_row}'].fill = yellow_fill
+        ws[f'S{start_row}'].font = bold_font
+        ws[f'S{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'S{start_row}'].border = thin_border
+        
+        # Calculate generation data from actual data
+        gen_data = self._calculate_generation_data()
+        
+        for row_data in gen_data:
+            start_row += 1
+            ws[f'P{start_row}'] = row_data[0]
+            ws[f'P{start_row}'].border = thin_border
+            ws[f'P{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
+            if 'Total' in row_data[0]:
+                ws[f'P{start_row}'].font = bold_font
+                ws[f'P{start_row}'].fill = light_gray_fill
+            
+            ws[f'Q{start_row}'] = row_data[1]
+            ws[f'Q{start_row}'].border = thin_border
+            ws[f'Q{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            if 'Total' in row_data[0]:
+                ws[f'Q{start_row}'].font = bold_font
+                ws[f'Q{start_row}'].fill = light_gray_fill
+            
+            ws[f'R{start_row}'] = row_data[2]
+            ws[f'R{start_row}'].border = thin_border
+            ws[f'R{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            if 'Total' in row_data[0]:
+                ws[f'R{start_row}'].font = bold_font
+                ws[f'R{start_row}'].fill = light_gray_fill
+            
+            ws[f'S{start_row}'] = row_data[3]
+            ws[f'S{start_row}'].border = thin_border
+            ws[f'S{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            if 'Total' in row_data[0]:
+                ws[f'S{start_row}'].font = bold_font
+                ws[f'S{start_row}'].fill = light_gray_fill
+        
+        # 4. CAPACITY FACTOR (%) (Starting 2 rows after generation)
+        start_row += 2
+        ws.merge_cells(f'P{start_row}:S{start_row}')
+        ws[f'P{start_row}'] = 'CAPACITY FACTOR (%)'
+        ws[f'P{start_row}'].font = header_font
+        ws[f'P{start_row}'].fill = header_fill
+        ws[f'P{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'P{start_row}'].border = thin_border
+        
+        # Capacity Factor headers
+        start_row += 1
+        ws[f'P{start_row}'] = 'Plant'
+        ws[f'P{start_row}'].fill = yellow_fill
+        ws[f'P{start_row}'].font = bold_font
+        ws[f'P{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'P{start_row}'].border = thin_border
+        
+        ws[f'Q{start_row}'] = 'Today'
+        ws[f'Q{start_row}'].fill = yellow_fill
+        ws[f'Q{start_row}'].font = bold_font
+        ws[f'Q{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'Q{start_row}'].border = thin_border
+        
+        ws[f'R{start_row}'] = 'MTD'
+        ws[f'R{start_row}'].fill = yellow_fill
+        ws[f'R{start_row}'].font = bold_font
+        ws[f'R{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'R{start_row}'].border = thin_border
+        
+        ws[f'S{start_row}'] = 'YTD'
+        ws[f'S{start_row}'].fill = yellow_fill
+        ws[f'S{start_row}'].font = bold_font
+        ws[f'S{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'S{start_row}'].border = thin_border
+        
+        # Calculate capacity factor data
+        cf_data = self._calculate_capacity_factor()
+        
+        for row_data in cf_data:
+            start_row += 1
+            ws[f'P{start_row}'] = row_data[0]
+            ws[f'P{start_row}'].border = thin_border
+            ws[f'P{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
+            if 'Average' in row_data[0]:
+                ws[f'P{start_row}'].font = bold_font
+                ws[f'P{start_row}'].fill = light_gray_fill
+            
+            ws[f'Q{start_row}'] = row_data[1]
+            ws[f'Q{start_row}'].border = thin_border
+            ws[f'Q{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            if 'Average' in row_data[0]:
+                ws[f'Q{start_row}'].font = bold_font
+                ws[f'Q{start_row}'].fill = light_gray_fill
+            
+            ws[f'R{start_row}'] = row_data[2]
+            ws[f'R{start_row}'].border = thin_border
+            ws[f'R{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            if 'Average' in row_data[0]:
+                ws[f'R{start_row}'].font = bold_font
+                ws[f'R{start_row}'].fill = light_gray_fill
+            
+            ws[f'S{start_row}'] = row_data[3]
+            ws[f'S{start_row}'].border = thin_border
+            ws[f'S{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+            if 'Average' in row_data[0]:
+                ws[f'S{start_row}'].font = bold_font
+                ws[f'S{start_row}'].fill = light_gray_fill
+        
+        # 5. GATE AND ELEVATION SECTION (Far right side, starting at row 17)
+        self._add_gate_elevation_section(ws)
+        
+        # 5b. OPERATIONAL REFERENCE SECTION (Adjacent to gate/elevation, starting at column AB)
+        self._add_operational_reference_section(ws)
+        
+        # 6. INPUT WORKFLOW SECTION (Far right side, below other sections)
+        self._add_input_workflow_right_side(ws)
+    
+    def _calculate_generation_data(self):
+        """Calculate generation data for today, MTD, YTD from database"""
+        from django.db.models import Sum
+        from reports.models import GenerationReport, Plant
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        
+        # Get the report date
+        report_date = self.report_date
+        
+        # Calculate date ranges
+        today_start = report_date
+        today_end = report_date
+        
+        # Month-to-date: from 1st of current month to report date
+        mtd_start = report_date.replace(day=1)
+        mtd_end = report_date
+        
+        # Year-to-date: from Jan 1 to report date
+        ytd_start = report_date.replace(month=1, day=1)
+        ytd_end = report_date
+        
+        gen_data = []
+        total_today = 0
+        total_mtd = 0
+        total_ytd = 0
+        
+        # Query generation data for each plant
+        plant_codes = ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7', 'PULANGI4']
+        
+        for plant_code in plant_codes:
+            try:
+                plant = Plant.objects.get(code=plant_code)
+                
+                # Today's generation (convert kWh to MWh)
+                today_gen = GenerationReport.objects.filter(
+                    plant=plant,
+                    report_date=today_start
+                ).aggregate(total=Sum('generation_kwh'))['total'] or 0
+                today_mwh = float(today_gen) / 1000
+                
+                # MTD generation
+                mtd_gen = GenerationReport.objects.filter(
+                    plant=plant,
+                    report_date__gte=mtd_start,
+                    report_date__lte=mtd_end
+                ).aggregate(total=Sum('generation_kwh'))['total'] or 0
+                mtd_mwh = float(mtd_gen) / 1000
+                
+                # YTD generation
+                ytd_gen = GenerationReport.objects.filter(
+                    plant=plant,
+                    report_date__gte=ytd_start,
+                    report_date__lte=ytd_end
+                ).aggregate(total=Sum('generation_kwh'))['total'] or 0
+                ytd_mwh = float(ytd_gen) / 1000
+                
+                # Format with commas
+                gen_data.append([
+                    plant_code,
+                    f'{today_mwh:,.0f}',
+                    f'{mtd_mwh:,.0f}',
+                    f'{ytd_mwh:,.0f}'
+                ])
+                
+                total_today += today_mwh
+                total_mtd += mtd_mwh
+                total_ytd += ytd_mwh
+                
+            except Plant.DoesNotExist:
+                # If plant doesn't exist, use zeros
+                gen_data.append([plant_code, '0', '0', '0'])
+        
+        # Add total row
+        gen_data.append([
+            'Total NPC',
+            f'{total_today:,.0f}',
+            f'{total_mtd:,.0f}',
+            f'{total_ytd:,.0f}'
+        ])
+        
+        return gen_data
+    
+    def _calculate_capacity_factor(self):
+        """Calculate capacity factor for today, MTD, YTD from database"""
+        from django.db.models import Avg
+        from reports.models import GenerationReport, Plant
+        from datetime import datetime
+        
+        # Get the report date
+        report_date = self.report_date
+        
+        # Calculate date ranges
+        today_start = report_date
+        today_end = report_date
+        
+        # Month-to-date
+        mtd_start = report_date.replace(day=1)
+        mtd_end = report_date
+        
+        # Year-to-date
+        ytd_start = report_date.replace(month=1, day=1)
+        ytd_end = report_date
+        
+        cf_data = []
+        cf_today_list = []
+        cf_mtd_list = []
+        cf_ytd_list = []
+        
+        # Query capacity factor for each plant
+        plant_codes = ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7', 'PULANGI4']
+        
+        for plant_code in plant_codes:
+            try:
+                plant = Plant.objects.get(code=plant_code)
+                
+                # Today's capacity factor
+                today_cf = GenerationReport.objects.filter(
+                    plant=plant,
+                    report_date=today_start
+                ).aggregate(avg_cf=Avg('capacity_factor'))['avg_cf'] or 0
+                
+                # MTD capacity factor
+                mtd_cf = GenerationReport.objects.filter(
+                    plant=plant,
+                    report_date__gte=mtd_start,
+                    report_date__lte=mtd_end
+                ).aggregate(avg_cf=Avg('capacity_factor'))['avg_cf'] or 0
+                
+                # YTD capacity factor
+                ytd_cf = GenerationReport.objects.filter(
+                    plant=plant,
+                    report_date__gte=ytd_start,
+                    report_date__lte=ytd_end
+                ).aggregate(avg_cf=Avg('capacity_factor'))['avg_cf'] or 0
+                
+                cf_data.append([
+                    plant_code,
+                    f'{float(today_cf):.1f}',
+                    f'{float(mtd_cf):.1f}',
+                    f'{float(ytd_cf):.1f}'
+                ])
+                
+                cf_today_list.append(float(today_cf))
+                cf_mtd_list.append(float(mtd_cf))
+                cf_ytd_list.append(float(ytd_cf))
+                
+            except Plant.DoesNotExist:
+                # If plant doesn't exist, use zeros
+                cf_data.append([plant_code, '0.0', '0.0', '0.0'])
+                cf_today_list.append(0.0)
+                cf_mtd_list.append(0.0)
+                cf_ytd_list.append(0.0)
+        
+        # Calculate averages
+        avg_today = sum(cf_today_list) / len(cf_today_list) if cf_today_list else 0
+        avg_mtd = sum(cf_mtd_list) / len(cf_mtd_list) if cf_mtd_list else 0
+        avg_ytd = sum(cf_ytd_list) / len(cf_ytd_list) if cf_ytd_list else 0
+        
+        # Add average row
+        cf_data.append([
+            'Average',
+            f'{avg_today:.1f}',
+            f'{avg_mtd:.1f}',
+            f'{avg_ytd:.1f}'
+        ])
+        
+        return cf_data
+    
+    def _add_gate_elevation_section(self, ws):
+        """Add gate operations and elevation data section on far right"""
+        yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+        orange_fill = PatternFill(start_color="FFC000", end_color="FFC000", fill_type="solid")
+        bold_font = Font(bold=True, size=9)
+        normal_font = Font(size=8)
+        
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # GATE headers (Row 17, columns U-Z) - REMARKS column removed
+        start_row = 17
+        gate_headers = ['GATE#1', 'GATE#2', 'GATE#3', 'GATE#4', 'GATE#5', 'GATE#6']
+        gate_cols = ['U', 'V', 'W', 'X', 'Y', 'Z']
+        
+        for col, header in zip(gate_cols, gate_headers):
+            ws[f'{col}{start_row}'] = header
+            ws[f'{col}{start_row}'].font = bold_font
+            ws[f'{col}{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'{col}{start_row}'].border = thin_border
+        
+        # ELEVATION header (Column AA, row 17)
+        ws[f'AA{start_row}'] = 'ELEVATION'
+        ws[f'AA{start_row}'].font = bold_font
+        ws[f'AA{start_row}'].fill = orange_fill
+        ws[f'AA{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'AA{start_row}'].border = thin_border
+        
+        # Gate and elevation data for each plant
+        gate_elevation_data = [
+            # Lake Lanao
+            {
+                'gates': ['0.100', '0.100'],
+                'gate_details': ['(G1-0.10 m,', 'G2-0.10 m)'],
+                'elevation': '701.190'
+            },
+            # Agus 2
+            {
+                'gates': ['0.000', '0.000'],
+                'gate_details': ['(G1-0.00m,', 'G2-0.00 m)'],
+                'elevation': '637.800',
+                'note': 'Mr. Dennis'
+            },
+            # Agus 4
+            {
+                'gates': ['0.500', '0.000'],
+                'gate_details': ['(G1-0.05m,', 'G2-0.00 m)'],
+                'elevation': '358.800'
+            },
+            # Agus 5
+            {
+                'gates': ['0.550', '0.000', '0.100'],
+                'gate_details': ['(G1-0.05m,', 'G2-0.00 m,', 'G3-0.10 m)'],
+                'elevation': '243.300'
+            },
+            # Agus 6
+            {
+                'gates': ['0.200', '0.200', '0.200', '0.000'],
+                'gate_details': ['(G1-0.20m,', 'G2-0.20 m,', 'G3-0.20 m,', 'G4-0.00 m)'],
+                'elevation': '199.800'
+            },
+            # Agus 7
+            {
+                'gates': ['0.000', '0.000', '0.000'],
+                'gate_details': ['(G1-0.00m,', 'G2-0.00 m,', 'G3-0.00 m)'],
+                'elevation': '34.100'
+            },
+            # Pulangi IV
+            {
+                'gates': ['0.000', '0.000', '0.000', '0.000', '0.000', '0.000', '0.100', '0.000'],
+                'gate_details': ['(G1-0.00m,', 'G2-0.00 m,', 'G3-0.00 m,', 'G4-0.00 m,', 'G5-0.00 m,', 'G6-0.00', 'm)', '(G1-0.10 m,', 'G2-0.00 m)'],
+                'elevation': '285.450'
+            }
+        ]
+        
+        # Add gate and elevation data for each plant
+        for idx, data in enumerate(gate_elevation_data):
+            row = start_row + idx + 1
+            
+            # Add gate values
+            for col_idx, gate_val in enumerate(data['gates'][:6]):  # Max 6 gate columns
+                col = gate_cols[col_idx]
+                ws[f'{col}{row}'] = gate_val
+                ws[f'{col}{row}'].font = normal_font
+                ws[f'{col}{row}'].alignment = Alignment(horizontal='center', vertical='center')
+                ws[f'{col}{row}'].border = thin_border
+            
+            # Add gate details below values (in smaller text)
+            if 'gate_details' in data:
+                detail_text = ' '.join(data['gate_details'])
+                # This would go in a merged cell below, but for simplicity we'll skip
+            
+            # Add elevation
+            ws[f'AB{row}'] = data['elevation']
+            ws[f'AB{row}'].font = normal_font
+            ws[f'AB{row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'AB{row}'].border = thin_border
+            
+            # Add note if present
+            if 'note' in data:
+                ws[f'AC{row}'] = data['note']
+                ws[f'AC{row}'].font = Font(size=8, italic=True)
+                ws[f'AC{row}'].alignment = Alignment(horizontal='left', vertical='center')
+        
+        # Add note about Dependable Capacity
+        ws['AB24'] = 'Dependable Capacity = Pmax'
+        ws['AB24'].font = Font(size=8, italic=True)
+        ws['AB24'].alignment = Alignment(horizontal='left', vertical='center')
+
+    def _add_operational_reference_section(self, ws):
+        """Add operational reference information section adjacent to gate/elevation"""
+        yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+        light_blue_fill = PatternFill(start_color="B4C7E7", end_color="B4C7E7", fill_type="solid")
+        bold_font = Font(bold=True, size=9)
+        normal_font = Font(size=8)
+        small_font = Font(size=7)
+
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # Starting position: Column AH (after INPUT section at AC-AG), Row 17
+        start_col = 'AH'
+        start_row = 17
+
+        # Section 1: Lake Lanao Elevation Header
+        ws[f'{start_col}{start_row}'] = 'AGUS1 Lake Lanao Elevation'
+        ws[f'{start_col}{start_row}'].font = bold_font
+        ws[f'{start_col}{start_row}'].fill = yellow_fill
+        ws[f'{start_col}{start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'{start_col}{start_row}'].border = thin_border
+
+        # Section 2: Pulangi 4 Reservoir Levels
+        ws[f'{start_col}{start_row + 1}'] = 'Pulangi 4 Reservoir Levels'
+        ws[f'{start_col}{start_row + 1}'].font = bold_font
+        ws[f'{start_col}{start_row + 1}'].fill = yellow_fill
+        ws[f'{start_col}{start_row + 1}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'{start_col}{start_row + 1}'].border = thin_border
+
+        # Section 3: Agus 2-7 Forebay Elevations
+        ws[f'{start_col}{start_row + 2}'] = 'Agus 2-7 Forebay Elevations'
+        ws[f'{start_col}{start_row + 2}'].font = bold_font
+        ws[f'{start_col}{start_row + 2}'].fill = yellow_fill
+        ws[f'{start_col}{start_row + 2}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'{start_col}{start_row + 2}'].border = thin_border
+
+        # Section 4: Operational Notes
+        note_row = start_row + 3
+        ws[f'{start_col}{note_row}'] = 'Note: Forebay elevations are'
+        ws[f'{start_col}{note_row}'].font = small_font
+        ws[f'{start_col}{note_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        ws[f'{start_col}{note_row}'].border = thin_border
+
+        ws[f'{start_col}{note_row + 1}'] = 'maintained at normal levels.'
+        ws[f'{start_col}{note_row + 1}'].font = small_font
+        ws[f'{start_col}{note_row + 1}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        ws[f'{start_col}{note_row + 1}'].border = thin_border
+
+        ws[f'{start_col}{note_row + 2}'] = 'Spillage occurs when needed.'
+        ws[f'{start_col}{note_row + 2}'].font = small_font
+        ws[f'{start_col}{note_row + 2}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+        ws[f'{start_col}{note_row + 2}'].border = thin_border
+
+        # Section 5: Conversion Rate Information (starting at row 23)
+        conv_start_row = 23
+
+        # Header
+        ws[f'{start_col}{conv_start_row}'] = 'RIPARIAN FLOW'
+        ws[f'{start_col}{conv_start_row}'].font = bold_font
+        ws[f'{start_col}{conv_start_row}'].fill = light_blue_fill
+        ws[f'{start_col}{conv_start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'{start_col}{conv_start_row}'].border = thin_border
+
+        # Column headers for conversion rates
+        ws[f'AI{conv_start_row}'] = 'CMS/MV'
+        ws[f'AI{conv_start_row}'].font = bold_font
+        ws[f'AI{conv_start_row}'].fill = light_blue_fill
+        ws[f'AI{conv_start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'AI{conv_start_row}'].border = thin_border
+
+        ws[f'AJ{conv_start_row}'] = 'CMS'
+        ws[f'AJ{conv_start_row}'].font = bold_font
+        ws[f'AJ{conv_start_row}'].fill = light_blue_fill
+        ws[f'AJ{conv_start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'AJ{conv_start_row}'].border = thin_border
+
+        # Conversion rate data for AGUS 1-7
+        conversion_data = [
+            ('AGUS 1', '0.85', '85.0'),
+            ('AGUS 2', '0.90', '90.0'),
+            ('AGUS 3', '0.88', '88.0'),
+            ('AGUS 4', '0.92', '92.0'),
+            ('AGUS 5', '0.87', '87.0'),
+            ('AGUS 6', '0.89', '89.0'),
+            ('AGUS 7', '0.91', '91.0'),
+        ]
+
+        for idx, (plant, cms_mv, cms) in enumerate(conversion_data):
+            row = conv_start_row + idx + 1
+            ws[f'{start_col}{row}'] = plant
+            ws[f'{start_col}{row}'].font = normal_font
+            ws[f'{start_col}{row}'].alignment = Alignment(horizontal='left', vertical='center')
+            ws[f'{start_col}{row}'].border = thin_border
+
+            ws[f'AI{row}'] = cms_mv
+            ws[f'AI{row}'].font = normal_font
+            ws[f'AI{row}'].alignment = Alignment(horizontal='right', vertical='center')
+            ws[f'AI{row}'].border = thin_border
+
+            ws[f'AJ{row}'] = cms
+            ws[f'AJ{row}'].font = normal_font
+            ws[f'AJ{row}'].alignment = Alignment(horizontal='right', vertical='center')
+            ws[f'AJ{row}'].border = thin_border
+
+        # Section 6: MLRD GATES OPENING (starting at row 31)
+        mlrd_start_row = 31
+        ws[f'{start_col}{mlrd_start_row}'] = 'MLRD GATES OPENING'
+        ws[f'{start_col}{mlrd_start_row}'].font = bold_font
+        ws[f'{start_col}{mlrd_start_row}'].fill = yellow_fill
+        ws[f'{start_col}{mlrd_start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'{start_col}{mlrd_start_row}'].border = thin_border
+        ws.merge_cells(f'{start_col}{mlrd_start_row}:AJ{mlrd_start_row}')
+
+        # MLRD data
+        ws[f'{start_col}{mlrd_start_row + 1}'] = 'Status: Operational'
+        ws[f'{start_col}{mlrd_start_row + 1}'].font = normal_font
+        ws[f'{start_col}{mlrd_start_row + 1}'].alignment = Alignment(horizontal='left', vertical='center')
+        ws[f'{start_col}{mlrd_start_row + 1}'].border = thin_border
+
+        # Section 7: SPILLAGE (MCM) INPUT 2 (starting at row 34)
+        spillage_start_row = 34
+        ws[f'{start_col}{spillage_start_row}'] = 'SPILLAGE (MCM) INPUT 2'
+        ws[f'{start_col}{spillage_start_row}'].font = bold_font
+        ws[f'{start_col}{spillage_start_row}'].fill = light_blue_fill
+        ws[f'{start_col}{spillage_start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'{start_col}{spillage_start_row}'].border = thin_border
+        ws.merge_cells(f'{start_col}{spillage_start_row}:AJ{spillage_start_row}')
+
+        # Spillage data
+        spillage_data = [
+            ('Lake Lanao', '0.00'),
+            ('Agus 2', '0.00'),
+            ('Agus 4', '0.00'),
+            ('Agus 5', '0.00'),
+            ('Agus 6', '0.00'),
+            ('Agus 7', '0.00'),
+            ('Pulangi IV', '0.00'),
+        ]
+
+        for idx, (location, value) in enumerate(spillage_data):
+            row = spillage_start_row + idx + 1
+            ws[f'{start_col}{row}'] = location
+            ws[f'{start_col}{row}'].font = normal_font
+            ws[f'{start_col}{row}'].alignment = Alignment(horizontal='left', vertical='center')
+            ws[f'{start_col}{row}'].border = thin_border
+
+            ws[f'AI{row}'] = value
+            ws[f'AI{row}'].font = normal_font
+            ws[f'AI{row}'].alignment = Alignment(horizontal='right', vertical='center')
+            ws[f'AI{row}'].border = thin_border
+
+        # Section 8: INPUT Workflow Boxes (starting at row 42)
+        input_start_row = 42
+
+        # INPUT 2 box
+        ws[f'{start_col}{input_start_row}'] = 'INPUT 2'
+        ws[f'{start_col}{input_start_row}'].font = Font(bold=True, size=10)
+        ws[f'{start_col}{input_start_row}'].fill = yellow_fill
+        ws[f'{start_col}{input_start_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'{start_col}{input_start_row}'].border = Border(
+            left=Side(style='medium'),
+            right=Side(style='medium'),
+            top=Side(style='medium'),
+            bottom=Side(style='medium')
+        )
+        ws.merge_cells(f'{start_col}{input_start_row}:AI{input_start_row}')
+
+        # Arrow/Flow indicator
+        ws[f'{start_col}{input_start_row + 1}'] = '↓'
+        ws[f'{start_col}{input_start_row + 1}'].font = Font(size=14, bold=True)
+        ws[f'{start_col}{input_start_row + 1}'].alignment = Alignment(horizontal='center', vertical='center')
+
+        # Process box
+        ws[f'{start_col}{input_start_row + 2}'] = 'PROCESS'
+        ws[f'{start_col}{input_start_row + 2}'].font = Font(bold=True, size=9)
+        ws[f'{start_col}{input_start_row + 2}'].fill = light_blue_fill
+        ws[f'{start_col}{input_start_row + 2}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'{start_col}{input_start_row + 2}'].border = thin_border
+        ws.merge_cells(f'{start_col}{input_start_row + 2}:AI{input_start_row + 2}')
+
+        # Set column widths
+        ws.column_dimensions['AH'].width = 18
+        ws.column_dimensions['AI'].width = 10
+        ws.column_dimensions['AJ'].width = 10
+

@@ -51,6 +51,20 @@
               <span class="template-desc">For plant capacity records</span>
             </div>
           </button>
+          <button @click="downloadTemplate('plant-status')" class="template-btn glass-button">
+            <i class="pi pi-file-excel"></i>
+            <div class="template-info">
+              <span class="template-name">Plant Status</span>
+              <span class="template-desc">For daily plant operational status</span>
+            </div>
+          </button>
+          <button @click="downloadTemplate('psr')" class="template-btn glass-button">
+            <i class="pi pi-file-excel"></i>
+            <div class="template-info">
+              <span class="template-name">PSR Template</span>
+              <span class="template-desc">Plant Status Report with right side data</span>
+            </div>
+          </button>
         </div>
       </div>
     </div>
@@ -631,15 +645,8 @@ export default {
       return statusMap[status] || 'info';
     },
     confirmDelete(upload) {
-      const confirmMsg = `Are you sure you want to delete "${upload.original_filename}"?\n\n` +
-                        `This will permanently delete:\n` +
-                        `- The uploaded file\n` +
-                        `- ${upload.records_imported || 0} generation report records\n\n` +
-                        `This action cannot be undone.`;
-      
-      if (confirm(confirmMsg)) {
-        this.deleteUpload(upload.id);
-      }
+      this.uploadToDelete = upload;
+      this.deleteDialog = true;
     },
     
     downloadFile(upload) {
@@ -678,19 +685,22 @@ export default {
       }
     },
     
-    async deleteUpload(uploadId) {
-      this.deleting = uploadId;
+    async deleteUpload() {
+      if (!this.uploadToDelete) return;
+      
+      this.deleting = this.uploadToDelete.id;
       
       try {
-        const response = await api.deleteUploadedFile(uploadId);
-        this.showMessage(
-          `File deleted successfully. ${response.data.reports_deleted || 0} records removed.`,
-          'success'
+        const response = await api.deleteUploadedFile(this.uploadToDelete.id);
+        this.$toast.success(
+          `File deleted successfully. ${response.data.reports_deleted || 0} records removed.`
         );
+        this.deleteDialog = false;
+        this.uploadToDelete = null;
         this.loadUploadHistory();
       } catch (error) {
         const errorMsg = error.response?.data?.error || 'Failed to delete file';
-        this.showMessage(errorMsg, 'error');
+        this.$toast.error(errorMsg);
       } finally {
         this.deleting = null;
       }
@@ -1648,5 +1658,52 @@ td:has(.btn-delete) {
 .template-desc {
   font-size: 0.8125rem;
   color: var(--gray-600);
+}
+
+/* Delete Confirmation Dialog */
+.confirmation-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem;
+}
+
+.confirmation-content span {
+  font-size: 1.125rem;
+  color: var(--gray-700);
+  margin-bottom: 1rem;
+}
+
+.delete-details {
+  width: 100%;
+  text-align: left;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.delete-details p {
+  margin: 0.5rem 0;
+  color: var(--gray-700);
+  font-size: 0.9375rem;
+}
+
+.delete-details ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  color: var(--gray-600);
+}
+
+.delete-details li {
+  margin: 0.25rem 0;
+}
+
+.warning-text {
+  color: #dc2626 !important;
+  font-weight: 600 !important;
+  margin-top: 0.75rem !important;
 }
 </style>

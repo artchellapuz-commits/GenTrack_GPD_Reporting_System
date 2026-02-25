@@ -76,6 +76,18 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
         wb = TemplateGenerator.generate_plant_capacity_template()
         return TemplateGenerator.create_http_response(wb, 'Plant_Capacity_Template.xlsx')
     
+    @action(detail=False, methods=['get'], url_path='download-template/plant-status')
+    def download_plant_status_template(self, request):
+        """Download Plant Status template"""
+        wb = TemplateGenerator.generate_plant_status_template()
+        return TemplateGenerator.create_http_response(wb, 'Plant_Status_Template.xlsx')
+    
+    @action(detail=False, methods=['get'], url_path='download-template/psr')
+    def download_psr_template(self, request):
+        """Download PSR (Plant Status Report) template with right side section"""
+        wb = TemplateGenerator.generate_psr_template()
+        return TemplateGenerator.create_http_response(wb, 'PSR_Template.xlsx')
+    
     @action(detail=True, methods=['delete'])
     def delete_upload(self, request, pk=None):
         """Delete an uploaded file and all its associated generation reports"""

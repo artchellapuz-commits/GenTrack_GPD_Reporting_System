@@ -93,8 +93,8 @@ class ScheduledReportViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class ReportExecutionViewSet(viewsets.ReadOnlyModelViewSet):
-    """ViewSet for viewing report execution history"""
+class ReportExecutionViewSet(viewsets.ModelViewSet):
+    """ViewSet for viewing and managing report execution history"""
     queryset = ReportExecution.objects.all()
     serializer_class = ReportExecutionSerializer
     permission_classes = [IsAuthenticated]
@@ -112,6 +112,43 @@ class ReportExecutionViewSet(viewsets.ReadOnlyModelViewSet):
             models.Q(scheduled_report__created_by=user) | 
             models.Q(scheduled_report__recipients=user)
         ).distinct()
+    
+    def destroy(self, request, *args, **kwargs):
+        """Delete execution record and associated file"""
+        import os
+        
+        try:
+            execution = self.get_object()
+            scheduled_report = execution.scheduled_report
+            
+            # Delete the physical file if it exists
+            if execution.file_path:
+                file_path = execution.file_path.replace('\\', '/')
+                if os.path.exists(file_path):
+                    try:
+                        os.remove(file_path)
+                    except Exception as e:
+                        print(f"Warning: Could not delete file {file_path}: {e}")
+            
+            # Delete the database record
+            execution.delete()
+            
+            # Update the run_count on the scheduled report
+            # Count remaining executions
+            remaining_count = ReportExecution.objects.filter(
+                scheduled_report=scheduled_report
+            ).count()
+            scheduled_report.run_count = remaining_count
+            scheduled_report.save(update_fields=['run_count'])
+            
+            return Response({
+                'message': 'Execution deleted successfully'
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                'error': f'Failed to delete execution: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=True, methods=['get'])
     def download(self, request, pk=None):

@@ -91,13 +91,22 @@
                 </span>
                 <span class="execution-date">{{ formatDateTime(exec.started_at) }}</span>
               </div>
-              <button 
-                v-if="exec.status === 'COMPLETED' && exec.file_path" 
-                @click="downloadFile(exec.id)"
-                class="btn-download"
-              >
-                <i class="pi pi-download"></i> Download
-              </button>
+              <div class="execution-actions">
+                <button 
+                  v-if="exec.status === 'COMPLETED' && exec.file_path" 
+                  @click="downloadFile(exec.id)"
+                  class="btn-download"
+                >
+                  <i class="pi pi-download"></i> Download
+                </button>
+                <button 
+                  @click="deleteExecution(exec)"
+                  class="btn-delete-exec"
+                  title="Delete execution"
+                >
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
             </div>
 
             <div class="execution-details">
@@ -560,6 +569,44 @@ export default {
       }
     };
 
+    const deleteExecution = async (execution) => {
+      if (!execution || !execution.id) {
+        console.error('Invalid execution object');
+        return;
+      }
+      
+      // Show confirm modal
+      showConfirm(
+        'Delete Execution',
+        `Are you sure you want to delete this execution?<br><br>` +
+        `<strong>File:</strong> ${getFileName(execution.file_path) || 'N/A'}<br>` +
+        `<strong>Date:</strong> ${formatDateTime(execution.started_at)}<br><br>` +
+        `This will permanently delete the execution record and the generated file.<br>` +
+        `This action cannot be undone.`,
+        async () => {
+          try {
+            console.log('Deleting execution:', execution.id);
+            await axios.delete(`${API_URL}/report-executions/${execution.id}/`);
+            
+            showToast('success', 'Deleted!', 'Execution record has been deleted successfully.');
+            
+            // Refresh executions list
+            if (selectedReport.value) {
+              await viewExecutions(selectedReport.value);
+            }
+            
+            // Reload reports list to update execution count
+            await loadReports();
+          } catch (error) {
+            console.error('Failed to delete execution:', error);
+            const errorMsg = error.response?.data?.error || error.message;
+            showToast('error', 'Failed to Delete', errorMsg);
+          }
+        },
+        'Delete'
+      );
+    };
+
     const getFileName = (filePath) => {
       if (!filePath) return 'N/A';
       // Handle both forward slashes and backslashes
@@ -618,6 +665,7 @@ export default {
       editReport,
       viewExecutions,
       downloadFile,
+      deleteExecution,
       getFileName,
       formatFileSize,
       formatDateTime,
@@ -990,6 +1038,12 @@ export default {
   margin-bottom: 16px;
 }
 
+.execution-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .execution-date {
   margin-left: 12px;
   color: #64748b;
@@ -1017,6 +1071,33 @@ export default {
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-delete-exec {
+  padding: 8px 12px;
+  background: white;
+  color: #ef4444;
+  border: 2px solid #fecaca;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+}
+
+.btn-delete-exec:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-color: #ef4444;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.btn-delete-exec:active {
+  transform: translateY(0) scale(1);
 }
 
 .execution-details {

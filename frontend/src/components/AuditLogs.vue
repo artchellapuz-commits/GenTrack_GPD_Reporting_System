@@ -426,9 +426,21 @@ h1 {
 
 .filters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   align-items: end;
+}
+
+@media (max-width: 1200px) {
+  .filters-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .filter-group {
@@ -462,6 +474,10 @@ h1 {
 .filter-actions {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 
 .btn-primary, .btn-secondary {
@@ -474,6 +490,8 @@ h1 {
   align-items: center;
   gap: 8px;
   transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-primary {
@@ -508,6 +526,8 @@ h1 {
   transition: all 0.3s ease;
   background: #00a651;
   color: white;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-export:hover {
