@@ -48,7 +48,7 @@ class UnitViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = UploadedFile.objects.all().select_related('plant', 'uploaded_by')
+    queryset = UploadedFile.objects.filter(is_archived=False).select_related('plant', 'uploaded_by')
     serializer_class = UploadedFileSerializer
     permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
     
@@ -92,7 +92,8 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
     def delete_upload(self, request, pk=None):
         """Delete an uploaded file and all its associated generation reports"""
         try:
-            uploaded_file = self.get_object()
+            # Get the file without the is_archived filter
+            uploaded_file = UploadedFile.objects.get(pk=pk)
             
             # Delete associated generation reports first
             deleted_reports = GenerationReport.objects.filter(uploaded_file=uploaded_file).delete()
@@ -115,8 +116,98 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
                 'reports_deleted': deleted_reports[0] if deleted_reports else 0
             }, status=status.HTTP_200_OK)
             
+        except UploadedFile.DoesNotExist:
+            return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
+    @action(detail=True, methods=['post'])
+    def archive(self, request, pk=None):
+        """Archive an uploaded file"""
+        try:
+            from django.utils import timezone
+            # Get the file without the is_archived filter
+            uploaded_file = UploadedFile.objects.get(pk=pk)
+            
+            if uploaded_file.is_archived:
+                return Response({'error': 'File is already archived'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            uploaded_file.is_archived = True
+            uploaded_file.archived_at = timezone.now()
+            uploaded_file.archived_by = request.user if request.user.is_authenticated else None
+            uploaded_file.save()
+            
+            # Log the action
+            if request.user.is_authenticated:
+                AuditLog.objects.create(
+                    user=request.user,
+                    action='UPDATE',
+                    model_name='UploadedFile',
+                    object_id=uploaded_file.id,
+                    description=f'Archived file: {uploaded_file.original_filename}',
+                    ip_address=get_client_ip(request),
+                    location=get_location_from_ip(get_client_ip(request)),
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                )
+            
+            return Response({
+                'message': 'File archived successfully',
+                'file_id': uploaded_file.id
+            }, status=status.HTTP_200_OK)
+            
+        except UploadedFile.DoesNotExist:
+            return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        """Restore an archived file"""
+        try:
+            # Get the file without the is_archived filter
+            uploaded_file = UploadedFile.objects.get(pk=pk)
+            
+            if not uploaded_file.is_archived:
+                return Response({'error': 'File is not archived'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            uploaded_file.is_archived = False
+            uploaded_file.archived_at = None
+            uploaded_file.archived_by = None
+            uploaded_file.save()
+            
+            # Log the action
+            if request.user.is_authenticated:
+                AuditLog.objects.create(
+                    user=request.user,
+                    action='UPDATE',
+                    model_name='UploadedFile',
+                    object_id=uploaded_file.id,
+                    description=f'Restored file: {uploaded_file.original_filename}',
+                    ip_address=get_client_ip(request),
+                    location=get_location_from_ip(get_client_ip(request)),
+                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                )
+            
+            return Response({
+                'message': 'File restored successfully',
+                'file_id': uploaded_file.id
+            }, status=status.HTTP_200_OK)
+            
+        except UploadedFile.DoesNotExist:
+            return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'])
+    def archived(self, request):
+        """Get all archived files"""
+        archived_files = UploadedFile.objects.filter(is_archived=True).select_related('plant', 'uploaded_by', 'archived_by')
+        page = self.paginate_queryset(archived_files)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(archived_files, many=True)
+        return Response(serializer.data)
+
     
     @action(detail=False, methods=['post'])
     def upload(self, request):

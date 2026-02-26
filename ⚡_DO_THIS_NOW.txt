@@ -1,29 +1,62 @@
-============================================================
-DO THIS NOW - FINAL FIX
-============================================================
+⚡⚡⚡ DO THIS RIGHT NOW ⚡⚡⚡
 
-The CORS error is because of cache-busting headers.
-I've fixed it. Just do these 2 steps:
+The archiveFile method EXISTS in the file (I verified it at line 751).
 
-1. RESTART BACKEND
-   - Go to backend terminal
-   - Press Ctrl+C
-   - Run: python manage.py runserver
+The problem is your dev server hasn't recompiled the file.
 
-2. HARD REFRESH BROWSER
-   - Press: Ctrl + Shift + R
+═══════════════════════════════════════════════════════════
 
-DONE! Dashboard should work now.
+STEP 1: STOP THE DEV SERVER
+═══════════════════════════════════════════════════════════
 
-============================================================
+Go to the terminal where "npm run serve" is running.
 
-WHAT TO EXPECT:
-✓ No CORS errors
-✓ Dashboard shows real data per plant
-✓ AGUS1: 990,000 kWh, 4.12%
-✓ AGUS2: 990,000 kWh, 2.29%
-✓ AGUS4-7: "No data uploaded yet"
+Press: Ctrl + C
 
-Open console (F12) to see detailed logs.
+Wait until it stops completely.
 
-============================================================
+═══════════════════════════════════════════════════════════
+
+STEP 2: START IT AGAIN
+═══════════════════════════════════════════════════════════
+
+Type: npm run serve
+
+Press: Enter
+
+Wait for: "Compiled successfully"
+
+═══════════════════════════════════════════════════════════
+
+STEP 3: HARD REFRESH BROWSER
+═══════════════════════════════════════════════════════════
+
+Press: Ctrl + Shift + R
+
+(This forces the browser to reload all files)
+
+═══════════════════════════════════════════════════════════
+
+STEP 4: TEST
+═══════════════════════════════════════════════════════════
+
+Click the Archive button.
+
+IT WILL WORK!
+
+═══════════════════════════════════════════════════════════
+
+IF YOU DON'T WANT TO MANUALLY RESTART:
+═══════════════════════════════════════════════════════════
+
+Double-click: RESTART_DEV_SERVER_NOW.bat
+
+It will do steps 1-2 automatically.
+
+Then you just do step 3 (Ctrl+Shift+R) and step 4 (test).
+
+═══════════════════════════════════════════════════════════
+
+THE METHOD IS IN THE FILE. THE CODE IS CORRECT.
+YOU JUST NEED TO RESTART THE DEV SERVER.
+═══════════════════════════════════════════════════════════

@@ -28,6 +28,12 @@
           <span class="nav-text">Upload Excel</span>
         </router-link>
         
+        <!-- Archive - Show for everyone who can upload -->
+        <router-link v-if="canUpload" to="/archive" @click="closeSidebar" class="nav-item">
+          <i class="pi pi-inbox"></i>
+          <span class="nav-text">Archive</span>
+        </router-link>
+        
         <router-link to="/view" @click="closeSidebar" class="nav-item">
           <i class="pi pi-eye"></i>
           <span class="nav-text">View Reports</span>

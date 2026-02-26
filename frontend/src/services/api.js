@@ -69,6 +69,21 @@ export default {
     return apiClient.delete(`/uploaded-files/${fileId}/delete_upload/`);
   },
 
+  // Archive uploaded file
+  archiveUploadedFile(fileId) {
+    return apiClient.post(`/uploaded-files/${fileId}/archive/`);
+  },
+
+  // Restore archived file
+  restoreArchivedFile(fileId) {
+    return apiClient.post(`/uploaded-files/${fileId}/restore/`);
+  },
+
+  // Get archived files
+  getArchivedFiles(params = {}) {
+    return apiClient.get('/uploaded-files/archived/', { params });
+  },
+
   // Get generation reports
   getGenerationReports(params = {}) {
     // Add timestamp to prevent caching

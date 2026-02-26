@@ -90,6 +90,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/archive',
+    name: 'Archive',
+    component: () => import('../components/ArchivePage.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/view',
     name: 'View',
     component: ViewReports,

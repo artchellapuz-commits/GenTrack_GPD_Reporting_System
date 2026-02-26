@@ -78,6 +78,9 @@ class UploadedFile(models.Model):
     error_message = models.TextField(blank=True)
     file_size = models.IntegerField()
     checksum = models.CharField(max_length=64)
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    archived_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='archived_files')
     
     class Meta:
         db_table = 'uploaded_files'
@@ -86,6 +89,7 @@ class UploadedFile(models.Model):
             models.Index(fields=['plant', 'uploaded_at']),
             models.Index(fields=['status']),
             models.Index(fields=['uploaded_by']),
+            models.Index(fields=['is_archived']),
         ]
     
     def __str__(self):

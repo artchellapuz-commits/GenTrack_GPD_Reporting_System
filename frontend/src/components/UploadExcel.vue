@@ -331,15 +331,9 @@
                   {{ upload.records_imported || 0 }}
                 </td>
                 <td>
-                  <div class="action-buttons">
-                    <Button 
-                      icon="pi pi-trash"
-                      @click="confirmDelete(upload)"
-                      class="p-button-rounded p-button-danger p-button-text"
-                      :loading="deleting === upload.id"
-                      v-tooltip.top="'Delete upload'"
-                    />
-                  </div>
+                  <button @click="archiveFile(upload)" class="btn-archive" title="Archive">
+                    <i class="pi pi-inbox"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -349,43 +343,57 @@
     </div>
 
     <!-- Delete Confirmation Dialog -->
-    <Dialog 
-      v-model:visible="deleteDialog" 
-      :style="{ width: '450px' }" 
-      header="Confirm Delete" 
-      :modal="true"
-      class="p-fluid"
-    >
-      <div class="confirmation-content">
-        <i class="pi pi-exclamation-triangle" style="font-size: 3rem; color: var(--red-500); margin-bottom: 1rem;"></i>
-        <span v-if="uploadToDelete">
-          Are you sure you want to delete <b>{{ uploadToDelete.original_filename }}</b>?
-        </span>
-        <div v-if="uploadToDelete" class="delete-details">
-          <p>This will permanently delete:</p>
-          <ul>
-            <li>The uploaded file</li>
-            <li>{{ uploadToDelete.records_imported || 0 }} generation report records</li>
-          </ul>
-          <p class="warning-text">This action cannot be undone.</p>
+    <div v-if="deleteDialog" class="modal-overlay" @click.self="deleteDialog = false">
+      <div class="modal-delete-content">
+        <!-- Orange Header with Icon -->
+        <div class="modal-delete-header">
+          <div class="header-left">
+            <div class="warning-icon-box">
+              <i class="pi pi-exclamation-triangle"></i>
+            </div>
+            <h3 class="modal-title">Delete Report</h3>
+          </div>
+          <button class="close-btn" @click="deleteDialog = false">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        
+        <!-- White Body -->
+        <div class="modal-delete-body">
+          <p class="delete-question" v-if="uploadToDelete">
+            Are you sure you want to delete <strong>"{{ uploadToDelete.original_filename }}"</strong>?
+          </p>
+          
+          <div class="delete-info">
+            <p class="info-title">This will:</p>
+            <ul class="info-list">
+              <li>Delete the uploaded file</li>
+              <li>Delete all generation report records</li>
+              <li>This action cannot be undone</li>
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Footer with Buttons -->
+        <div class="modal-delete-footer">
+          <button 
+            @click="deleteDialog = false" 
+            class="btn-cancel"
+          >
+            Cancel
+          </button>
+          <button 
+            @click="deleteUpload" 
+            class="btn-delete"
+            :disabled="deleting !== null"
+          >
+            <i v-if="deleting === null" class="pi pi-trash"></i>
+            <i v-else class="pi pi-spin pi-spinner"></i>
+            {{ deleting !== null ? 'Deleting...' : 'Delete' }}
+          </button>
         </div>
       </div>
-      <template #footer>
-        <Button 
-          label="Cancel" 
-          icon="pi pi-times" 
-          @click="deleteDialog = false" 
-          class="p-button-text"
-        />
-        <Button 
-          label="Delete" 
-          icon="pi pi-trash" 
-          @click="deleteUpload" 
-          class="p-button-danger"
-          :loading="deleting !== null"
-        />
-      </template>
-    </Dialog>
+    </div>
   </div>
   </AppLayout>
 </template>
@@ -394,16 +402,12 @@
 import api from '../services/api';
 import AppLayout from './AppLayout.vue';
 import Toast from 'primevue/toast';
-import Dialog from 'primevue/dialog';
-import Button from 'primevue/button';
 
 export default {
   name: 'UploadExcel',
   components: {
     AppLayout,
     Toast,
-    Dialog,
-    Button,
   },
   data() {
     return {
@@ -742,12 +746,73 @@ export default {
         console.error('Error downloading template:', error);
         this.$toast.error('Failed to download template');
       }
-    }
+    },
+    
+    async archiveFile(upload) {
+      try {
+        this.$toast.info('Archiving file...');
+        await api.archiveUploadedFile(upload.id);
+        this.$toast.success('File archived successfully!');
+        this.loadUploadHistory();
+      } catch (error) {
+        const errorMsg = error.response?.data?.error || 'Failed to archive file';
+        this.$toast.error(errorMsg);
+      }
+    },
   },
 };
 </script>
 
 <style scoped>
+/* Delete Modal with Blur Background */
+.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(75, 85, 99, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999 !important;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-delete-content {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  max-width: 550px;
+  width: 90%;
+  position: relative;
+  z-index: 10000;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .upload-page {
   max-width: 900px;
   margin: 0 auto;
@@ -1660,50 +1725,234 @@ td:has(.btn-delete) {
   color: var(--gray-600);
 }
 
-/* Delete Confirmation Dialog */
-.confirmation-content {
+/* Delete Confirmation Modal - Matching Screenshot Design */
+.modal-delete-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2rem 2rem;
+  background: linear-gradient(135deg, #ff9a3c 0%, #ff8c00 100%);
+  position: relative;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.warning-icon-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.warning-icon-box i {
+  font-size: 2rem;
+  color: white;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.02em;
+}
+
+.close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.close-btn i {
+  font-size: 1.5rem;
+  color: white;
+  font-weight: bold;
+}
+
+/* White Body */
+.modal-delete-body {
+  padding: 2.5rem 2rem 2rem 2rem;
+  background: white;
+}
+
+.delete-question {
+  font-size: 1.125rem;
+  color: #718096;
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+}
+
+.delete-question strong {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.delete-info {
+  margin-top: 1.5rem;
+}
+
+.info-title {
+  font-size: 1rem;
+  color: #718096;
+  margin: 0 0 1rem 0;
+  font-weight: 500;
+}
+
+.info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 1rem;
+  gap: 0.75rem;
 }
 
-.confirmation-content span {
-  font-size: 1.125rem;
-  color: var(--gray-700);
-  margin-bottom: 1rem;
-}
-
-.delete-details {
-  width: 100%;
-  text-align: left;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: var(--radius-md);
-  padding: 1rem;
-  margin-top: 1rem;
-}
-
-.delete-details p {
-  margin: 0.5rem 0;
-  color: var(--gray-700);
+.info-list li {
   font-size: 0.9375rem;
-}
-
-.delete-details ul {
-  margin: 0.5rem 0;
+  color: #718096;
   padding-left: 1.5rem;
-  color: var(--gray-600);
+  position: relative;
+  line-height: 1.5;
 }
 
-.delete-details li {
-  margin: 0.25rem 0;
+.info-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0.5rem;
+  color: #a0aec0;
+  font-size: 1.25rem;
+  line-height: 1.2;
 }
 
-.warning-text {
-  color: #dc2626 !important;
-  font-weight: 600 !important;
-  margin-top: 0.75rem !important;
+.info-list li:last-child {
+  color: #718096;
+  font-weight: 500;
+}
+
+/* Footer with Buttons */
+.modal-delete-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem 2rem 2rem 2rem;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-cancel,
+.btn-delete {
+  padding: 0.875rem 2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: #718096;
+  border: none;
+}
+
+.btn-cancel:hover {
+  background: #f7fafc;
+  color: #4a5568;
+}
+
+.btn-delete {
+  background: #ef4444;
+  color: white;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-delete i {
+  font-size: 1rem;
+}
+.btn-archive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  color: #f59e0b;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-archive:hover {
+  background-color: #f59e0b;
+  color: white;
+  transform: scale(1.1);
+}
+
+.btn-archive i {
+  font-size: 1.125rem;
 }
 </style>
+
+
+/* Archive Button Styles */
+.btn-archive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  color: #f59e0b;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-archive:hover {
+  background-color: #f59e0b;
+  color: white;
+  transform: scale(1.1);
+}
+
+.btn-archive i {
+  font-size: 1.125rem;
+}

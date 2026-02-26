@@ -31,6 +31,14 @@
               <span>Upload Excel</span>
             </router-link>
           </li>
+
+          <!-- Archive - Show for everyone who can upload -->
+          <li class="menu-item" v-if="canUpload">
+            <router-link to="/archive" class="menu-link">
+              <i class="pi pi-inbox"></i>
+              <span>Archive</span>
+            </router-link>
+          </li>
           
           <li class="menu-item">
             <router-link to="/view" class="menu-link">
