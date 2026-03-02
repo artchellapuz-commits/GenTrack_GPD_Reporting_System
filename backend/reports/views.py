@@ -347,16 +347,16 @@ class GenerationReportViewSet(mixins.ListModelMixin,
         try:
             report_date = data['start_date']
             
+            # Both daily_status and PSR now use the same PSR template
+            # Pass report_type to customize header styling
+            exporter = PSRExporter(reports, report_date, report_type=report_type)
+            file_path = exporter.generate()
+            
             if report_type == 'daily_status':
-                # Generate Daily Status Report
                 filename = f"DAILY_PLANT_STATUS_{report_date.strftime('%Y%m%d')}.xlsx"
-                file_path = generate_daily_status_report(report_date, filename)
-                report_name = "Daily Status Report"
+                report_name = "Daily Plant Status Report"
             else:
-                # Generate PSR report (default)
-                exporter = PSRExporter(reports, report_date)
-                file_path = exporter.generate()
-                filename = f"PLANT_STATUS_{report_date.strftime('%Y%m%d')}.xlsx"
+                filename = f"PSR_REPORT_{report_date.strftime('%Y%m%d')}.xlsx"
                 report_name = "PSR Report"
             
             # Create audit log for report generation

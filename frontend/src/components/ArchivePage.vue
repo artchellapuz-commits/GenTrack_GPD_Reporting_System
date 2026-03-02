@@ -16,16 +16,37 @@
       <!-- Archived Files List -->
       <div v-if="archivedFiles.length" class="card glass-card glass-fade-in">
         <div class="card-header">
-          <h3 class="card-title">
-            <i class="pi pi-history title-icon"></i>
-            Archived Uploads ({{ archivedFiles.length }})
-          </h3>
+          <div class="header-left">
+            <h3 class="card-title">
+              <i class="pi pi-history title-icon"></i>
+              Archived Uploads ({{ archivedFiles.length }})
+            </h3>
+          </div>
+          <div class="header-actions" v-if="selectedFiles.length > 0">
+            <span class="selected-count">{{ selectedFiles.length }} selected</span>
+            <button @click="bulkDelete" class="btn-bulk-delete glass-button">
+              <i class="pi pi-trash"></i>
+              Delete Selected
+            </button>
+            <button @click="clearSelection" class="btn-clear glass-button">
+              <i class="pi pi-times"></i>
+              Clear
+            </button>
+          </div>
         </div>
         <div class="card-body p-0">
           <div class="table-container">
             <table>
               <thead>
                 <tr>
+                  <th style="width: 50px;">
+                    <input 
+                      type="checkbox" 
+                      @change="toggleSelectAll"
+                      :checked="isAllSelected"
+                      class="checkbox-input"
+                    />
+                  </th>
                   <th>File Name</th>
                   <th>Plant</th>
                   <th>Uploaded At</th>
@@ -36,7 +57,20 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="file in archivedFiles" :key="file.id" class="archive-row">
+                <tr 
+                  v-for="file in archivedFiles" 
+                  :key="file.id" 
+                  class="archive-row"
+                  :class="{ 'selected-row': isSelected(file.id) }"
+                >
+                  <td>
+                    <input 
+                      type="checkbox" 
+                      :checked="isSelected(file.id)"
+                      @change="toggleSelect(file.id)"
+                      class="checkbox-input"
+                    />
+                  </td>
                   <td>
                     <div class="file-cell">
                       <i class="pi pi-file file-icon-sm"></i>
@@ -112,7 +146,9 @@
               <div class="warning-icon-box">
                 <i class="pi pi-exclamation-triangle"></i>
               </div>
-              <h3 class="modal-title">Delete Permanently</h3>
+              <h3 class="modal-title">
+                {{ isBulkDelete ? 'Delete Multiple Files' : 'Delete Permanently' }}
+              </h3>
             </div>
             <button class="close-btn" @click="deleteDialog = false">
               <i class="pi pi-times"></i>
@@ -120,14 +156,17 @@
           </div>
           
           <div class="modal-delete-body">
-            <p class="delete-question" v-if="fileToDelete">
+            <p class="delete-question" v-if="isBulkDelete">
+              Are you sure you want to permanently delete <strong>{{ selectedFiles.length }} files</strong>?
+            </p>
+            <p class="delete-question" v-else-if="fileToDelete">
               Are you sure you want to permanently delete <strong>"{{ fileToDelete.original_filename }}"</strong>?
             </p>
             
             <div class="delete-info">
               <p class="info-title">This will:</p>
               <ul class="info-list">
-                <li>Permanently delete the uploaded file</li>
+                <li>Permanently delete the uploaded file(s)</li>
                 <li>Delete all generation report records</li>
                 <li>This action cannot be undone</li>
               </ul>
@@ -139,7 +178,7 @@
               Cancel
             </button>
             <button 
-              @click="deleteFile" 
+              @click="isBulkDelete ? executeBulkDelete() : deleteFile()" 
               class="btn-delete"
               :disabled="deleting !== null"
             >
@@ -168,11 +207,19 @@ export default {
   data() {
     return {
       archivedFiles: [],
+      selectedFiles: [],
       restoring: null,
       deleting: null,
       deleteDialog: false,
       fileToDelete: null,
+      isBulkDelete: false,
     };
+  },
+  computed: {
+    isAllSelected() {
+      return this.archivedFiles.length > 0 && 
+             this.selectedFiles.length === this.archivedFiles.length;
+    },
   },
   mounted() {
     this.loadArchivedFiles();
@@ -182,9 +229,84 @@ export default {
       try {
         const response = await api.getArchivedFiles();
         this.archivedFiles = response.data.results || response.data;
+        // Clear selection when reloading
+        this.selectedFiles = [];
       } catch (error) {
         console.error('Error loading archived files:', error);
         this.$toast.error('Failed to load archived files');
+      }
+    },
+    
+    toggleSelect(fileId) {
+      const index = this.selectedFiles.indexOf(fileId);
+      if (index > -1) {
+        this.selectedFiles.splice(index, 1);
+      } else {
+        this.selectedFiles.push(fileId);
+      }
+    },
+    
+    toggleSelectAll(event) {
+      if (event.target.checked) {
+        this.selectedFiles = this.archivedFiles.map(f => f.id);
+      } else {
+        this.selectedFiles = [];
+      }
+    },
+    
+    isSelected(fileId) {
+      return this.selectedFiles.includes(fileId);
+    },
+    
+    clearSelection() {
+      this.selectedFiles = [];
+    },
+    
+    bulkDelete() {
+      if (this.selectedFiles.length === 0) {
+        this.$toast.warning('Please select files to delete');
+        return;
+      }
+      this.isBulkDelete = true;
+      this.deleteDialog = true;
+    },
+    
+    async executeBulkDelete() {
+      if (this.selectedFiles.length === 0) return;
+      
+      this.deleting = 'bulk';
+      let successCount = 0;
+      let failCount = 0;
+      
+      try {
+        // Delete files one by one
+        for (const fileId of this.selectedFiles) {
+          try {
+            await api.deleteUploadedFile(fileId);
+            successCount++;
+          } catch (error) {
+            console.error(`Failed to delete file ${fileId}:`, error);
+            failCount++;
+          }
+        }
+        
+        // Show result
+        if (successCount > 0) {
+          this.$toast.success(`Successfully deleted ${successCount} file(s)`);
+        }
+        if (failCount > 0) {
+          this.$toast.error(`Failed to delete ${failCount} file(s)`);
+        }
+        
+        this.deleteDialog = false;
+        this.isBulkDelete = false;
+        this.selectedFiles = [];
+        this.loadArchivedFiles();
+        
+      } catch (error) {
+        this.$toast.error('Failed to delete files');
+      } finally {
+        this.deleting = null;
       }
     },
     
@@ -204,6 +326,7 @@ export default {
     
     confirmDelete(file) {
       this.fileToDelete = file;
+      this.isBulkDelete = false;
       this.deleteDialog = true;
     },
     
@@ -278,6 +401,89 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.selected-count {
+  font-size: 0.9375rem;
+  color: var(--npc-primary);
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 61, 130, 0.1);
+  border-radius: 0.5rem;
+}
+
+.btn-bulk-delete,
+.btn-clear {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-bulk-delete {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-bulk-delete:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-clear {
+  background: #6b7280;
+  color: white;
+}
+
+.btn-clear:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--npc-primary);
+}
+
+.selected-row {
+  background-color: rgba(0, 61, 130, 0.05);
+}
+
+.archive-row {
+  transition: background-color 0.2s ease;
+}
+
+.archive-row:hover {
+  background-color: rgba(0, 61, 130, 0.02);
 }
 
 .title-icon {

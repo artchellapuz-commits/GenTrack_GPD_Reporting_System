@@ -81,12 +81,13 @@ class PSRExporter:
         }
     }
     
-    def __init__(self, queryset, report_date):
+    def __init__(self, queryset, report_date, report_type='psr'):
         if not EXCEL_AVAILABLE:
             raise ImportError("openpyxl is required for Excel export")
         
         self.queryset = queryset
         self.report_date = report_date
+        self.report_type = report_type  # 'psr' or 'daily_status'
         self.data_by_plant = self._organize_data()
     
     def _organize_data(self):
@@ -166,7 +167,19 @@ class PSRExporter:
         return file_path
     
     def _add_header(self, ws):
-        """Add header section EXACTLY as template (rows 1-12)"""
+        """Add header section with dark gray/teal styling for both report types"""
+        # Both reports now use dark gray/teal header
+        header_fill = PatternFill(start_color="2F4F4F", end_color="2F4F4F", fill_type="solid")
+        header_font_color = "FFFFFF"
+        
+        # Determine title and time text based on report type
+        if self.report_type == 'daily_status':
+            title_text = 'DAILY PLANT STATUS'
+            time_text = f'as of 12:00 NN    {self.report_date.strftime("%A, %B %d, %Y")}'
+        else:
+            title_text = ' PLANT STATUS REPORT'
+            time_text = f'as of 0800H {self.report_date.strftime("%A, %d %B %Y")}'
+        
         # Row 1: Empty with specific formatting
         ws['A1'] = ' '
         ws['A1'].font = Font(size=20, bold=True)
@@ -223,17 +236,18 @@ class PSRExporter:
         # Row 8: Empty
         ws.row_dimensions[8].height = 8.25
         
-        # Row 9: PLANT STATUS REPORT
-        ws['A9'] = ' PLANT STATUS REPORT'
-        ws['A9'].font = Font(size=18, bold=True, italic=True)
+        # Row 9: PLANT STATUS REPORT or DAILY PLANT STATUS (with dark gray/teal background)
+        ws['A9'] = title_text
+        ws['A9'].font = Font(size=18, bold=True, italic=True, color=header_font_color)
+        ws['A9'].fill = header_fill
         ws['A9'].alignment = Alignment(horizontal='center', vertical='center')
         ws.merge_cells('A9:N9')
         ws.row_dimensions[9].height = 24.95
         
-        # Row 10: Date
-        date_str = self.report_date.strftime('%A, %d %B %Y')
-        ws['A10'] = f'as of 0800H {date_str}'
-        ws['A10'].font = Font(size=14, bold=True)
+        # Row 10: Date (with dark gray/teal background)
+        ws['A10'] = time_text
+        ws['A10'].font = Font(size=14, bold=True, color=header_font_color)
+        ws['A10'].fill = header_fill
         ws['A10'].alignment = Alignment(horizontal='center', vertical='center')
         ws.merge_cells('A10:N10')
         ws.row_dimensions[10].height = 22.5
@@ -453,15 +467,27 @@ class PSRExporter:
         return '. '.join(remarks)
     
     def _add_forecasted_load(self, ws, current_row):
-        """Add Agus-Pulangi Forecasted Load section (yellow highlighted row) EXACTLY as template"""
-        # Calculate forecasted loads (example values - can be made dynamic)
-        agus_forecast = 500.8
-        pulangi_forecast = 150.0
+        """Add Agus-Pulangi Forecasted Load section (yellow highlighted row) based on actual data"""
+        # Calculate forecasted loads from actual uploaded data
+        agus_forecast = 0.0
+        pulangi_forecast = 0.0
+        
+        # Sum up loads from AGUS plants
+        for plant_code in ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7']:
+            if plant_code in self.data_by_plant:
+                for unit_num, unit_data in self.data_by_plant[plant_code].items():
+                    agus_forecast += unit_data['generation']
+        
+        # Sum up loads from PULANGI4
+        if 'PULANGI4' in self.data_by_plant:
+            for unit_num, unit_data in self.data_by_plant['PULANGI4'].items():
+                pulangi_forecast += unit_data['generation']
+        
         total_forecast = agus_forecast + pulangi_forecast
         
-        # Forecasted load row with yellow background - EXACTLY as template
+        # Forecasted load row with yellow background
         date_str = self.report_date.strftime('%b %d, %Y')
-        forecast_text = f'Agus-Pulangi Forecasted Load @ 6pm, {date_str} : Agus = {agus_forecast} MW & Pulangui IV = {pulangi_forecast} MW, Total Load: {total_forecast} MW'
+        forecast_text = f'Agus-Pulangi Forecasted Load @ 6pm, {date_str} : Agus = {agus_forecast:.1f} MW & Pulangui IV = {pulangi_forecast:.1f} MW, Total Load: {total_forecast:.1f} MW'
         
         ws[f'A{current_row}'] = forecast_text
         ws[f'A{current_row}'].font = Font(size=11, bold=True)
@@ -652,12 +678,17 @@ class PSRExporter:
         ws.row_dimensions[start_row].height = 15.0
         start_row += 1
         
-        # Total load display
+        # Total load display - calculate from actual data
+        total_load_all = 0.0
+        for plant_code in self.data_by_plant:
+            for unit_num, unit_data in self.data_by_plant[plant_code].items():
+                total_load_all += unit_data['generation']
+        
         ws[f'AD{start_row}'] = 'Total load @ 0800H.xls'
         ws[f'AD{start_row}'].font = Font(size=9, bold=True)
         ws[f'AD{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
         
-        ws[f'AF{start_row}'] = '650.80 MW'
+        ws[f'AF{start_row}'] = f'{total_load_all:.2f} MW'
         ws[f'AF{start_row}'].font = Font(size=10, bold=True)
         ws[f'AF{start_row}'].fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
         ws[f'AF{start_row}'].border = thin_border
@@ -680,40 +711,47 @@ class PSRExporter:
         ws.row_dimensions[start_row].height = 15.0
         start_row += 1
         
-        # Plant data
-        plants_data = [
-            ('AGUS1', 80.0, 80.0, 0.00),
-            ('AGUS2', 180.0, 180.0, 0.00),
-            ('AGUS4', 158.1, 158.1, 0.00),
-            ('AGUS5', 55.0, 55.0, 0.00),
-            ('AGUS6', 219.0, 219.0, 0.00),
-            ('AGUS7', 54.0, 54.0, 0.00),
-            ('PULANGI4', 255.0, 255.0, 0.00),
-        ]
+        # Plant data - use actual data from uploaded files
+        plants_list = ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7', 'PULANGI4']
         
-        for plant, rated, available, load in plants_data:
-            ws[f'AD{start_row}'] = plant
-            ws[f'AD{start_row}'].font = Font(size=8)
-            ws[f'AD{start_row}'].border = thin_border
-            ws[f'AD{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
-            
-            ws[f'AE{start_row}'] = rated
-            ws[f'AE{start_row}'].font = Font(size=8)
-            ws[f'AE{start_row}'].border = thin_border
-            ws[f'AE{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
-            
-            ws[f'AF{start_row}'] = available
-            ws[f'AF{start_row}'].font = Font(size=8)
-            ws[f'AF{start_row}'].border = thin_border
-            ws[f'AF{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
-            
-            ws[f'AG{start_row}'] = load
-            ws[f'AG{start_row}'].font = Font(size=8)
-            ws[f'AG{start_row}'].border = thin_border
-            ws[f'AG{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
-            
-            ws.row_dimensions[start_row].height = 14.0
-            start_row += 1
+        for plant_code in plants_list:
+            if plant_code in self.PLANTS_CONFIG:
+                config = self.PLANTS_CONFIG[plant_code]
+                plant_data = self.data_by_plant.get(plant_code, {})
+                
+                # Calculate totals from actual data
+                total_capacity = sum(u['capacity'] for u in config['units'])
+                total_available = 0
+                total_load = 0
+                
+                for unit in config['units']:
+                    if unit['num'] in plant_data:
+                        unit_data = plant_data[unit['num']]
+                        total_load += unit_data['generation']
+                        total_available += unit['capacity']
+                
+                ws[f'AD{start_row}'] = plant_code
+                ws[f'AD{start_row}'].font = Font(size=8)
+                ws[f'AD{start_row}'].border = thin_border
+                ws[f'AD{start_row}'].alignment = Alignment(horizontal='left', vertical='center')
+                
+                ws[f'AE{start_row}'] = total_capacity
+                ws[f'AE{start_row}'].font = Font(size=8)
+                ws[f'AE{start_row}'].border = thin_border
+                ws[f'AE{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+                
+                ws[f'AF{start_row}'] = total_available
+                ws[f'AF{start_row}'].font = Font(size=8)
+                ws[f'AF{start_row}'].border = thin_border
+                ws[f'AF{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+                
+                ws[f'AG{start_row}'] = total_load
+                ws[f'AG{start_row}'].font = Font(size=8)
+                ws[f'AG{start_row}'].border = thin_border
+                ws[f'AG{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+                
+                ws.row_dimensions[start_row].height = 14.0
+                start_row += 1
         
         # IPP data
         ipp_data = [
@@ -766,17 +804,34 @@ class PSRExporter:
         ws[f'AF{start_row}'].border = thin_border
         start_row += 1
         
-        # Plant summary rows
-        summary_plants = [
-            ('AGUS1', 80.0, 80.0, 0.00),
-            ('AGUS2', 180.0, 165.0, 120.0),
-            ('AGUS4', 158.1, 158.1, 105.4),
-            ('AGUS5', 55.0, 55.0, 55.0),
-            ('AGUS6', 219.0, 219.0, 165.0),
-            ('AGUS7', 54.0, 54.0, 54.0),
-            ('PULANGI4', 255.0, 255.0, 215.0),
-            ('Total', 1001.1, 986.1, 714.4),
-        ]
+        # Plant summary rows - use actual data
+        summary_plants = []
+        total_rated = 0.0
+        total_available = 0.0
+        total_load = 0.0
+        
+        for plant_code in ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7', 'PULANGI4']:
+            if plant_code in self.PLANTS_CONFIG:
+                config = self.PLANTS_CONFIG[plant_code]
+                plant_data = self.data_by_plant.get(plant_code, {})
+                
+                rated = sum(u['capacity'] for u in config['units'])
+                available = 0.0
+                load = 0.0
+                
+                for unit in config['units']:
+                    if unit['num'] in plant_data:
+                        unit_data = plant_data[unit['num']]
+                        load += unit_data['generation']
+                        available += unit['capacity']
+                
+                summary_plants.append((plant_code, rated, available, load))
+                total_rated += rated
+                total_available += available
+                total_load += load
+        
+        # Add Total row
+        summary_plants.append(('Total', total_rated, total_available, total_load))
         
         for plant, rated, available, load in summary_plants:
             ws[f'AD{start_row}'] = plant
@@ -802,6 +857,7 @@ class PSRExporter:
             start_row += 1
         
         # Capacity factor table
+        # Capacity factor table
         start_row += 2
         ws[f'AD{start_row}'] = 'Rated'
         ws[f'AD{start_row}'].font = Font(size=8, bold=True)
@@ -819,30 +875,46 @@ class PSRExporter:
         ws[f'AF{start_row}'].border = thin_border
         start_row += 1
         
-        cf_data = [
-            ('AGUS1', 80.0, 80.0, 0.00),
-            ('AGUS2', 180.0, 165.0, 66.67),
-            ('AGUS4', 158.1, 158.1, 66.67),
-            ('AGUS5', 55.0, 55.0, 100.00),
-            ('AGUS6', 219.0, 219.0, 75.34),
-            ('AGUS7', 54.0, 54.0, 100.00),
-            ('PULANGI4', 255.0, 255.0, 84.31),
-        ]
-        
-        for plant, rated, available, cf in cf_data:
-            ws[f'AD{start_row}'] = plant
-            ws[f'AD{start_row}'].font = Font(size=8)
-            ws[f'AD{start_row}'].border = thin_border
-            
-            ws[f'AE{start_row}'] = rated
-            ws[f'AE{start_row}'].font = Font(size=8)
-            ws[f'AE{start_row}'].border = thin_border
-            ws[f'AE{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
-            
-            ws[f'AF{start_row}'] = available
-            ws[f'AF{start_row}'].font = Font(size=8)
-            ws[f'AF{start_row}'].border = thin_border
-            ws[f'AF{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+        # Capacity factor data - use actual data
+        for plant_code in ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7', 'PULANGI4']:
+            if plant_code in self.PLANTS_CONFIG:
+                config = self.PLANTS_CONFIG[plant_code]
+                plant_data = self.data_by_plant.get(plant_code, {})
+                
+                rated = sum(u['capacity'] for u in config['units'])
+                available = 0.0
+                load = 0.0
+                
+                for unit in config['units']:
+                    if unit['num'] in plant_data:
+                        unit_data = plant_data[unit['num']]
+                        load += unit_data['generation']
+                        available += unit['capacity']
+                
+                # Calculate capacity factor as percentage
+                cf = (load / rated * 100) if rated > 0 else 0.0
+                
+                ws[f'AD{start_row}'] = plant_code
+                ws[f'AD{start_row}'].font = Font(size=8)
+                ws[f'AD{start_row}'].border = thin_border
+                
+                ws[f'AE{start_row}'] = rated
+                ws[f'AE{start_row}'].font = Font(size=8)
+                ws[f'AE{start_row}'].border = thin_border
+                ws[f'AE{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+                
+                ws[f'AF{start_row}'] = available
+                ws[f'AF{start_row}'].font = Font(size=8)
+                ws[f'AF{start_row}'].border = thin_border
+                ws[f'AF{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+                
+                ws[f'AG{start_row}'] = cf
+                ws[f'AG{start_row}'].font = Font(size=8)
+                ws[f'AG{start_row}'].border = thin_border
+                ws[f'AG{start_row}'].alignment = Alignment(horizontal='right', vertical='center')
+                
+                ws.row_dimensions[start_row].height = 13.0
+                start_row += 1
             
             ws[f'AG{start_row}'] = cf
             ws[f'AG{start_row}'].font = Font(size=8)
@@ -879,17 +951,26 @@ class PSRExporter:
         pie_chart.width = 10
         pie_chart.height = 10
         
+        # Calculate actual hydro and thermal capacity from uploaded data
+        hydro_capacity = 0.0
+        for plant_code in ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7', 'PULANGI4']:
+            if plant_code in self.PLANTS_CONFIG:
+                config = self.PLANTS_CONFIG[plant_code]
+                hydro_capacity += sum(u['capacity'] for u in config['units'])
+        
+        thermal_capacity = 210.00  # IPP capacity (STEAG) - this is fixed
+        
         # Add data for pie chart (Hydro vs Coal Fired Thermal)
         # Create hidden data cells for the chart
         data_row = current_row
         ws[f'A{data_row}'] = 'Hydro'
-        ws[f'B{data_row}'] = 811.31
+        ws[f'B{data_row}'] = hydro_capacity
         ws[f'A{data_row}'].font = Font(size=1, color='FFFFFF')  # Hidden
         ws[f'B{data_row}'].font = Font(size=1, color='FFFFFF')  # Hidden
         
         data_row += 1
         ws[f'A{data_row}'] = 'Coal Fired Thermal'
-        ws[f'B{data_row}'] = 210.00
+        ws[f'B{data_row}'] = thermal_capacity
         ws[f'A{data_row}'].font = Font(size=1, color='FFFFFF')  # Hidden
         ws[f'B{data_row}'].font = Font(size=1, color='FFFFFF')  # Hidden
         
@@ -917,17 +998,23 @@ class PSRExporter:
         bar_chart.y_axis.title = None
         bar_chart.x_axis.title = None
         
-        # Add data for bar chart (Plant forecasted loads)
+        # Add data for bar chart (Plant forecasted loads) - use actual data
         bar_data_start = current_row + 3
-        plants_data = [
-            ('AGUS 1', 60.0),
-            ('AGUS 2', 120.0),
-            ('AGUS 4', 96.0),
-            ('AGUS 5', 40.0),
-            ('AGUS 6', 144.8),
-            ('AGUS 7', 40.0),
-            ('PULANGI IV', 150.0)
-        ]
+        plants_data = []
+        
+        for plant_code in ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7', 'PULANGI4']:
+            if plant_code in self.PLANTS_CONFIG:
+                config = self.PLANTS_CONFIG[plant_code]
+                plant_data = self.data_by_plant.get(plant_code, {})
+                
+                load = 0.0
+                for unit in config['units']:
+                    if unit['num'] in plant_data:
+                        unit_data = plant_data[unit['num']]
+                        load += unit_data['generation']
+                
+                plant_name = config['name']
+                plants_data.append((plant_name, load))
         
         for idx, (plant, load) in enumerate(plants_data):
             row = bar_data_start + idx
@@ -1104,17 +1191,27 @@ class PSRExporter:
         chart.y_axis.title = "MW"
         chart.x_axis.title = None
         
-        # Chart data (hidden cells)
+        # Chart data (hidden cells) - use actual data
         chart_data_start = start_row
-        plants_chart_data = [
-            ('AGUS 1', 80.0, 80.0, 0.0),
-            ('AGUS 2', 180.0, 180.0, 120.0),
-            ('AGUS 4', 158.1, 158.1, 105.4),
-            ('AGUS 5', 55.0, 55.0, 55.0),
-            ('AGUS 6', 219.0, 219.0, 165.0),
-            ('AGUS 7', 54.0, 54.0, 54.0),
-            ('PULANGI IV', 255.0, 255.0, 215.0),
-        ]
+        plants_chart_data = []
+        
+        for plant_code in ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7', 'PULANGI4']:
+            if plant_code in self.PLANTS_CONFIG:
+                config = self.PLANTS_CONFIG[plant_code]
+                plant_data = self.data_by_plant.get(plant_code, {})
+                
+                rated = sum(u['capacity'] for u in config['units'])
+                available = 0.0
+                load = 0.0
+                
+                for unit in config['units']:
+                    if unit['num'] in plant_data:
+                        unit_data = plant_data[unit['num']]
+                        load += unit_data['generation']
+                        available += unit['capacity']
+                
+                plant_name = config['name']
+                plants_chart_data.append((plant_name, rated, available, load))
         
         # Add hidden data for chart
         for idx, (plant, rated, dependable, load) in enumerate(plants_chart_data):

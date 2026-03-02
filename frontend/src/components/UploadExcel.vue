@@ -6,67 +6,8 @@
     <div class="page-header">
       <h2 class="page-title">Upload Excel Report</h2>
       <p class="page-description">
-        Upload generation reports for Agus and Pulangi Hydro-electric Power Plants. Supported format: .xlsx (Max: 25MB)
+        Upload generation reports for Agus and Pulangi Hydro-electric Power Plants. Supported formats: .xlsx, .xls, .csv (Max: 100MB)
       </p>
-    </div>
-
-    <!-- Download Templates Section -->
-    <div class="card glass-card glass-fade-in">
-      <div class="card-header">
-        <h3 class="card-title">
-          <i class="pi pi-download"></i>
-          Download Excel Templates
-        </h3>
-      </div>
-      <div class="card-body">
-        <p class="template-description">
-          Download pre-formatted Excel templates to ensure your data is uploaded correctly. Each template includes instructions and sample data.
-        </p>
-        <div class="template-grid">
-          <button @click="downloadTemplate('daily-generation')" class="template-btn glass-button">
-            <i class="pi pi-file-excel"></i>
-            <div class="template-info">
-              <span class="template-name">Daily Generation</span>
-              <span class="template-desc">For daily generation reports</span>
-            </div>
-          </button>
-          <button @click="downloadTemplate('water-nomination')" class="template-btn glass-button">
-            <i class="pi pi-file-excel"></i>
-            <div class="template-info">
-              <span class="template-name">Water Nomination</span>
-              <span class="template-desc">For water nomination data</span>
-            </div>
-          </button>
-          <button @click="downloadTemplate('historical-data')" class="template-btn glass-button">
-            <i class="pi pi-file-excel"></i>
-            <div class="template-info">
-              <span class="template-name">Historical Data</span>
-              <span class="template-desc">For bulk historical imports</span>
-            </div>
-          </button>
-          <button @click="downloadTemplate('plant-capacity')" class="template-btn glass-button">
-            <i class="pi pi-file-excel"></i>
-            <div class="template-info">
-              <span class="template-name">Plant Capacity</span>
-              <span class="template-desc">For plant capacity records</span>
-            </div>
-          </button>
-          <button @click="downloadTemplate('plant-status')" class="template-btn glass-button">
-            <i class="pi pi-file-excel"></i>
-            <div class="template-info">
-              <span class="template-name">Plant Status</span>
-              <span class="template-desc">For daily plant operational status</span>
-            </div>
-          </button>
-          <button @click="downloadTemplate('psr')" class="template-btn glass-button">
-            <i class="pi pi-file-excel"></i>
-            <div class="template-info">
-              <span class="template-name">PSR Template</span>
-              <span class="template-desc">Plant Status Report with right side data</span>
-            </div>
-          </button>
-        </div>
-      </div>
     </div>
 
     <!-- Upload Form Card -->
@@ -174,7 +115,7 @@
               <input 
                 type="file" 
                 @change="handleFileSelect" 
-                accept=".xlsx"
+                accept=".xlsx,.xls,.csv"
                 class="file-input"
                 id="file-upload"
                 ref="fileInput"
@@ -196,11 +137,11 @@
                 <div class="drop-zone-specs">
                   <span class="spec-item">
                     <i class="pi pi-file-excel"></i>
-                    .xlsx only
+                    .xlsx / .xls / .csv
                   </span>
                   <span class="spec-item">
                     <i class="pi pi-database"></i>
-                    Max 25MB
+                    Max 100MB
                   </span>
                 </div>
               </div>
@@ -237,7 +178,7 @@
               {{ fileError }}
             </p>
             <p v-else class="form-help">
-              Supported format: .xlsx (Excel 2007+) • Maximum file size: 25MB
+              Supported formats: .xlsx, .xls, .csv (Excel & CSV files) • Maximum file size: 100MB
             </p>
           </div>
 
@@ -521,20 +462,20 @@ export default {
       
       if (!file) return;
       
-      // Check file type
-      const validExtensions = ['.xlsx'];
+      // Check file type - accept .xlsx, .xls, and .csv
+      const validExtensions = ['.xlsx', '.xls', '.csv'];
       const fileName = file.name.toLowerCase();
       const isValidType = validExtensions.some(ext => fileName.endsWith(ext));
       
       if (!isValidType) {
-        this.fileError = 'Invalid file type. Please upload an Excel file (.xlsx)';
+        this.fileError = 'Invalid file type. Please upload an Excel file (.xlsx, .xls) or CSV file (.csv)';
         return;
       }
       
-      // Check file size (25MB limit)
-      const maxSize = 25 * 1024 * 1024; // 25MB in bytes
+      // Check file size (100MB limit)
+      const maxSize = 100 * 1024 * 1024; // 100MB in bytes
       if (file.size > maxSize) {
-        this.fileError = 'File size exceeds 25MB limit';
+        this.fileError = 'File size exceeds 100MB limit';
         return;
       }
       
@@ -619,9 +560,9 @@ export default {
         let errorMsg = error.response?.data?.error || 'Upload failed';
         
         // Make error message more helpful
-        if (errorMsg.includes('Missing required columns')) {
-          errorMsg = 'Invalid Excel file format! Please use the correct template with all required columns.';
-          this.$toast.error(errorMsg, 6000);
+        if (errorMsg.includes('Missing required columns') || errorMsg.includes('Cannot import')) {
+          // Show the actual error message from backend which is now more helpful
+          this.$toast.error(errorMsg, 8000);
         } else {
           this.$toast.error(errorMsg);
         }

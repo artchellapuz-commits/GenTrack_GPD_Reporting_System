@@ -201,26 +201,50 @@ class GenerationReportListSerializer(serializers.ModelSerializer):
 
 class ExcelUploadSerializer(serializers.Serializer):
     file = serializers.FileField()
-    plant_code = serializers.ChoiceField(choices=Plant.PLANT_CHOICES)
+    plant_code = serializers.CharField(max_length=10)
     
     def validate_file(self, value):
-        if not value.name.endswith('.xlsx'):
-            raise serializers.ValidationError("Only .xlsx files are allowed")
+        # Accept .xlsx, .xls, and .csv formats
+        valid_extensions = ['.xlsx', '.xls', '.csv']
+        file_ext = value.name.lower()[-5:] if len(value.name) > 5 else value.name.lower()
         
-        if value.size > 10485760:  # 10MB
-            raise serializers.ValidationError("File size must not exceed 10MB")
+        if not any(file_ext.endswith(ext) for ext in valid_extensions):
+            raise serializers.ValidationError("Only Excel files (.xlsx, .xls) and CSV files (.csv) are allowed")
         
+        # Increase file size limit to 100MB
+        if value.size > 104857600:  # 100MB
+            raise serializers.ValidationError("File size must not exceed 100MB")
+        
+        return value
+    
+    def validate_plant_code(self, value):
+        """Validate that the plant code exists in the database"""
+        if not Plant.objects.filter(code=value, is_active=True).exists():
+            raise serializers.ValidationError(f"Plant with code '{value}' not found or is inactive")
         return value
 
 
 class ReportGenerationSerializer(serializers.Serializer):
     plant_codes = serializers.ListField(
-        child=serializers.ChoiceField(choices=Plant.PLANT_CHOICES),
+        child=serializers.CharField(max_length=10),
         allow_empty=False
     )
     start_date = serializers.DateField()
     end_date = serializers.DateField()
-    report_type = serializers.ChoiceField(choices=['psr', 'daily_status'])
+    report_type = serializers.ChoiceField(choices=['psr', 'daily_status'], default='psr')
+    
+    def validate_plant_codes(self, value):
+        """Validate that all plant codes exist in the database"""
+        invalid_codes = []
+        for code in value:
+            if not Plant.objects.filter(code=code, is_active=True).exists():
+                invalid_codes.append(code)
+        
+        if invalid_codes:
+            raise serializers.ValidationError(
+                f"Invalid or inactive plant codes: {', '.join(invalid_codes)}"
+            )
+        return value
     
     def validate(self, data):
         if data['start_date'] > data['end_date']:

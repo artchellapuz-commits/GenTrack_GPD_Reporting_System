@@ -118,14 +118,6 @@
         </form>
       </div>
     </div>
-
-    <!-- Alert Messages -->
-    <transition name="fade">
-      <div v-if="message" :class="['alert', `alert-${messageType}`]">
-        <i :class="['pi', messageType === 'success' ? 'pi-check-circle' : 'pi-times-circle']"></i>
-        <span>{{ message }}</span>
-      </div>
-    </transition>
   </div>
   </AppLayout>
 </template>
@@ -133,6 +125,7 @@
 <script>
 import api from '../services/api';
 import AppLayout from './AppLayout.vue';
+import toast from '../utils/toast';
 
 export default {
   name: 'GenerateReport',
@@ -147,8 +140,6 @@ export default {
       endDate: '',
       reportType: 'psr',
       generating: false,
-      message: '',
-      messageType: '',
       reportTypes: [
         {
           value: 'psr',
@@ -187,14 +178,13 @@ export default {
         console.log('Loaded plants:', this.plants);
       } catch (error) {
         console.error('Error loading plants:', error);
-        this.showMessage('Error loading plants: ' + (error.message || 'Unknown error'), 'error');
+        toast.error('Error loading plants: ' + (error.message || 'Unknown error'));
       }
     },
     async generateReport() {
       if (!this.canGenerate) return;
 
       this.generating = true;
-      this.message = '';
 
       try {
         // For daily status report, automatically set end_date = start_date
@@ -226,7 +216,7 @@ export default {
         link.click();
         link.remove();
 
-        this.showMessage('Report generated successfully!', 'success');
+        toast.success('Report generated successfully!');
       } catch (error) {
         console.error('Generate report error:', error);
         let errorMsg = 'Failed to generate report';
@@ -254,17 +244,10 @@ export default {
           errorMsg = error.message;
         }
         
-        this.showMessage(errorMsg, 'error');
+        toast.error(errorMsg, 6000);
       } finally {
         this.generating = false;
       }
-    },
-    showMessage(text, type) {
-      this.message = text;
-      this.messageType = type;
-      setTimeout(() => {
-        this.message = '';
-      }, 5000);
     },
   },
 };
@@ -534,45 +517,6 @@ export default {
 
 .btn-generate i {
   font-size: 1.125rem;
-}
-
-/* Alert */
-.alert {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  margin-top: 1.5rem;
-  border-radius: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 500;
-}
-
-.alert i {
-  font-size: 1.25rem;
-}
-
-.alert-success {
-  background: #d4edda;
-  color: #155724;
-  border-left: 4px solid #28a745;
-}
-
-.alert-error {
-  background: #f8d7da;
-  color: #721c24;
-  border-left: 4px solid #dc3545;
-}
-
-/* Fade Transition */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
 }
 
 /* Responsive */
