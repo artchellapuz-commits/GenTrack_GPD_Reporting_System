@@ -1,5 +1,18 @@
 <template>
   <div class="register-page">
+    <!-- Background Slideshow -->
+    <div class="background-slideshow">
+      <img 
+        v-for="(image, index) in riverImages" 
+        :key="index"
+        :src="image" 
+        alt="" 
+        class="background-image"
+        :class="{ 'active': index === currentRiverIndex }"
+      />
+    </div>
+    <div class="background-overlay"></div>
+
     <!-- Theme Controls -->
     <ThemeControls />
 
@@ -153,6 +166,26 @@ export default {
   },
   data() {
     return {
+      currentRiverIndex: 0,
+      riverImages: [
+        require('@/assets/River1.jpg'),
+        require('@/assets/River2.jpg'),
+        require('@/assets/River3.jpg'),
+        require('@/assets/River4.jpg'),
+        require('@/assets/River5.jpg'),
+        require('@/assets/River6.jpg'),
+        require('@/assets/River7.jpg'),
+        require('@/assets/River8.jpg'),
+        require('@/assets/River9.jpg'),
+        require('@/assets/River10.jpg'),
+        require('@/assets/River11.jpg'),
+        require('@/assets/River12.jpg'),
+        require('@/assets/River13.jpg'),
+        require('@/assets/River14.jpg'),
+        require('@/assets/River15.jpg'),
+        require('@/assets/River16.jpg'),
+        require('@/assets/River17.jpg')
+      ],
       formData: {
         username: '',
         email: '',
@@ -167,7 +200,20 @@ export default {
       error: null
     };
   },
+  mounted() {
+    this.startBackgroundSlideshow();
+  },
+  beforeUnmount() {
+    if (this.backgroundInterval) {
+      clearInterval(this.backgroundInterval);
+    }
+  },
   methods: {
+    startBackgroundSlideshow() {
+      this.backgroundInterval = setInterval(() => {
+        this.currentRiverIndex = (this.currentRiverIndex + 1) % this.riverImages.length;
+      }, 5000);
+    },
     async handleRegister() {
       this.loading = true;
       this.error = null;
@@ -226,6 +272,45 @@ export default {
   padding: 20px;
   position: relative;
   overflow: hidden;
+}
+
+/* Background Slideshow */
+.background-slideshow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: high-quality;
+}
+
+.background-image.active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.background-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(51, 65, 85, 0.7) 100%);
+  z-index: 1;
 }
 
 .register-container {

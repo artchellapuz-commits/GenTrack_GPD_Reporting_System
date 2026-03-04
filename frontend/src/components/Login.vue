@@ -1,5 +1,18 @@
 <template>
   <div class="login-page">
+    <!-- Background Slideshow -->
+    <div class="background-slideshow">
+      <img 
+        v-for="(image, index) in riverImages" 
+        :key="index"
+        :src="image" 
+        alt="" 
+        class="background-image"
+        :class="{ 'active': index === currentRiverIndex }"
+      />
+    </div>
+    <div class="background-overlay"></div>
+
     <!-- Theme Controls -->
     <ThemeControls />
 
@@ -101,6 +114,36 @@ export default {
   },
   data() {
     return {
+      currentRiverIndex: 0,
+      riverImages: [
+         require('@/assets/River2.1.jpg'),
+        require('@/assets/River1.5.jpg'),
+        require('@/assets/River1.3.jpg'),
+        require('@/assets/River1.4.jpg'),
+        require('@/assets/River1.2.jpg'),
+        require('@/assets/River1.6.jpg'),
+        require('@/assets/River1.7.jpg'),
+        require('@/assets/River1.8.jpg'),
+        require('@/assets/River1.9.jpg'),
+        require('@/assets/River2.0.jpg'),
+        require('@/assets/River1.1.jpg'),
+        require('@/assets/River2.2.jpg'),
+        require('@/assets/River2.3.jpg'),
+        require('@/assets/River2.4.jpg'),
+        require('@/assets/River2.5.jpg'),
+        require('@/assets/River2.6.jpg'),
+        require('@/assets/River2.7.jpg'),
+        require('@/assets/River2.8.jpg'),
+        require('@/assets/River2.9.jpg'),
+        require('@/assets/River3.0.jpg'),
+        require('@/assets/River3.1.jpg'),
+        require('@/assets/River3.2.jpg'),
+        require('@/assets/River3.3.jpg'),
+        require('@/assets/River3.4.jpg'),
+        require('@/assets/River3.5.jpg'),
+        require('@/assets/River3.6.jpg'),
+        require('@/assets/River3.7.jpg'),
+      ],
       credentials: {
         username: '',
         password: ''
@@ -112,6 +155,9 @@ export default {
     };
   },
   mounted() {
+    // Start background slideshow
+    this.startBackgroundSlideshow();
+
     // Check if user just logged out
     const justLoggedOut = sessionStorage.getItem('justLoggedOut');
     
@@ -143,7 +189,17 @@ export default {
       }
     }
   },
+  beforeUnmount() {
+    if (this.backgroundInterval) {
+      clearInterval(this.backgroundInterval);
+    }
+  },
   methods: {
+    startBackgroundSlideshow() {
+      this.backgroundInterval = setInterval(() => {
+        this.currentRiverIndex = (this.currentRiverIndex + 1) % this.riverImages.length;
+      }, 5000);
+    },
     async handleLogin() {
       this.loading = true;
       this.error = null;
@@ -207,6 +263,45 @@ export default {
   padding: 20px;
   position: relative;
   overflow: hidden;
+}
+
+/* Background Slideshow */
+.background-slideshow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 2s ease-in-out;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: high-quality;
+}
+
+.background-image.active {
+  opacity: 1;
+  z-index: 1;
+}
+
+.background-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(51, 65, 85, 0.7) 100%);
+  z-index: 1;
 }
 
 .login-container {
