@@ -192,6 +192,23 @@ class AuthViewSet(viewsets.ViewSet):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def pending_reset_count(self, request):
+        """Get count of pending password reset requests (Admin only)"""
+        # Check if user is admin
+        if not (request.user.is_staff or 
+                (hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN')):
+            return Response({
+                'count': 0
+            }, status=status.HTTP_200_OK)
+        
+        from .models import PasswordResetRequest
+        pending_count = PasswordResetRequest.objects.filter(status='PENDING').count()
+        
+        return Response({
+            'count': pending_count
+        }, status=status.HTTP_200_OK)
+    
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def reset_user_password(self, request):
         """Reset a user's password (Admin only)"""

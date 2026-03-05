@@ -126,7 +126,12 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="request in paginatedRequests" :key="request.id">
+            <tr 
+              v-for="request in paginatedRequests" 
+              :key="request.id"
+              :id="`request-row-${request.id}`"
+              :class="{ 'highlighted-row': highlightedRequestId === request.id }"
+            >
               <td>
                 <div class="user-info">
                   <i class="pi pi-user"></i>
@@ -176,7 +181,7 @@
           </tbody>
         </table>
         
-        <!-- Pagination -->
+        <!-- y -->
         <Paginator 
           v-if="requests.length > 0"
           :rows="itemsPerPage" 
@@ -470,11 +475,26 @@ export default {
       actionRequest: null,
       rejectReason: '',
       resetPasswordData: null,
-      successMessage: ''
+      successMessage: '',
+      // Highlight state
+      highlightedRequestId: null
     };
   },
   created() {
     this.loadRequests();
+  },
+  mounted() {
+    // Check if there's a highlight query parameter
+    const highlightId = this.$route.query.highlight;
+    if (highlightId) {
+      this.highlightedRequestId = parseInt(highlightId);
+      // Wait for data to load and DOM to update
+      this.$nextTick(() => {
+        setTimeout(() => {
+          this.scrollToHighlightedRow();
+        }, 500);
+      });
+    }
   },
   computed: {
     paginatedRequests() {
@@ -565,6 +585,15 @@ export default {
         
         this.calculateStats();
         this.currentPage = 1; // Reset to first page on new data
+        
+        // Trigger highlight scroll after data is loaded
+        if (this.highlightedRequestId) {
+          this.$nextTick(() => {
+            setTimeout(() => {
+              this.scrollToHighlightedRow();
+            }, 300);
+          });
+        }
       } catch (error) {
         console.error('Error loading requests:', error);
         this.requests = [];
@@ -674,6 +703,7 @@ export default {
         this.showSuccess('Request approved successfully. You can now reset the password.');
         this.selectedRequest = null;
         this.loadRequests();
+        this.notifyParentToRefresh();
       } catch (error) {
         console.error('Error approving request:', error);
         console.error('Error response:', error.response?.data);
@@ -710,6 +740,7 @@ export default {
       this.closeModals();
       this.selectedRequest = null;
       this.loadRequests();
+      this.notifyParentToRefresh();
     },
     
     copyPassword() {
@@ -777,10 +808,39 @@ export default {
         this.showSuccess('Request rejected successfully.');
         this.selectedRequest = null;
         this.loadRequests();
+        this.notifyParentToRefresh();
       } catch (error) {
         console.error('Error rejecting request:', error);
         console.error('Error response:', error.response?.data);
         alert(`Failed to reject request: ${error.response?.data?.detail || error.message}`);
+      }
+    },
+    
+    notifyParentToRefresh() {
+      // Trigger a custom event that the parent can listen to
+      window.dispatchEvent(new CustomEvent('password-reset-processed'));
+    },
+    
+    scrollToHighlightedRow() {
+      if (!this.highlightedRequestId) return;
+      
+      const rowElement = document.getElementById(`request-row-${this.highlightedRequestId}`);
+      if (rowElement) {
+        // Scroll to the row with smooth behavior
+        rowElement.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        
+        // Remove highlight after 5 seconds
+        setTimeout(() => {
+          this.highlightedRequestId = null;
+          // Clean up the query parameter
+          this.$router.replace({ 
+            path: this.$route.path,
+            query: {}
+          });
+        }, 5000);
       }
     },
     
@@ -1575,5 +1635,50 @@ export default {
 
 :deep(.p-paginator .p-paginator-icon) {
   font-size: 0.875rem;
+}
+
+/* Highlighted Row Animation */
+.highlighted-row {
+  animation: highlightFade 5s ease-in-out;
+  position: relative;
+}
+
+@keyframes highlightFade {
+  0% {
+    background-color: #fef3c7;
+    box-shadow: 0 0 0 3px #fbbf24;
+  }
+  10% {
+    background-color: #fef3c7;
+    box-shadow: 0 0 0 3px #fbbf24;
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.highlighted-row td {
+  position: relative;
+}
+
+.highlighted-row td::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+  animation: fadeOutBar 5s ease-in-out forwards;
+}
+
+@keyframes fadeOutBar {
+  0%, 10% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 </style>

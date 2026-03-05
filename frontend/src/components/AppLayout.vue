@@ -23,6 +23,7 @@
               <span>Dashboard</span>
             </router-link>
           </li>
+          <li class="menu-divider"></li>
           
           <!-- Upload - Only for Operator, Manager, Admin -->
           <li class="menu-item" v-if="canUpload">
@@ -32,6 +33,19 @@
             </router-link>
           </li>
 
+          
+          <li class="menu-item">
+            <router-link to="/generate" class="menu-link">
+              <i class="pi pi-download"></i>
+              <span>Generate Report</span>
+            </router-link>
+          </li>
+          <li class="menu-item">
+            <router-link to="/view" class="menu-link">
+              <i class="pi pi-chart-bar"></i>
+              <span>View Reports</span>
+            </router-link>
+          </li>
           <!-- Archive - Show for everyone who can upload -->
           <li class="menu-item" v-if="canUpload">
             <router-link to="/archive" class="menu-link">
@@ -39,19 +53,7 @@
               <span>Archive</span>
             </router-link>
           </li>
-          
-          <li class="menu-item">
-            <router-link to="/view" class="menu-link">
-              <i class="pi pi-chart-bar"></i>
-              <span>View Reports</span>
-            </router-link>
-          </li>
-          <li class="menu-item">
-            <router-link to="/generate" class="menu-link">
-              <i class="pi pi-download"></i>
-              <span>Generate Report</span>
-            </router-link>
-          </li>
+          <li class="menu-divider"></li>
           
           <!-- Water Nomination with Dropdown - Only for Operator, Manager, Admin -->
           <li class="menu-item menu-item-dropdown" v-if="canUpload">
@@ -153,6 +155,60 @@
           <!-- Quick Search -->
           <QuickSearch />
           
+          <!-- Notification Icon (Admin only) -->
+          <div v-if="isAdminUser" class="notification-wrapper">
+            <button 
+              class="topbar-icon-btn notification-btn" 
+              @click="toggleNotificationMenu"
+              :title="`${pendingResetCount} pending password reset request${pendingResetCount !== 1 ? 's' : ''}`"
+            >
+              <i class="pi pi-bell"></i>
+              <span v-if="pendingResetCount > 0" class="notification-badge">{{ pendingResetCount }}</span>
+            </button>
+
+            <!-- Notification Dropdown -->
+            <div v-if="notificationMenuActive" class="notification-menu">
+              <div class="notification-header">
+                <h3>Notifications</h3>
+                <span class="notification-count">{{ pendingResetCount }} pending</span>
+              </div>
+              
+              <div class="notification-body">
+                <div v-if="recentRequests.length === 0" class="notification-empty">
+                  <i class="pi pi-check-circle"></i>
+                  <p>No pending requests</p>
+                </div>
+                
+                <div v-else class="notification-list">
+                  <div 
+                    v-for="request in recentRequests" 
+                    :key="request.id" 
+                    class="notification-item"
+                    @click="viewRequest(request)"
+                  >
+                    <div class="notification-icon">
+                      <i class="pi pi-lock"></i>
+                    </div>
+                    <div class="notification-content">
+                      <div class="notification-title">Password Reset Request</div>
+                      <div class="notification-text">
+                        <strong>{{ request.username }}</strong> requested password reset
+                      </div>
+                      <div class="notification-time">{{ formatTimeAgo(request.created_at) }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="notification-footer">
+                <a href="#" @click.prevent="viewAllRequests" class="view-all-link">
+                  View All Requests
+                  <i class="pi pi-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+          
           <!-- Light/Dark Mode Toggle -->
           <button class="topbar-icon-btn" @click="toggleDarkMode" :title="isDarkMode ? 'Light Mode' : 'Dark Mode'">
             <i :class="isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
@@ -239,7 +295,11 @@ export default {
       isThemeCustomizerOpen: false,
       isComponentMounted: false,
       waterNominationOpen: false,
-      userManagementOpen: false
+      userManagementOpen: false,
+      pendingResetCount: 0,
+      notificationInterval: null,
+      notificationMenuActive: false,
+      recentRequests: []
     };
   },
   created() {
@@ -275,6 +335,18 @@ export default {
     window.addEventListener('resize', this.checkScreenSize);
     document.addEventListener('click', this.handleClickOutside);
     
+    // Load pending reset count if admin
+    if (this.isAdminUser) {
+      this.loadPendingResetCount();
+      // Poll every 30 seconds for updates
+      this.notificationInterval = setInterval(() => {
+        this.loadPendingResetCount();
+      }, 30000);
+    }
+    
+    // Listen for password reset processed events
+    window.addEventListener('password-reset-processed', this.handlePasswordResetProcessed);
+    
     // Ensure component is fully mounted before rendering ThemeCustomizer
     this.$nextTick(() => {
       this.isComponentMounted = true;
@@ -283,6 +355,12 @@ export default {
   beforeUnmount() {
     window.removeEventListener('resize', this.checkScreenSize);
     document.removeEventListener('click', this.handleClickOutside);
+    window.removeEventListener('password-reset-processed', this.handlePasswordResetProcessed);
+    
+    // Clear notification polling interval
+    if (this.notificationInterval) {
+      clearInterval(this.notificationInterval);
+    }
   },
   watch: {
     '$route'(to) {
@@ -354,9 +432,15 @@ export default {
     handleClickOutside(event) {
       const profileButton = event.target.closest('.topbar-item');
       const profileMenu = event.target.closest('.profile-menu');
+      const notificationButton = event.target.closest('.notification-btn');
+      const notificationMenu = event.target.closest('.notification-menu');
       
       if (!profileButton && !profileMenu && this.profileMenuActive) {
         this.profileMenuActive = false;
+      }
+      
+      if (!notificationButton && !notificationMenu && this.notificationMenuActive) {
+        this.notificationMenuActive = false;
       }
     },
     checkScreenSize() {
@@ -371,6 +455,77 @@ export default {
     },
     handleDarkModeChange(isDark) {
       this.isDarkMode = isDark;
+    },
+    async loadPendingResetCount() {
+      try {
+        const response = await fetch('http://localhost:8000/api/auth/pending_reset_count/', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          this.pendingResetCount = data.count || 0;
+        }
+      } catch (error) {
+        console.error('Failed to load pending reset count:', error);
+      }
+    },
+    async loadRecentRequests() {
+      try {
+        const response = await fetch('http://localhost:8000/api/password-reset-requests/?status=PENDING', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          // Get the 5 most recent requests
+          this.recentRequests = (data.results || data).slice(0, 5);
+        }
+      } catch (error) {
+        console.error('Failed to load recent requests:', error);
+      }
+    },
+    toggleNotificationMenu() {
+      this.notificationMenuActive = !this.notificationMenuActive;
+      if (this.notificationMenuActive) {
+        this.loadRecentRequests();
+      }
+    },
+    viewRequest(request) {
+      this.notificationMenuActive = false;
+      // Pass the request ID as a query parameter to highlight it
+      this.$router.push({
+        path: '/password-reset-requests',
+        query: { highlight: request.id }
+      });
+    },
+    viewAllRequests() {
+      this.notificationMenuActive = false;
+      this.$router.push('/password-reset-requests');
+    },
+    formatTimeAgo(dateString) {
+      if (!dateString) return '';
+      
+      const date = new Date(dateString);
+      const now = new Date();
+      const seconds = Math.floor((now - date) / 1000);
+      
+      if (seconds < 60) return 'Just now';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+      if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+      
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    },
+    handlePasswordResetProcessed() {
+      // Refresh the notification count when a request is processed
+      if (this.isAdminUser) {
+        this.loadPendingResetCount();
+      }
     },
     async handleLogout() {
       sessionStorage.setItem('justLoggedOut', 'true');
@@ -622,10 +777,17 @@ export default {
   display: flex;
   align-items: center;
   padding: 0 1.5rem;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 250px;
+  right: 0;
   z-index: 998;
   gap: 1rem;
+  transition: left 0.3s;
+}
+
+.layout-static-inactive .layout-topbar {
+  left: 0;
 }
 
 .menu-button {
@@ -720,6 +882,199 @@ export default {
   background: #d97706;
 }
 
+.notification-wrapper {
+  position: relative;
+}
+
+.notification-btn {
+  position: relative;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: #ef4444;
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.notification-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  width: 380px;
+  max-height: 500px;
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+}
+
+.notification-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.notification-count {
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.notification-body {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 360px;
+}
+
+.notification-empty {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.notification-empty i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #cbd5e1;
+}
+
+.notification-empty p {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.notification-list {
+  padding: 0;
+}
+
+.notification-item {
+  display: flex;
+  gap: 0.875rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.notification-item:hover {
+  background: #f8fafc;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-icon i {
+  color: white;
+  font-size: 1.125rem;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.notification-text {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin-bottom: 0.375rem;
+  line-height: 1.4;
+}
+
+.notification-text strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.notification-time {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.notification-footer {
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.view-all-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.view-all-link:hover {
+  color: #2563eb;
+  gap: 0.625rem;
+}
+
+.view-all-link i {
+  font-size: 0.75rem;
+}
+
 .profile-menu {
   position: absolute;
   top: calc(100% + 0.5rem);
@@ -764,6 +1119,7 @@ export default {
   flex: 1;
   padding: 2rem;
   background: #f8fafc;
+  margin-top: 70px;
 }
 
 /* Mobile Overlay */
@@ -791,6 +1147,10 @@ export default {
   .layout-main-container {
     margin-left: 0;
   }
+  
+  .layout-topbar {
+    left: 0;
+  }
 
   .layout-wrapper:not(.layout-static-inactive) .layout-mask {
     display: block;
@@ -812,6 +1172,11 @@ export default {
 
   .layout-main {
     padding: 1rem;
+  }
+  
+  .notification-menu {
+    width: calc(100vw - 2rem);
+    right: -0.5rem;
   }
 }
 </style>

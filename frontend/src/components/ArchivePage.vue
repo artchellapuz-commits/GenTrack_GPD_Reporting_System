@@ -19,7 +19,7 @@
           <div class="header-left">
             <h3 class="card-title">
               <i class="pi pi-history title-icon"></i>
-              Archived Uploads ({{ archivedFiles.length }})
+              Archived Uploads ({{ totalFiles }})
             </h3>
           </div>
           <div class="header-actions" v-if="selectedFiles.length > 0">
@@ -34,6 +34,26 @@
             </button>
           </div>
         </div>
+
+        <!-- Show Entries Control -->
+        <div class="table-controls">
+          <div class="show-entries">
+            <label for="entries-select">Show</label>
+            <select 
+              id="entries-select" 
+              v-model="itemsPerPage" 
+              @change="changeItemsPerPage"
+              class="entries-select"
+            >
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+            <span>entries</span>
+          </div>
+        </div>
+
         <div class="card-body p-0">
           <div class="table-container">
             <table>
@@ -47,18 +67,48 @@
                       class="checkbox-input"
                     />
                   </th>
-                  <th>File Name</th>
-                  <th>Plant</th>
-                  <th>Uploaded At</th>
-                  <th>Archived At</th>
-                  <th>Status</th>
-                  <th>Records</th>
+                  <th @click="sortBy('original_filename')" class="sortable">
+                    <div class="th-content">
+                      <span>File Name</span>
+                      <i :class="getSortIcon('original_filename')"></i>
+                    </div>
+                  </th>
+                  <th @click="sortBy('plant_name')" class="sortable">
+                    <div class="th-content">
+                      <span>Plant</span>
+                      <i :class="getSortIcon('plant_name')"></i>
+                    </div>
+                  </th>
+                  <th @click="sortBy('uploaded_at')" class="sortable">
+                    <div class="th-content">
+                      <span>Uploaded At</span>
+                      <i :class="getSortIcon('uploaded_at')"></i>
+                    </div>
+                  </th>
+                  <th @click="sortBy('archived_at')" class="sortable">
+                    <div class="th-content">
+                      <span>Archived At</span>
+                      <i :class="getSortIcon('archived_at')"></i>
+                    </div>
+                  </th>
+                  <th @click="sortBy('status')" class="sortable">
+                    <div class="th-content">
+                      <span>Status</span>
+                      <i :class="getSortIcon('status')"></i>
+                    </div>
+                  </th>
+                  <th @click="sortBy('records_imported')" class="sortable">
+                    <div class="th-content">
+                      <span>Records</span>
+                      <i :class="getSortIcon('records_imported')"></i>
+                    </div>
+                  </th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 <tr 
-                  v-for="file in archivedFiles" 
+                  v-for="file in paginatedFiles" 
                   :key="file.id" 
                   class="archive-row"
                   :class="{ 'selected-row': isSelected(file.id) }"
@@ -120,6 +170,17 @@
               </tbody>
             </table>
           </div>
+          
+          <!-- Pagination -->
+          <Paginator 
+            v-if="archivedFiles.length > 0"
+            :rows="itemsPerPage" 
+            :totalRecords="totalFiles" 
+            :first="(currentPage - 1) * itemsPerPage"
+            @page="onPageChange($event)"
+            template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+            :pageLinkSize="5"
+          />
         </div>
       </div>
 
@@ -197,12 +258,14 @@
 import api from '../services/api';
 import AppLayout from './AppLayout.vue';
 import Toast from 'primevue/toast';
+import Paginator from 'primevue/paginator';
 
 export default {
   name: 'ArchivePage',
   components: {
     AppLayout,
     Toast,
+    Paginator,
   },
   data() {
     return {
@@ -213,12 +276,59 @@ export default {
       deleteDialog: false,
       fileToDelete: null,
       isBulkDelete: false,
+      // Pagination
+      currentPage: 1,
+      itemsPerPage: 10,
+      // Sorting
+      sortColumn: 'archived_at',
+      sortDirection: 'desc',
     };
   },
   computed: {
     isAllSelected() {
-      return this.archivedFiles.length > 0 && 
-             this.selectedFiles.length === this.archivedFiles.length;
+      return this.paginatedFiles.length > 0 && 
+             this.paginatedFiles.every(file => this.selectedFiles.includes(file.id));
+    },
+    sortedFiles() {
+      const files = [...this.archivedFiles];
+      
+      files.sort((a, b) => {
+        let aVal = a[this.sortColumn];
+        let bVal = b[this.sortColumn];
+        
+        // Handle null/undefined values
+        if (aVal === null || aVal === undefined) aVal = '';
+        if (bVal === null || bVal === undefined) bVal = '';
+        
+        // Convert to lowercase for string comparison
+        if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+        if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+        
+        // Compare values
+        if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
+        if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+      
+      return files;
+    },
+    paginatedFiles() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.sortedFiles.slice(start, end);
+    },
+    totalFiles() {
+      return this.archivedFiles.length;
+    },
+    totalPages() {
+      return Math.ceil(this.totalFiles / this.itemsPerPage);
+    },
+    startIndex() {
+      return (this.currentPage - 1) * this.itemsPerPage;
+    },
+    endIndex() {
+      const end = this.startIndex + this.itemsPerPage;
+      return end > this.totalFiles ? this.totalFiles : end;
     },
   },
   mounted() {
@@ -248,9 +358,20 @@ export default {
     
     toggleSelectAll(event) {
       if (event.target.checked) {
-        this.selectedFiles = this.archivedFiles.map(f => f.id);
+        // Select all files on current page
+        this.paginatedFiles.forEach(file => {
+          if (!this.selectedFiles.includes(file.id)) {
+            this.selectedFiles.push(file.id);
+          }
+        });
       } else {
-        this.selectedFiles = [];
+        // Deselect all files on current page
+        this.paginatedFiles.forEach(file => {
+          const index = this.selectedFiles.indexOf(file.id);
+          if (index > -1) {
+            this.selectedFiles.splice(index, 1);
+          }
+        });
       }
     },
     
@@ -362,6 +483,35 @@ export default {
         'PENDING': 'info'
       };
       return statusMap[status] || 'info';
+    },
+    
+    changeItemsPerPage() {
+      this.currentPage = 1; // Reset to first page when changing items per page
+    },
+    
+    onPageChange(event) {
+      this.currentPage = event.page + 1; // PrimeVue uses 0-based page index
+    },
+    
+    // Sorting methods
+    sortBy(column) {
+      if (this.sortColumn === column) {
+        // Toggle direction if same column
+        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        // New column, default to ascending
+        this.sortColumn = column;
+        this.sortDirection = 'asc';
+      }
+    },
+    
+    getSortIcon(column) {
+      if (this.sortColumn !== column) {
+        return 'pi pi-sort-alt sort-icon';
+      }
+      return this.sortDirection === 'asc' 
+        ? 'pi pi-sort-amount-up-alt sort-icon active' 
+        : 'pi pi-sort-amount-down sort-icon active';
     },
   },
 };
@@ -793,5 +943,157 @@ export default {
 .btn-delete:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Table Controls */
+.table-controls {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.show-entries {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--gray-700);
+}
+
+.show-entries label {
+  font-weight: 500;
+}
+
+.entries-select {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 0.5rem;
+  background-color: white;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23718096' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+}
+
+.entries-select:hover {
+  border-color: var(--npc-primary);
+}
+
+.entries-select:focus {
+  outline: none;
+  border-color: var(--npc-primary);
+  box-shadow: 0 0 0 3px rgba(0, 61, 130, 0.1);
+}
+
+/* Sortable Headers */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+  background-color: rgba(0, 61, 130, 0.05);
+}
+
+.th-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sort-icon {
+  font-size: 0.875rem;
+  color: #cbd5e0;
+  transition: color 0.2s ease;
+}
+
+.sort-icon.active {
+  color: var(--npc-primary);
+}
+
+/* Pagination */
+:deep(.p-paginator) {
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last),
+:deep(.p-paginator .p-paginator-page) {
+  min-width: 2.5rem;
+  height: 2.5rem;
+  margin: 0.125rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+:deep(.p-paginator .p-paginator-first:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-prev:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-next:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-last:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-page:not(.p-highlight):hover) {
+  background: #f1f5f9;
+  color: var(--npc-primary);
+}
+
+:deep(.p-paginator .p-paginator-page.p-highlight) {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+
+:deep(.p-paginator .p-disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+:deep(.p-paginator .p-paginator-icon) {
+  font-size: 0.875rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .pagination-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .pagination-info {
+    position: static;
+    text-align: center;
+    order: 2;
+    margin-top: 0.5rem;
+  }
+  
+  .pagination-controls {
+    justify-content: center;
+    order: 1;
+  }
+  
+  .table-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>
