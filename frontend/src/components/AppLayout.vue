@@ -96,12 +96,30 @@
           <template v-if="isAdminUser">
             <li class="menu-divider"></li>
             <li class="menu-section-title">Administration</li>
-            <li class="menu-item">
-              <router-link to="/user-management" class="menu-link">
+            
+            <!-- User Management with Dropdown -->
+            <li class="menu-item menu-item-dropdown">
+              <a href="#" @click.prevent="toggleUserManagementDropdown" class="menu-link">
                 <i class="pi pi-users"></i>
                 <span>User Management</span>
-              </router-link>
+                <i class="pi pi-chevron-down dropdown-icon" :class="{ rotated: userManagementOpen }"></i>
+              </a>
+              <ul class="submenu" :class="{ open: userManagementOpen }">
+                <li class="submenu-item">
+                  <router-link to="/user-management" class="submenu-link">
+                    <i class="pi pi-user-edit"></i>
+                    <span>Manage Users</span>
+                  </router-link>
+                </li>
+                <li class="submenu-item">
+                  <router-link to="/password-reset-requests" class="submenu-link">
+                    <i class="pi pi-lock"></i>
+                    <span>Reset Requests</span>
+                  </router-link>
+                </li>
+              </ul>
             </li>
+            
             <li class="menu-item">
               <a href="http://localhost:8000/admin" target="_blank" class="menu-link">
                 <i class="pi pi-cog"></i>
@@ -220,7 +238,8 @@ export default {
       isDarkMode: false,
       isThemeCustomizerOpen: false,
       isComponentMounted: false,
-      waterNominationOpen: false
+      waterNominationOpen: false,
+      userManagementOpen: false
     };
   },
   created() {
@@ -242,6 +261,7 @@ export default {
         '/approval-queue': 'Approval Queue',
         '/audit-logs': 'Audit Logs',
         '/user-management': 'User Management',
+        '/password-reset-requests': 'Password Reset Requests',
         '/analytics': 'Advanced Analytics',
         '/scheduled-reports': 'Automated Reports'
       };
@@ -276,6 +296,10 @@ export default {
       if (currentPath === '/water-nomination' || currentPath === '/approval-queue') {
         this.waterNominationOpen = true;
       }
+      // Auto-open user management dropdown if on related pages
+      if (currentPath === '/user-management' || currentPath === '/password-reset-requests') {
+        this.userManagementOpen = true;
+      }
     },
     loadUserInfo() {
       this.username = getUsername() || 'User';
@@ -291,6 +315,9 @@ export default {
     },
     toggleWaterNominationDropdown() {
       this.waterNominationOpen = !this.waterNominationOpen;
+    },
+    toggleUserManagementDropdown() {
+      this.userManagementOpen = !this.userManagementOpen;
     },
     toggleProfileMenu() {
       this.profileMenuActive = !this.profileMenuActive;

@@ -100,13 +100,34 @@
           <table>
             <thead>
               <tr>
-                <th class="text-left">Date</th>
-                <th class="text-left">Plant</th>
-                <th class="text-center">Unit</th>
-                <th class="text-right">Generation (kWh)</th>
-                <th class="text-center">Operating Hours</th>
-                <th class="text-right">Capacity Factor (%)</th>
-                <th class="text-right">Availability (%)</th>
+                <th class="text-left sortable" @click="sortBy('report_date')">
+                  Date
+                  <i :class="['pi', getSortIcon('report_date'), 'sort-icon']"></i>
+                </th>
+                <th class="text-left sortable" @click="sortBy('plant')">
+                  Plant
+                  <i :class="['pi', getSortIcon('plant'), 'sort-icon']"></i>
+                </th>
+                <th class="text-center sortable" @click="sortBy('unit')">
+                  Unit
+                  <i :class="['pi', getSortIcon('unit'), 'sort-icon']"></i>
+                </th>
+                <th class="text-right sortable nowrap" @click="sortBy('generation')">
+                  Generation (kWh)
+                  <i :class="['pi', getSortIcon('generation'), 'sort-icon']"></i>
+                </th>
+                <th class="text-center sortable nowrap" @click="sortBy('operating_hours')">
+                  Operating Hours
+                  <i :class="['pi', getSortIcon('operating_hours'), 'sort-icon']"></i>
+                </th>
+                <th class="text-right sortable nowrap" @click="sortBy('capacity_factor')">
+                  Capacity Factor (%)
+                  <i :class="['pi', getSortIcon('capacity_factor'), 'sort-icon']"></i>
+                </th>
+                <th class="text-right sortable nowrap" @click="sortBy('availability')">
+                  Availability (%)
+                  <i :class="['pi', getSortIcon('availability'), 'sort-icon']"></i>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -174,14 +195,60 @@ export default {
       currentPage: 1,
       totalRecords: 0,
       rowsPerPage: 10,
+      // Sorting
+      sortField: 'report_date',
+      sortOrder: -1, // -1 for descending, 1 for ascending
     };
   },
   computed: {
     reports() {
-      // Client-side pagination
+      // Sort first, then paginate
+      const sorted = this.sortedReports;
       const start = (this.currentPage - 1) * this.rowsPerPage;
       const end = start + this.rowsPerPage;
-      return this.allReports.slice(start, end);
+      return sorted.slice(start, end);
+    },
+    sortedReports() {
+      return [...this.allReports].sort((a, b) => {
+        let aVal, bVal;
+        
+        switch(this.sortField) {
+          case 'report_date':
+            aVal = new Date(a.report_date);
+            bVal = new Date(b.report_date);
+            break;
+          case 'plant':
+            aVal = a.plant_name?.toLowerCase() || '';
+            bVal = b.plant_name?.toLowerCase() || '';
+            break;
+          case 'unit':
+            aVal = a.unit_name?.toLowerCase() || '';
+            bVal = b.unit_name?.toLowerCase() || '';
+            break;
+          case 'generation':
+            aVal = parseFloat(a.generation_kwh) || 0;
+            bVal = parseFloat(b.generation_kwh) || 0;
+            break;
+          case 'operating_hours':
+            aVal = parseFloat(a.operating_hours) || 0;
+            bVal = parseFloat(b.operating_hours) || 0;
+            break;
+          case 'capacity_factor':
+            aVal = parseFloat(a.capacity_factor) || 0;
+            bVal = parseFloat(b.capacity_factor) || 0;
+            break;
+          case 'availability':
+            aVal = parseFloat(a.availability) || 0;
+            bVal = parseFloat(b.availability) || 0;
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aVal < bVal) return -1 * this.sortOrder;
+        if (aVal > bVal) return 1 * this.sortOrder;
+        return 0;
+      });
     }
   },
   mounted() {
@@ -189,6 +256,25 @@ export default {
     this.loadReports();
   },
   methods: {
+    sortBy(field) {
+      if (this.sortField === field) {
+        // Toggle sort order if clicking the same field
+        this.sortOrder = this.sortOrder * -1;
+      } else {
+        // Set new field and default to ascending
+        this.sortField = field;
+        this.sortOrder = 1;
+      }
+      this.currentPage = 1; // Reset to first page when sorting
+    },
+    
+    getSortIcon(field) {
+      if (this.sortField !== field) {
+        return 'pi-sort-alt'; // Neutral sort icon
+      }
+      return this.sortOrder === 1 ? 'pi-sort-amount-up' : 'pi-sort-amount-down';
+    },
+    
     async loadPlants() {
       try {
         const response = await api.getPlants();
@@ -619,6 +705,41 @@ tbody tr:hover {
 
 .text-right {
   text-align: right !important;
+}
+
+/* Sortable Table Headers */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+th.sortable.nowrap {
+  white-space: nowrap;
+}
+
+th.sortable:hover {
+  background-color: #f1f5f9;
+}
+
+th .sort-icon {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-left: 6px;
+  transition: color 0.2s ease;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+th.sortable:hover .sort-icon {
+  color: #64748b;
+}
+
+th .pi-sort-amount-up,
+th .pi-sort-amount-down {
+  color: #667eea;
+  font-weight: bold;
 }
 
 .plant-badge {

@@ -74,7 +74,7 @@
               <input type="checkbox" v-model="rememberMe" />
               <span>Remember me</span>
             </label>
-            <a href="#" class="forgot-password">Forgot password?</a>
+            <a href="#" class="forgot-password" @click.prevent="showForgotPasswordModal = true">Forgot password?</a>
           </div>
 
           <!-- Error Message -->
@@ -91,13 +91,121 @@
               Signing in...
             </span>
           </button>
-
-          <!-- Register Link -->
-          <div class="register-link">
-            Don't have an account?
-            <router-link to="/register">Register here</router-link>
-          </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div v-if="showForgotPasswordModal" class="modal-overlay" @click.self="showForgotPasswordModal = false">
+      <div class="forgot-password-modal">
+        <div class="modal-header">
+          <i class="pi pi-lock"></i>
+          <h3>Forgot Your Password?</h3>
+          <button @click="showForgotPasswordModal = false" class="modal-close">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <p class="modal-message">
+            For security reasons, password resets must be handled by your system administrator.
+          </p>
+
+          <!-- Password Reset Request Form -->
+          <div class="reset-request-form">
+            <div class="form-group">
+              <label for="reset-username" style="color: #ffffff !important;">Your Username</label>
+              <input
+                id="reset-username"
+                v-model="resetRequest.username"
+                type="text"
+                placeholder="Enter your username"
+                :disabled="resetRequestSent"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label for="reset-reason" style="color: #ffffff !important;">Reason (Optional)</label>
+              <textarea
+                id="reset-reason"
+                v-model="resetRequest.reason"
+                placeholder="Brief reason for password reset..."
+                rows="2"
+                :disabled="resetRequestSent"
+              ></textarea>
+            </div>
+
+            <button 
+              @click="submitResetRequest" 
+              class="btn-submit-request"
+              :disabled="!resetRequest.username || resetRequestSent || resetRequestLoading"
+            >
+              <span v-if="!resetRequestLoading && !resetRequestSent">
+                <i class="pi pi-send"></i>
+                Submit Reset Request
+              </span>
+              <span v-else-if="resetRequestLoading">
+                <i class="pi pi-spin pi-spinner"></i>
+                Sending...
+              </span>
+              <span v-else>
+                <i class="pi pi-check"></i>
+                Request Sent
+              </span>
+            </button>
+
+            <div v-if="resetRequestSent" class="success-message">
+              <i class="pi pi-check-circle"></i>
+              Your password reset request has been sent to the administrator. You will be contacted shortly.
+            </div>
+
+            <div v-if="resetRequestError" class="error-message-modal">
+              <i class="pi pi-exclamation-circle"></i>
+              {{ resetRequestError }}
+            </div>
+          </div>
+
+          <div class="divider">
+            <span>OR CONTACT DIRECTLY</span>
+          </div>
+          
+          <div class="contact-info">
+            <div class="contact-item">
+              <i class="pi pi-users"></i>
+              <div>
+                <strong>Contact IT Support</strong>
+                <p>GPD IT Department</p>
+              </div>
+            </div>
+            
+            <div class="contact-item">
+              <i class="pi pi-envelope"></i>
+              <div>
+                <strong>Email</strong>
+                <p>gpd.support@npc.gov.ph</p>
+              </div>
+            </div>
+            
+            <div class="contact-item">
+              <i class="pi pi-phone"></i>
+              <div>
+                <strong>Phone</strong>
+                <p>+63 (XX) XXXX-XXXX</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-box">
+            <i class="pi pi-info-circle"></i>
+            <p>Your administrator will verify your identity and reset your password securely.</p>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button @click="showForgotPasswordModal = false" class="btn-close-modal">
+            Close
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -116,7 +224,7 @@ export default {
     return {
       currentRiverIndex: 0,
       riverImages: [
-         require('@/assets/River2.1.jpg'),
+         require('@/assets/River2.8.jpg'),
         require('@/assets/River1.5.jpg'),
         require('@/assets/River1.3.jpg'),
         require('@/assets/River1.4.jpg'),
@@ -133,7 +241,7 @@ export default {
         require('@/assets/River2.5.jpg'),
         require('@/assets/River2.6.jpg'),
         require('@/assets/River2.7.jpg'),
-        require('@/assets/River2.8.jpg'),
+        require('@/assets/River2.1.jpg'),
         require('@/assets/River2.9.jpg'),
         require('@/assets/River3.0.jpg'),
         require('@/assets/River3.1.jpg'),
@@ -150,6 +258,14 @@ export default {
       },
       rememberMe: false,
       showPassword: false,
+      showForgotPasswordModal: false,
+      resetRequest: {
+        username: '',
+        reason: ''
+      },
+      resetRequestSent: false,
+      resetRequestLoading: false,
+      resetRequestError: null,
       loading: false,
       error: null
     };
@@ -195,6 +311,40 @@ export default {
     }
   },
   methods: {
+    async submitResetRequest() {
+      this.resetRequestLoading = true;
+      this.resetRequestError = null;
+
+      try {
+        await axios.post(
+          `${process.env.VUE_APP_API_URL}/auth/password_reset_request/`,
+          {
+            username: this.resetRequest.username,
+            reason: this.resetRequest.reason || 'User requested password reset'
+          }
+        );
+
+        this.resetRequestSent = true;
+        
+        // Reset form after 5 seconds
+        setTimeout(() => {
+          this.showForgotPasswordModal = false;
+          this.resetRequest = { username: '', reason: '' };
+          this.resetRequestSent = false;
+        }, 5000);
+
+      } catch (error) {
+        console.error('Password reset request error:', error);
+        
+        if (error.response && error.response.data) {
+          this.resetRequestError = error.response.data.detail || error.response.data.error || 'Failed to submit request';
+        } else {
+          this.resetRequestError = 'Network error. Please contact IT support directly.';
+        }
+      } finally {
+        this.resetRequestLoading = false;
+      }
+    },
     startBackgroundSlideshow() {
       this.backgroundInterval = setInterval(() => {
         this.currentRiverIndex = (this.currentRiverIndex + 1) % this.riverImages.length;
@@ -314,10 +464,10 @@ export default {
 /* Dark card with teal border - matching Sakai exactly */
 .login-card {
   background: #1a1a1a;
-  border: 2px solid #10b981;
+  border: 2px solid var(--primary-color, #10b981);
   border-radius: 32px;
   padding: 60px 50px;
-  box-shadow: 0 0 60px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 60px rgba(var(--primary-color-rgb, 16, 185, 129), 0.2);
   position: relative;
 }
 
@@ -392,7 +542,7 @@ export default {
 
 .form-group input:focus {
   outline: none;
-  border-color: #10b981;
+  border-color: var(--primary-color, #10b981);
   background: #0f0f0f;
 }
 
@@ -428,7 +578,7 @@ export default {
 }
 
 .toggle-password:hover {
-  color: #10b981;
+  color: var(--primary-color, #10b981);
 }
 
 .form-options {
@@ -452,19 +602,19 @@ export default {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: #10b981;
+  accent-color: var(--primary-color, #10b981);
   border-radius: 4px;
 }
 
 .forgot-password {
-  color: #10b981;
+  color: var(--primary-color, #10b981);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
 }
 
 .forgot-password:hover {
-  color: #059669;
+  color: var(--primary-hover, #059669);
 }
 
 .error-message {
@@ -481,8 +631,8 @@ export default {
 
 .login-button {
   padding: 14px 24px;
-  background: #10b981;
-  color: #000000;
+  background: var(--primary-color, #10b981);
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 15px;
@@ -497,32 +647,14 @@ export default {
 }
 
 .login-button:hover:not(:disabled) {
-  background: #059669;
+  background: var(--primary-hover, #059669);
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 20px rgba(var(--primary-color-rgb, 16, 185, 129), 0.3);
 }
 
 .login-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.register-link {
-  text-align: center;
-  font-size: 14px;
-  color: #9ca3af;
-  padding-top: 12px;
-}
-
-.register-link a {
-  color: #10b981;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.register-link a:hover {
-  color: #059669;
-  text-decoration: underline;
 }
 
 @media (max-width: 480px) {
@@ -569,12 +701,442 @@ export default {
 
 .back-button:hover {
   background: #262626;
-  border-color: #10b981;
-  color: #10b981;
+  border-color: var(--primary-color, #10b981);
+  color: var(--primary-color, #10b981);
   transform: translateX(-2px);
 }
 
 .back-button i {
   font-size: 14px;
+}
+
+/* Forgot Password Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.forgot-password-modal {
+  background: rgba(26, 26, 26, 0.98);
+  border: 2px solid var(--primary-color, #10b981);
+  border-radius: 16px;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(var(--primary-color-rgb, 16, 185, 129), 0.2);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid #374151;
+  position: relative;
+  text-align: center;
+}
+
+.modal-header i.pi-lock {
+  font-size: 48px;
+  color: #ffffff !important;
+  margin-bottom: 12px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #ffffff !important;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: #ffffff !important;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: #ef4444 !important;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-message {
+  color: #ffffff !important;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.reset-request-form {
+  margin-bottom: 24px;
+}
+
+.reset-request-form .form-group {
+  margin-bottom: 16px;
+}
+
+.reset-request-form label {
+  display: block;
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.reset-request-form input,
+.reset-request-form textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: #0a0a0a;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  color: #ffffff !important;
+  font-size: 14px;
+  transition: all 0.2s;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.reset-request-form input::placeholder,
+.reset-request-form textarea::placeholder {
+  color: #6b7280 !important;
+}
+
+.reset-request-form input:focus,
+.reset-request-form textarea:focus {
+  outline: none;
+  border-color: var(--primary-color, #10b981);
+  background: #0f0f0f;
+}
+
+.reset-request-form input:disabled,
+.reset-request-form textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-submit-request {
+  width: 100%;
+  padding: 12px 24px;
+  background: var(--primary-color, #10b981);
+  color: #ffffff !important;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.btn-submit-request:hover:not(:disabled) {
+  background: var(--primary-hover, #059669);
+  transform: translateY(-1px);
+}
+
+.btn-submit-request:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.success-message {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(var(--primary-color-rgb, 16, 185, 129), 0.15);
+  border: 1px solid rgba(var(--primary-color-rgb, 16, 185, 129), 0.4);
+  border-radius: 8px;
+  color: var(--primary-color, #10b981) !important;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-message-modal {
+  margin-top: 16px;
+  padding: 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  color: #fca5a5 !important;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 24px 0;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #374151;
+}
+
+.divider span {
+  position: relative;
+  background: #1a1a1a;
+  padding: 0 12px;
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  background: #0a0a0a;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.contact-item:hover {
+  border-color: var(--primary-color, #10b981);
+  background: #0f0f0f;
+}
+
+.contact-item i {
+  font-size: 20px;
+  color: #ffffff !important;
+  margin-top: 2px;
+}
+
+.contact-item strong {
+  display: block;
+  color: #ffffff !important;
+  font-size: 14px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.contact-item p {
+  margin: 0;
+  color: #ffffff !important;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: rgba(var(--primary-color-rgb, 16, 185, 129), 0.1);
+  border: 1px solid rgba(var(--primary-color-rgb, 16, 185, 129), 0.3);
+  border-radius: 8px;
+}
+
+.info-box i {
+  font-size: 18px;
+  color: #ffffff !important;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.info-box p {
+  margin: 0;
+  color: #ffffff !important;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #374151;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-close-modal {
+  padding: 10px 32px;
+  background: #374151;
+  color: #ffffff !important;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 480px) {
+  .forgot-password-modal {
+    margin: 10px;
+    max-width: calc(100vw - 20px);
+    border-radius: 12px;
+  }
+  
+  .modal-header {
+    padding: 16px 16px 12px;
+  }
+  
+  .modal-header i.pi-lock {
+    font-size: 36px;
+    margin-bottom: 8px;
+  }
+  
+  .modal-header h3 {
+    font-size: 18px;
+  }
+  
+  .modal-close {
+    top: 12px;
+    right: 12px;
+    font-size: 18px;
+  }
+  
+  .modal-body {
+    padding: 16px;
+  }
+  
+  .modal-message {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  
+  .reset-request-form .form-group {
+    margin-bottom: 12px;
+  }
+  
+  .reset-request-form label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  
+  .reset-request-form input,
+  .reset-request-form textarea {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .btn-submit-request {
+    padding: 10px 20px;
+    font-size: 13px;
+    margin-top: 12px;
+  }
+  
+  .divider {
+    margin: 16px 0;
+  }
+  
+  .divider span {
+    font-size: 11px;
+  }
+  
+  .contact-info {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .contact-item {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .contact-item i {
+    font-size: 16px;
+  }
+  
+  .contact-item strong {
+    font-size: 13px;
+    margin-bottom: 2px;
+  }
+  
+  .contact-item p {
+    font-size: 12px;
+  }
+  
+  .info-box {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .info-box i {
+    font-size: 16px;
+  }
+  
+  .info-box p {
+    font-size: 12px;
+  }
+  
+  .modal-footer {
+    padding: 12px 16px;
+  }
+  
+  .btn-close-modal {
+    padding: 8px 24px;
+    font-size: 13px;
+  }
+  
+  .success-message,
+  .error-message-modal {
+    padding: 10px;
+    font-size: 12px;
+    margin-top: 12px;
+  }
 }
 </style>

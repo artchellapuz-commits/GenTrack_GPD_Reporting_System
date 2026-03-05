@@ -4,7 +4,8 @@ from django.contrib.auth.models import User
 from .models import (
     Plant, Unit, UploadedFile, GenerationReport, 
     PlantCapacity, HistoricalData, WaterNomination, 
-    ActualGeneration, Testimonial, UserProfile, AuditLog
+    ActualGeneration, Testimonial, UserProfile, AuditLog,
+    PasswordResetRequest
 )
 
 
@@ -179,6 +180,71 @@ class AuditLogAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return request.user.is_superuser
+
+
+@admin.register(PasswordResetRequest)
+class PasswordResetRequestAdmin(admin.ModelAdmin):
+    list_display = ['username', 'status', 'created_at', 'processed_by', 'processed_at']
+    list_filter = ['status', 'created_at', 'processed_at']
+    search_fields = ['username', 'reason', 'admin_notes']
+    readonly_fields = ['username', 'reason', 'ip_address', 'created_at', 'updated_at']
+    date_hierarchy = 'created_at'
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Request Information', {
+            'fields': ('username', 'reason', 'ip_address', 'status')
+        }),
+        ('Admin Actions', {
+            'fields': ('processed_by', 'processed_at', 'admin_notes')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """Auto-set processed_by and processed_at when status changes"""
+        if change and 'status' in form.changed_data:
+            if obj.status in ['APPROVED', 'REJECTED', 'COMPLETED']:
+                if not obj.processed_by:
+                    obj.processed_by = request.user
+                if not obj.processed_at:
+                    from django.utils import timezone
+                    obj.processed_at = timezone.now()
+        super().save_model(request, obj, form, change)
+    
+    actions = ['mark_as_approved', 'mark_as_rejected', 'mark_as_completed']
+    
+    def mark_as_approved(self, request, queryset):
+        from django.utils import timezone
+        updated = queryset.filter(status='PENDING').update(
+            status='APPROVED',
+            processed_by=request.user,
+            processed_at=timezone.now()
+        )
+        self.message_user(request, f'{updated} request(s) marked as approved.')
+    mark_as_approved.short_description = 'Mark selected as Approved'
+    
+    def mark_as_rejected(self, request, queryset):
+        from django.utils import timezone
+        updated = queryset.filter(status='PENDING').update(
+            status='REJECTED',
+            processed_by=request.user,
+            processed_at=timezone.now()
+        )
+        self.message_user(request, f'{updated} request(s) marked as rejected.')
+    mark_as_rejected.short_description = 'Mark selected as Rejected'
+    
+    def mark_as_completed(self, request, queryset):
+        from django.utils import timezone
+        updated = queryset.filter(status='APPROVED').update(
+            status='COMPLETED',
+            processed_at=timezone.now()
+        )
+        self.message_user(request, f'{updated} request(s) marked as completed.')
+    mark_as_completed.short_description = 'Mark selected as Completed'
 
 
 # Customize admin site

@@ -15,7 +15,8 @@ from .serializers import (
     UserSerializer, 
     UserRegistrationSerializer,
     UserProfileSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    PasswordResetRequestSerializer
 )
 from .utils import get_location_from_ip, get_client_ip
 
@@ -147,6 +148,157 @@ class AuthViewSet(viewsets.ViewSet):
             }, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def password_reset_request(self, request):
+        """Submit a password reset request"""
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            username = serializer.validated_data.get('username')
+            
+            # Verify username exists
+            from django.contrib.auth.models import User
+            if not User.objects.filter(username=username).exists():
+                return Response({
+                    'error': 'Username not found'
+                }, status=status.HTTP_404_NOT_FOUND)
+            
+            # Get IP address
+            ip_address = get_client_ip(request)
+            
+            # Create password reset request
+            from .models import PasswordResetRequest
+            reset_request = PasswordResetRequest.objects.create(
+                username=username,
+                reason=serializer.validated_data.get('reason', ''),
+                ip_address=ip_address
+            )
+            
+            # Send email notification to admins
+            try:
+                from .email_service import send_password_reset_notification
+                send_password_reset_notification(reset_request)
+            except Exception as e:
+                # Log error but don't fail the request
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to send password reset notification email: {str(e)}")
+            
+            return Response({
+                'message': 'Password reset request submitted successfully. An administrator will contact you shortly.',
+                'request_id': reset_request.id
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def reset_user_password(self, request):
+        """Reset a user's password (Admin only)"""
+        # Check if user is admin
+        if not (request.user.is_staff or 
+                (hasattr(request.user, 'profile') and request.user.profile.role == 'ADMIN')):
+            return Response({
+                'error': 'Permission denied. Admin access required.'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        username = request.data.get('username')
+        new_password = request.data.get('new_password')
+        request_id = request.data.get('request_id')
+        
+        if not username:
+            return Response({
+                'error': 'Username is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(username=username)
+            
+            # Generate random password if not provided
+            if not new_password:
+                import secrets
+                import string
+                alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+                new_password = ''.join(secrets.choice(alphabet) for i in range(12))
+            
+            # Reset password
+            user.set_password(new_password)
+            user.save()
+            
+            # Update password reset request if provided
+            if request_id:
+                from .models import PasswordResetRequest
+                try:
+                    reset_request = PasswordResetRequest.objects.get(id=request_id)
+                    reset_request.status = 'COMPLETED'
+                    reset_request.processed_by = request.user
+                    from django.utils import timezone
+                    reset_request.processed_at = timezone.now()
+                    reset_request.admin_notes = f'Password reset by {request.user.username}'
+                    reset_request.save()
+                except PasswordResetRequest.DoesNotExist:
+                    pass
+            
+            # Create audit log
+            from .models import AuditLog
+            ip_address = get_client_ip(request)
+            location = get_location_from_ip(ip_address)
+            
+            AuditLog.objects.create(
+                user=request.user,
+                action='PASSWORD_RESET',
+                model_name='User',
+                object_id=user.id,
+                description=f'Admin {request.user.username} reset password for user {username}',
+                ip_address=ip_address,
+                location=location
+            )
+            
+            # Try to send email with new password
+            email_sent = False
+            if user.email:
+                try:
+                    from django.core.mail import send_mail
+                    from django.conf import settings
+                    
+                    send_mail(
+                        subject='Your Password Has Been Reset - GPD System',
+                        message=f'''Hello {username},
+
+Your password has been reset by an administrator.
+
+Your new temporary password is: {new_password}
+
+Please log in and change your password immediately for security.
+
+Login at: {settings.FRONTEND_URL}/login
+
+If you did not request this password reset, please contact IT support immediately at gpd.support@npc.gov.ph
+
+Best regards,
+GPD System Administration''',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[user.email],
+                        fail_silently=False,
+                    )
+                    email_sent = True
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Failed to send password reset email: {str(e)}")
+            
+            return Response({
+                'message': 'Password reset successfully',
+                'username': username,
+                'new_password': new_password,
+                'email_sent': email_sent,
+                'user_email': user.email if user.email else None
+            }, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response({
+                'error': 'User not found'
+            }, status=status.HTTP_404_NOT_FOUND)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -172,3 +324,50 @@ class UserViewSet(viewsets.ModelViewSet):
             from .permissions import CanManageUsers
             return [CanManageUsers()]
         return super().get_permissions()
+
+
+
+class PasswordResetRequestViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing password reset requests (Admin only)"""
+    from .models import PasswordResetRequest
+    queryset = PasswordResetRequest.objects.all()
+    serializer_class = PasswordResetRequestSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        """Filter queryset based on query parameters"""
+        queryset = super().get_queryset()
+        
+        # Only admins can view password reset requests
+        if not (self.request.user.is_staff or 
+                (hasattr(self.request.user, 'profile') and 
+                 self.request.user.profile.role == 'ADMIN')):
+            return queryset.none()
+        
+        # Filter by status
+        status = self.request.query_params.get('status', None)
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        # Search by username
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(username__icontains=search)
+        
+        return queryset.order_by('-created_at')
+    
+    def update(self, request, *args, **kwargs):
+        """Update password reset request status"""
+        instance = self.get_object()
+        
+        # Auto-set processed_by and processed_at when status changes
+        if 'status' in request.data and request.data['status'] != instance.status:
+            if request.data['status'] in ['APPROVED', 'REJECTED', 'COMPLETED']:
+                if not instance.processed_by:
+                    instance.processed_by = request.user
+                if not instance.processed_at:
+                    from django.utils import timezone
+                    instance.processed_at = timezone.now()
+                instance.save()
+        
+        return super().update(request, *args, **kwargs)

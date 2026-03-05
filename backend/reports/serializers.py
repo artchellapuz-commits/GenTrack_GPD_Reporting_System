@@ -4,7 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from .models import (
     Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, 
     HistoricalData, WaterNomination, ActualGeneration, Testimonial,
-    UserProfile, AuditLog
+    UserProfile, AuditLog, PasswordResetRequest
 )
 
 
@@ -369,3 +369,16 @@ class AuditLogSerializer(serializers.ModelSerializer):
         model = AuditLog
         fields = '__all__'
         read_only_fields = ['user', 'timestamp']
+
+
+class PasswordResetRequestSerializer(serializers.ModelSerializer):
+    """Serializer for password reset requests"""
+    processed_by_username = serializers.CharField(source='processed_by.username', read_only=True)
+    
+    class Meta:
+        model = PasswordResetRequest
+        fields = ['id', 'username', 'reason', 'status', 'ip_address', 
+                  'processed_by', 'processed_by_username', 'processed_at', 
+                  'admin_notes', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'processed_by', 'processed_at', 
+                           'created_at', 'updated_at', 'ip_address']

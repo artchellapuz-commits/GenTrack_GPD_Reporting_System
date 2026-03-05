@@ -55,34 +55,49 @@
 
       <!-- Filters -->
       <div class="filters-section">
-        <div class="filter-group">
-          <label>Search</label>
-          <input 
-            type="text" 
-            v-model="searchQuery" 
-            placeholder="Search by username or email..."
-            class="search-input"
-          >
+        <div class="filter-left">
+          <div class="show-entries">
+            <span>Show:</span>
+            <select v-model.number="itemsPerPage" @change="changeItemsPerPage">
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+            <span>entries</span>
+          </div>
         </div>
         
-        <div class="filter-group">
-          <label>Role</label>
-          <select v-model="filterRole">
-            <option value="">All Roles</option>
-            <option value="ADMIN">Admin</option>
-            <option value="MANAGER">Manager</option>
-            <option value="OPERATOR">Operator</option>
-            <option value="VIEWER">Viewer</option>
-          </select>
-        </div>
-        
-        <div class="filter-group">
-          <label>Status</label>
-          <select v-model="filterStatus">
-            <option value="">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+        <div class="filter-right">
+          <div class="filter-group">
+            <label>Search</label>
+            <input 
+              type="text" 
+              v-model="searchQuery" 
+              placeholder="Search by username or email..."
+              class="search-input"
+            >
+          </div>
+          
+          <div class="filter-group">
+            <label>Role</label>
+            <select v-model="filterRole">
+              <option value="">All Roles</option>
+              <option value="ADMIN">Admin</option>
+              <option value="MANAGER">Manager</option>
+              <option value="OPERATOR">Operator</option>
+              <option value="VIEWER">Viewer</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label>Status</label>
+            <select v-model="filterStatus">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -95,16 +110,31 @@
         <table v-else-if="filteredUsers.length > 0" class="users-table">
           <thead>
             <tr>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Date Joined</th>
+              <th class="sortable" @click="sortBy('username')">
+                Username
+                <i :class="['pi', getSortIcon('username'), 'sort-icon']"></i>
+              </th>
+              <th class="sortable" @click="sortBy('email')">
+                Email
+                <i :class="['pi', getSortIcon('email'), 'sort-icon']"></i>
+              </th>
+              <th class="sortable" @click="sortBy('role')">
+                Role
+                <i :class="['pi', getSortIcon('role'), 'sort-icon']"></i>
+              </th>
+              <th class="sortable" @click="sortBy('status')">
+                Status
+                <i :class="['pi', getSortIcon('status'), 'sort-icon']"></i>
+              </th>
+              <th class="sortable nowrap" @click="sortBy('date_joined')">
+                Date Joined
+                <i :class="['pi', getSortIcon('date_joined'), 'sort-icon']"></i>
+              </th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="user in filteredUsers" :key="user.id">
+            <tr v-for="user in paginatedUsers" :key="user.id">
               <td>
                 <div class="user-info">
                   <i class="pi pi-user"></i>
@@ -144,6 +174,17 @@
             </tr>
           </tbody>
         </table>
+        
+        <!-- Pagination -->
+        <Paginator 
+          v-if="filteredUsers.length > 0"
+          :rows="itemsPerPage" 
+          :totalRecords="filteredUsers.length" 
+          :first="(currentPage - 1) * itemsPerPage"
+          @page="onPageChange($event)"
+          template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+          :pageLinkSize="5"
+        />
 
         <div v-else class="empty-state">
           <i class="pi pi-users"></i>
@@ -233,11 +274,13 @@
 <script>
 import axios from 'axios';
 import AppLayout from './AppLayout.vue';
+import Paginator from 'primevue/paginator';
 
 export default {
   name: 'UserManagement',
   components: {
-    AppLayout
+    AppLayout,
+    Paginator
   },
   data() {
     return {
@@ -248,6 +291,12 @@ export default {
       searchQuery: '',
       filterRole: '',
       filterStatus: '',
+      // Pagination
+      currentPage: 1,
+      itemsPerPage: 10,
+      // Sorting
+      sortField: 'username',
+      sortOrder: 1, // -1 for descending, 1 for ascending
       formData: {
         username: '',
         email: '',
@@ -273,12 +322,78 @@ export default {
         
         return matchesSearch && matchesRole && matchesStatus;
       });
+    },
+    sortedUsers() {
+      return [...this.filteredUsers].sort((a, b) => {
+        let aVal, bVal;
+        
+        switch(this.sortField) {
+          case 'username':
+            aVal = a.username?.toLowerCase() || '';
+            bVal = b.username?.toLowerCase() || '';
+            break;
+          case 'email':
+            aVal = a.email?.toLowerCase() || '';
+            bVal = b.email?.toLowerCase() || '';
+            break;
+          case 'role':
+            aVal = a.profile?.role?.toLowerCase() || 'viewer';
+            bVal = b.profile?.role?.toLowerCase() || 'viewer';
+            break;
+          case 'status':
+            aVal = a.is_active ? 1 : 0;
+            bVal = b.is_active ? 1 : 0;
+            break;
+          case 'date_joined':
+            aVal = new Date(a.date_joined);
+            bVal = new Date(b.date_joined);
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aVal < bVal) return -1 * this.sortOrder;
+        if (aVal > bVal) return 1 * this.sortOrder;
+        return 0;
+      });
+    },
+    paginatedUsers() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.sortedUsers.slice(start, end);
     }
   },
   mounted() {
     this.loadUsers();
   },
   methods: {
+    sortBy(field) {
+      if (this.sortField === field) {
+        // Toggle sort order if clicking the same field
+        this.sortOrder = this.sortOrder * -1;
+      } else {
+        // Set new field and default to ascending
+        this.sortField = field;
+        this.sortOrder = 1;
+      }
+      this.currentPage = 1; // Reset to first page when sorting
+    },
+    
+    getSortIcon(field) {
+      if (this.sortField !== field) {
+        return 'pi-sort-alt'; // Neutral sort icon
+      }
+      return this.sortOrder === 1 ? 'pi-sort-amount-up' : 'pi-sort-amount-down';
+    },
+    
+    changeItemsPerPage() {
+      this.currentPage = 1; // Reset to first page when changing items per page
+    },
+    
+    onPageChange(event) {
+      this.currentPage = event.page + 1; // PrimeVue uses 0-based page index
+    },
+    
     async loadUsers() {
       this.loading = true;
       try {
@@ -486,14 +601,53 @@ export default {
 
 /* Filters */
 .filters-section {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
   gap: 20px;
   margin-bottom: 20px;
   padding: 20px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.filter-left {
+  flex-shrink: 0;
+}
+
+.filter-right {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.show-entries {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.show-entries select {
+  padding: 8px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.3s;
+}
+
+.show-entries select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
 }
 
 .filter-group label {
@@ -545,6 +699,41 @@ export default {
   color: #475569;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+/* Sortable Table Headers */
+.users-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.users-table th.sortable.nowrap {
+  white-space: nowrap;
+}
+
+.users-table th.sortable:hover {
+  background-color: #e2e8f0;
+}
+
+.users-table th .sort-icon {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-left: 6px;
+  transition: color 0.2s ease;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.users-table th.sortable:hover .sort-icon {
+  color: #64748b;
+}
+
+.users-table th .pi-sort-amount-up,
+.users-table th .pi-sort-amount-down {
+  color: #667eea;
+  font-weight: bold;
 }
 
 .users-table td {
@@ -801,5 +990,59 @@ export default {
   font-size: 48px;
   margin-bottom: 15px;
   display: block;
+}
+
+/* Pagination */
+:deep(.p-paginator) {
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last),
+:deep(.p-paginator .p-paginator-page) {
+  min-width: 2.5rem;
+  height: 2.5rem;
+  margin: 0.125rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+:deep(.p-paginator .p-paginator-first:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-prev:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-next:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-last:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-page:not(.p-highlight):hover) {
+  background: #f1f5f9;
+  color: var(--npc-primary);
+}
+
+:deep(.p-paginator .p-paginator-page.p-highlight) {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+
+:deep(.p-paginator .p-disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+:deep(.p-paginator .p-paginator-icon) {
+  font-size: 0.875rem;
 }
 </style>

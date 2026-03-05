@@ -78,10 +78,26 @@
         <!-- Admin Section - Only for Admin -->
         <div class="nav-divider"></div>
         <div class="nav-section-title">Administration</div>
-        <router-link to="/user-management" @click="closeSidebar" class="nav-item">
-          <i class="pi pi-users"></i>
-          <span class="nav-text">User Management</span>
-        </router-link>
+        
+        <!-- User Management with Dropdown -->
+        <div class="nav-item-dropdown">
+          <a href="#" @click.prevent="toggleUserManagementDropdown" class="nav-item">
+            <i class="pi pi-users"></i>
+            <span class="nav-text">User Management</span>
+            <i class="pi pi-chevron-down dropdown-icon" :class="{ rotated: userManagementOpen }"></i>
+          </a>
+          <div class="dropdown-menu" :class="{ open: userManagementOpen }">
+            <router-link to="/user-management" class="dropdown-item">
+              <i class="pi pi-user-edit"></i>
+              <span>Manage Users</span>
+            </router-link>
+            <router-link v-if="isAdminUser" to="/password-reset-requests" class="dropdown-item">
+              <i class="pi pi-lock"></i>
+              <span>Reset Requests</span>
+            </router-link>
+          </div>
+        </div>
+        
         <a href="http://localhost:8000/admin" target="_blank" class="nav-item">
           <i class="pi pi-cog"></i>
           <span class="nav-text">Admin Panel</span>
@@ -134,7 +150,8 @@ export default {
       canUpload: false,
       canApprove: false,
       isAdminUser: false,
-      waterNominationOpen: false
+      waterNominationOpen: false,
+      userManagementOpen: false
     };
   },
   mounted() {
@@ -154,6 +171,10 @@ export default {
       const currentPath = this.$route.path;
       if (currentPath === '/water-nomination' || currentPath === '/approval-queue') {
         this.waterNominationOpen = true;
+      }
+      // Auto-open user management dropdown if on related pages
+      if (currentPath === '/user-management' || currentPath === '/password-reset-requests') {
+        this.userManagementOpen = true;
       }
     },
     loadUserInfo() {
@@ -175,6 +196,9 @@ export default {
     },
     toggleWaterNominationDropdown() {
       this.waterNominationOpen = !this.waterNominationOpen;
+    },
+    toggleUserManagementDropdown() {
+      this.userManagementOpen = !this.userManagementOpen;
     },
     handleLogout() {
       sessionStorage.setItem('justLoggedOut', 'true');

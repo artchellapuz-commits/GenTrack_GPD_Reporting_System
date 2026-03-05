@@ -5,7 +5,7 @@ from .views import (
     GenerationReportViewSet, HistoricalDataViewSet, PlantCapacityViewSet,
     WaterNominationViewSet, ActualGenerationViewSet, TestimonialViewSet, AuditLogViewSet
 )
-from .auth_views import AuthViewSet, UserViewSet
+from .auth_views import AuthViewSet, UserViewSet, PasswordResetRequestViewSet
 from .views_scheduled import ScheduledReportViewSet, ReportExecutionViewSet
 from .views_analytics import (
     performance_trends, plant_comparison, predictive_insights,
@@ -25,6 +25,7 @@ router.register(r'testimonials', TestimonialViewSet, basename='testimonial')
 router.register(r'audit-logs', AuditLogViewSet, basename='auditlog')
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'users', UserViewSet, basename='user')
+router.register(r'password-reset-requests', PasswordResetRequestViewSet, basename='password-reset-request')
 router.register(r'scheduled-reports', ScheduledReportViewSet, basename='scheduledreport')
 router.register(r'report-executions', ReportExecutionViewSet, basename='reportexecution')
 

@@ -496,3 +496,41 @@ class AuditLog(models.Model):
     def __str__(self):
         return f"{self.user.username if self.user else 'System'} - {self.action} - {self.timestamp}"
 
+
+class PasswordResetRequest(models.Model):
+    """Password reset requests from users"""
+    
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+        ('COMPLETED', 'Completed'),
+    ]
+    
+    username = models.CharField(max_length=150, help_text="Username requesting password reset")
+    reason = models.TextField(blank=True, help_text="Optional reason for password reset request")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    
+    # Admin actions
+    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, 
+                                    related_name='processed_reset_requests',
+                                    help_text="Admin who processed this request")
+    processed_at = models.DateTimeField(null=True, blank=True)
+    admin_notes = models.TextField(blank=True, help_text="Internal notes from admin")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'password_reset_requests'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['username', 'status']),
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.username} - {self.status} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+

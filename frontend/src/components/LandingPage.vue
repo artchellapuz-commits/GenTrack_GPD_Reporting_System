@@ -30,11 +30,7 @@
             <p class="hero-tagline">Streamline your power generation reporting with real-time analytics</p>
             
             <div class="cta-buttons">
-              <router-link to="/register" class="btn btn-primary">
-                <i class="pi pi-user-plus"></i>
-                Get Started
-              </router-link>
-              <router-link to="/login" class="btn btn-secondary">
+              <router-link to="/login" class="btn btn-primary">
                 <i class="pi pi-sign-in"></i>
                 Sign In
               </router-link>
@@ -515,11 +511,11 @@
         <div class="cta-banner-content">
           <div class="cta-banner-text">
             <strong>Ready to streamline your reporting?</strong>
-            <span>Get started with GPD Reporting System today!</span>
+            <span>Contact your administrator for access to GPD Reporting System</span>
           </div>
           <div class="cta-banner-actions">
-            <router-link to="/register" class="cta-banner-btn">
-              Get Started Free
+            <router-link to="/login" class="cta-banner-btn">
+              Sign In
             </router-link>
             <button @click="dismissCtaBanner" class="cta-banner-dismiss">
               <i class="pi pi-times"></i>
@@ -603,7 +599,8 @@
         </div>
         
         <div class="footer-bottom">
-          <p>&copy; 2026 National Power Corporation. All rights reserved.</p>
+          <p>&copy; 2026 Generation and Performance Division. All rights reserved.</p>
+          <p class="developer-credit">Developed by <span class="developer-name">Artchel B. Lapuz</span></p>
         </div>
       </div>
     </footer>
@@ -624,7 +621,7 @@ export default {
       nextRiverIndex: 1,
       isTransitioning: true,
       riverImages: [
-        require('@/assets/River2.1.jpg'),
+        require('@/assets/River2.8.jpg'),
         require('@/assets/River1.5.jpg'),
         require('@/assets/River1.3.jpg'),
         require('@/assets/River1.4.jpg'),
@@ -641,7 +638,7 @@ export default {
         require('@/assets/River2.5.jpg'),
         require('@/assets/River2.6.jpg'),
         require('@/assets/River2.7.jpg'),
-        require('@/assets/River2.8.jpg'),
+        require('@/assets/River2.1.jpg'),
         require('@/assets/River2.9.jpg'),
         require('@/assets/River3.0.jpg'),
         require('@/assets/River3.1.jpg'),
@@ -2581,6 +2578,22 @@ export default {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.875rem;
   margin: 0;
+  margin-bottom: 8px;
+}
+
+.developer-credit {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.developer-name {
+  color: #10b981;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.developer-name:hover {
+  color: #059669;
 }
 
 /* Scroll Progress Bar */

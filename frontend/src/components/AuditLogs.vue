@@ -84,17 +84,38 @@
           <table class="audit-table">
             <thead>
               <tr>
-                <th>Timestamp</th>
-                <th>User</th>
-                <th>Action</th>
-                <th>Model</th>
-                <th>Description</th>
-                <th>IP Address</th>
-                <th>Location</th>
+                <th class="sortable" @click="sortBy('timestamp')">
+                  Timestamp
+                  <i :class="['pi', getSortIcon('timestamp'), 'sort-icon']"></i>
+                </th>
+                <th class="sortable" @click="sortBy('user')">
+                  User
+                  <i :class="['pi', getSortIcon('user'), 'sort-icon']"></i>
+                </th>
+                <th class="sortable" @click="sortBy('action')">
+                  Action
+                  <i :class="['pi', getSortIcon('action'), 'sort-icon']"></i>
+                </th>
+                <th class="sortable" @click="sortBy('model')">
+                  Model
+                  <i :class="['pi', getSortIcon('model'), 'sort-icon']"></i>
+                </th>
+                <th class="sortable" @click="sortBy('description')">
+                  Description
+                  <i :class="['pi', getSortIcon('description'), 'sort-icon']"></i>
+                </th>
+                <th class="sortable nowrap" @click="sortBy('ip_address')">
+                  IP Address
+                  <i :class="['pi', getSortIcon('ip_address'), 'sort-icon']"></i>
+                </th>
+                <th class="sortable" @click="sortBy('location')">
+                  Location
+                  <i :class="['pi', getSortIcon('location'), 'sort-icon']"></i>
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="log in logs" :key="log.id">
+              <tr v-for="log in sortedLogs" :key="log.id">
                 <td>{{ formatDateTime(log.timestamp) }}</td>
                 <td>
                   <div class="user-cell">
@@ -160,10 +181,55 @@ export default {
       // Pagination
       currentPage: 1,
       entriesPerPage: 10,
-      totalEntries: 0
+      totalEntries: 0,
+      // Sorting
+      sortField: 'timestamp',
+      sortOrder: -1 // -1 for descending, 1 for ascending
     };
   },
   computed: {
+    sortedLogs() {
+      return [...this.logs].sort((a, b) => {
+        let aVal, bVal;
+        
+        switch(this.sortField) {
+          case 'timestamp':
+            aVal = new Date(a.timestamp);
+            bVal = new Date(b.timestamp);
+            break;
+          case 'user':
+            aVal = a.user?.username?.toLowerCase() || 'system';
+            bVal = b.user?.username?.toLowerCase() || 'system';
+            break;
+          case 'action':
+            aVal = a.action?.toLowerCase() || '';
+            bVal = b.action?.toLowerCase() || '';
+            break;
+          case 'model':
+            aVal = a.model_name?.toLowerCase() || '';
+            bVal = b.model_name?.toLowerCase() || '';
+            break;
+          case 'description':
+            aVal = a.description?.toLowerCase() || '';
+            bVal = b.description?.toLowerCase() || '';
+            break;
+          case 'ip_address':
+            aVal = a.ip_address || '';
+            bVal = b.ip_address || '';
+            break;
+          case 'location':
+            aVal = a.location?.toLowerCase() || '';
+            bVal = b.location?.toLowerCase() || '';
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aVal < bVal) return -1 * this.sortOrder;
+        if (aVal > bVal) return 1 * this.sortOrder;
+        return 0;
+      });
+    },
     totalPages() {
       return Math.ceil(this.totalEntries / this.entriesPerPage);
     },
@@ -178,6 +244,24 @@ export default {
     this.loadLogs();
   },
   methods: {
+    sortBy(field) {
+      if (this.sortField === field) {
+        // Toggle sort order if clicking the same field
+        this.sortOrder = this.sortOrder * -1;
+      } else {
+        // Set new field and default to ascending
+        this.sortField = field;
+        this.sortOrder = 1;
+      }
+    },
+    
+    getSortIcon(field) {
+      if (this.sortField !== field) {
+        return 'pi-sort-alt'; // Neutral sort icon
+      }
+      return this.sortOrder === 1 ? 'pi-sort-amount-up' : 'pi-sort-amount-down';
+    },
+    
     async loadLogs() {
       this.loading = true;
       try {
@@ -571,6 +655,41 @@ h1 {
   color: #475569;
   font-size: 0.9rem;
   border-bottom: 2px solid #e2e8f0;
+}
+
+/* Sortable Table Headers */
+.audit-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.audit-table th.sortable.nowrap {
+  white-space: nowrap;
+}
+
+.audit-table th.sortable:hover {
+  background-color: #e2e8f0;
+}
+
+.audit-table th .sort-icon {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-left: 6px;
+  transition: color 0.2s ease;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.audit-table th.sortable:hover .sort-icon {
+  color: #64748b;
+}
+
+.audit-table th .pi-sort-amount-up,
+.audit-table th .pi-sort-amount-down {
+  color: #667eea;
+  font-weight: bold;
 }
 
 .audit-table td {

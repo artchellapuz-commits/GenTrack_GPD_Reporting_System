@@ -261,3 +261,57 @@ class EmailService:
             message=message,
             recipient_list=recipient_list
         )
+
+
+def send_password_reset_notification(reset_request):
+    """
+    Send email notification to admins about password reset request
+    """
+    subject = f"Password Reset Request - {reset_request.username}"
+    message = f"""
+    A password reset request has been submitted.
+    
+    Details:
+    - Username: {reset_request.username}
+    - Reason: {reset_request.reason or 'Not provided'}
+    - Request Date: {reset_request.created_at.strftime('%Y-%m-%d %H:%M')}
+    - IP Address: {reset_request.ip_address or 'Unknown'}
+    
+    Please review this request in the admin panel and contact the user to reset their password.
+    
+    Contact Information:
+    Email: gpd.support@npc.gov.ph
+    
+    NPC Reporting System
+    """
+    
+    # Get all admin users
+    from django.contrib.auth.models import User
+    from django.db.models import Q
+    
+    admins = User.objects.filter(
+        is_active=True
+    ).filter(
+        Q(is_staff=True) | 
+        Q(profile__role='ADMIN')
+    )
+    
+    recipient_list = [admin.email for admin in admins if admin.email]
+    
+    # If no admin emails, use default support email
+    if not recipient_list:
+        recipient_list = ['gpd.support@npc.gov.ph']
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipient_list,
+            fail_silently=False,
+        )
+        logger.info(f"Password reset notification sent for user: {reset_request.username}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send password reset notification: {str(e)}")
+        return False

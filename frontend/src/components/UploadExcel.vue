@@ -231,26 +231,53 @@
     <!-- Upload History -->
     <div v-if="uploadHistory.length" class="card glass-card mt-5 glass-fade-in">
       <div class="card-header">
-        <h3 class="card-title">
-          <i class="pi pi-history title-icon"></i>
-          Recent Uploads
-        </h3>
+        <div class="header-content">
+          <h3 class="card-title">
+            <i class="pi pi-history title-icon"></i>
+            Recent Uploads
+          </h3>
+          <div class="show-entries">
+            <span>Show:</span>
+            <select v-model.number="itemsPerPage" @change="changeItemsPerPage">
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+            <span>entries</span>
+          </div>
+        </div>
       </div>
       <div class="card-body p-0">
         <div class="table-container">
           <table>
             <thead>
               <tr>
-                <th>File Name</th>
-                <th>Plant</th>
-                <th>Uploaded At</th>
-                <th>Status</th>
-                <th>Records</th>
+                <th @click="sortBy('filename')" class="sortable">
+                  File Name
+                  <i :class="['pi', getSortIcon('filename'), 'sort-icon']"></i>
+                </th>
+                <th @click="sortBy('plant')" class="sortable">
+                  Plant
+                  <i :class="['pi', getSortIcon('plant'), 'sort-icon']"></i>
+                </th>
+                <th @click="sortBy('uploaded_at')" class="sortable nowrap">
+                  Uploaded At
+                  <i :class="['pi', getSortIcon('uploaded_at'), 'sort-icon']"></i>
+                </th>
+                <th @click="sortBy('status')" class="sortable">
+                  Status
+                  <i :class="['pi', getSortIcon('status'), 'sort-icon']"></i>
+                </th>
+                <th @click="sortBy('records')" class="sortable nowrap">
+                  Records
+                  <i :class="['pi', getSortIcon('records'), 'sort-icon']"></i>
+                </th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="upload in uploadHistory" :key="upload.id" class="upload-row">
+              <tr v-for="upload in paginatedUploadHistory" :key="upload.id" class="upload-row">
                 <td>
                   <div class="file-cell">
                     <i class="pi pi-file file-icon-sm"></i>
@@ -280,6 +307,17 @@
             </tbody>
           </table>
         </div>
+        
+        <!-- Pagination -->
+        <Paginator 
+          v-if="uploadHistory.length > itemsPerPage"
+          :rows="itemsPerPage" 
+          :totalRecords="uploadHistory.length" 
+          :first="(currentPage - 1) * itemsPerPage"
+          @page="onPageChange($event)"
+          template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+          :pageLinkSize="5"
+        />
       </div>
     </div>
 
@@ -343,12 +381,14 @@
 import api from '../services/api';
 import AppLayout from './AppLayout.vue';
 import Toast from 'primevue/toast';
+import Paginator from 'primevue/paginator';
 
 export default {
   name: 'UploadExcel',
   components: {
     AppLayout,
     Toast,
+    Paginator,
   },
   data() {
     return {
@@ -369,6 +409,12 @@ export default {
       isDragging: false,
       fileError: '',
       fileValidation: false,
+      // Pagination
+      currentPage: 1,
+      itemsPerPage: 10,
+      // Sorting
+      sortField: 'uploaded_at',
+      sortOrder: -1, // -1 for descending, 1 for ascending
     };
   },
   computed: {
@@ -380,6 +426,47 @@ export default {
         plant.code.toLowerCase().includes(query) ||
         plant.location.toLowerCase().includes(query)
       );
+    },
+    paginatedUploadHistory() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      const end = start + this.itemsPerPage;
+      return this.sortedUploadHistory.slice(start, end);
+    },
+    sortedUploadHistory() {
+      const sorted = [...this.uploadHistory].sort((a, b) => {
+        let aVal, bVal;
+        
+        switch(this.sortField) {
+          case 'filename':
+            aVal = a.original_filename?.toLowerCase() || '';
+            bVal = b.original_filename?.toLowerCase() || '';
+            break;
+          case 'plant':
+            aVal = a.plant_name?.toLowerCase() || '';
+            bVal = b.plant_name?.toLowerCase() || '';
+            break;
+          case 'uploaded_at':
+            aVal = new Date(a.uploaded_at);
+            bVal = new Date(b.uploaded_at);
+            break;
+          case 'status':
+            aVal = a.status?.toLowerCase() || '';
+            bVal = b.status?.toLowerCase() || '';
+            break;
+          case 'records':
+            aVal = a.records_imported || 0;
+            bVal = b.records_imported || 0;
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aVal < bVal) return -1 * this.sortOrder;
+        if (aVal > bVal) return 1 * this.sortOrder;
+        return 0;
+      });
+      
+      return sorted;
     }
   },
   mounted() {
@@ -391,6 +478,33 @@ export default {
     document.removeEventListener('click', this.closeDropdown);
   },
   methods: {
+    sortBy(field) {
+      if (this.sortField === field) {
+        // Toggle sort order if clicking the same field
+        this.sortOrder = this.sortOrder * -1;
+      } else {
+        // Set new field and default to ascending
+        this.sortField = field;
+        this.sortOrder = 1;
+      }
+      this.currentPage = 1; // Reset to first page when sorting
+    },
+    
+    getSortIcon(field) {
+      if (this.sortField !== field) {
+        return 'pi-sort-alt'; // Neutral sort icon
+      }
+      return this.sortOrder === 1 ? 'pi-sort-amount-up' : 'pi-sort-amount-down';
+    },
+    
+    changeItemsPerPage() {
+      this.currentPage = 1; // Reset to first page when changing items per page
+    },
+    
+    onPageChange(event) {
+      this.currentPage = event.page + 1; // PrimeVue uses 0-based page index
+    },
+    
     toggleDropdown() {
       this.dropdownOpen = !this.dropdownOpen;
     },
@@ -1870,6 +1984,126 @@ td:has(.btn-delete) {
 
 .btn-archive i {
   font-size: 1.125rem;
+}
+
+/* Show Entries in Card Header */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.show-entries {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #475569;
+}
+
+.show-entries select {
+  padding: 6px 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.3s;
+  background: white;
+}
+
+.show-entries select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Sortable Table Headers */
+.table-container th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.table-container th.sortable.nowrap {
+  white-space: nowrap;
+}
+
+.table-container th.sortable:hover {
+  background-color: #f1f5f9;
+}
+
+.table-container th .sort-icon {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-left: 6px;
+  transition: color 0.2s ease;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.table-container th.sortable:hover .sort-icon {
+  color: #64748b;
+}
+
+.table-container th .pi-sort-amount-up,
+.table-container th .pi-sort-amount-down {
+  color: #667eea;
+  font-weight: bold;
+}
+
+/* Pagination */
+:deep(.p-paginator) {
+  background: white;
+  border-top: 1px solid #e2e8f0;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last),
+:deep(.p-paginator .p-paginator-page) {
+  min-width: 2.5rem;
+  height: 2.5rem;
+  margin: 0.125rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+}
+
+:deep(.p-paginator .p-paginator-first:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-prev:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-next:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-last:not(.p-disabled):hover),
+:deep(.p-paginator .p-paginator-page:not(.p-highlight):hover) {
+  background: #f1f5f9;
+  color: var(--npc-primary);
+}
+
+:deep(.p-paginator .p-paginator-page.p-highlight) {
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 600;
+}
+
+:deep(.p-paginator .p-disabled) {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+:deep(.p-paginator .p-paginator-icon) {
+  font-size: 0.875rem;
 }
 </style>
 

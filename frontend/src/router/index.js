@@ -8,6 +8,7 @@ import WaterNomination from '../components/WaterNomination.vue';
 import ApprovalQueue from '../components/ApprovalQueue.vue';
 import AuditLogs from '../components/AuditLogs.vue';
 import UserManagement from '../components/UserManagement.vue';
+import PasswordResetRequests from '../components/PasswordResetRequests.vue';
 import DebugUser from '../components/DebugUser.vue';
 import LoginPage from '../components/Login.vue';
 import RegisterPage from '../components/Register.vue';
@@ -132,6 +133,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/password-reset-requests',
+    name: 'PasswordResetRequests',
+    component: PasswordResetRequests,
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
     path: '/debug-user',
     name: 'DebugUser',
     component: DebugUser,
@@ -176,7 +183,20 @@ router.beforeEach((to, from, next) => {
         query: { redirect: to.fullPath }
       });
     } else {
-      next();
+      // Check if route requires admin
+      if (to.matched.some(record => record.meta.requiresAdmin)) {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const isAdmin = user.is_staff || (user.profile && user.profile.role === 'ADMIN');
+        
+        if (!isAdmin) {
+          // Not admin, redirect to dashboard
+          next('/dashboard');
+        } else {
+          next();
+        }
+      } else {
+        next();
+      }
     }
   }
   // Check if route requires guest (login/register)
