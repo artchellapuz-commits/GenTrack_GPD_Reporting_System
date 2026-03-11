@@ -1,130 +1,103 @@
 <template>
   <AppLayout>
-    <div class="generate-report-page glass-background">
+    <div class="generate-report-page">
     <!-- Page Header -->
     <div class="page-header">
-      <h2 class="page-title">Generate Excel Report</h2>
-      <p class="page-description">
-        Create and download customized generation reports
-      </p>
+      <div class="header-content">
+        <div class="title-section">
+          <h2 class="page-title">
+            <i class="pi pi-file-excel title-icon"></i>
+            Generate Excel Report
+          </h2>
+          <p class="page-description">
+            Create and download customized generation reports for all {{ plants.length }} power plants
+          </p>
+        </div>
+        <div class="header-info">
+          <div class="info-badge success">
+            <i class="pi pi-check-circle"></i>
+            <span>All Plants Included</span>
+          </div>
+          <div class="info-badge primary">
+            <i class="pi pi-file-excel"></i>
+            <span>PSR Format</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Main Form Card -->
-    <div class="card glass-card glass-fade-in">
+    <div class="main-card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="pi pi-calendar-plus"></i>
+          <span>Report Configuration</span>
+        </div>
+        <div class="card-subtitle">
+          Select the date for your comprehensive plant status report
+        </div>
+      </div>
+      
       <div class="card-body">
         <form @submit.prevent="generateReport" class="report-form">
-          <!-- Plant Selection -->
-          <div class="form-section">
-            <label class="section-label">
-              <i class="pi pi-building"></i>
-              Select Plant
-            </label>
-            <div class="plants-grid">
-              <label 
-                v-for="plant in plants" 
-                :key="plant.code"
-                class="plant-checkbox"
-                :class="{ 'selected': selectedPlant === plant.code }"
-              >
-                <input 
-                  type="radio" 
-                  :value="plant.code" 
-                  v-model="selectedPlant"
-                  class="radio-input"
-                />
-                <div class="plant-info">
-                  <span class="plant-name">{{ plant.name }}</span>
-                  <span class="plant-code">{{ plant.code }}</span>
-                </div>
-                <i v-if="selectedPlant === plant.code" class="pi pi-check check-icon"></i>
-              </label>
-            </div>
-          </div>
-
-          <!-- Date Range -->
-          <div class="form-row">
-            <div class="form-field">
-              <label class="field-label">
-                <i class="pi pi-calendar"></i>
-                {{ reportType === 'daily_status' ? 'Report Date' : 'Start Date' }}
-              </label>
-              <input 
-                type="date" 
-                v-model="startDate" 
-                class="date-input glass-input"
-                required
-              />
-              <p v-if="reportType === 'daily_status'" class="field-hint">
-                <i class="pi pi-info-circle"></i>
-                Daily report will be generated for this specific date
-              </p>
-            </div>
-
-            <div v-if="reportType !== 'daily_status'" class="form-field">
-              <label class="field-label">
-                <i class="pi pi-calendar"></i>
-                End Date
-              </label>
-              <input 
-                type="date" 
-                v-model="endDate" 
-                class="date-input glass-input"
-                required
-              />
-            </div>
-          </div>
-
-          <!-- Report Type -->
+          <!-- Date Selection -->
           <div class="form-field">
             <label class="field-label">
-              <i class="pi pi-file"></i>
-              Report Type
+              <i class="pi pi-calendar"></i>
+              Report Date
             </label>
-            <div class="report-types">
-              <label 
-                v-for="type in reportTypes" 
-                :key="type.value"
-                class="report-type-option"
-                :class="{ 'active': reportType === type.value }"
-              >
-                <input 
-                  type="radio" 
-                  :value="type.value" 
-                  v-model="reportType"
-                  class="radio-input"
-                />
-                <div class="type-content">
-                  <i :class="type.icon"></i>
-                  <div class="type-text">
-                    <span class="type-name">{{ type.label }}</span>
-                    <span class="type-desc">{{ type.description }}</span>
-                  </div>
-                </div>
-              </label>
+            <div class="date-input-wrapper">
+              <input 
+                type="date" 
+                v-model="reportDate" 
+                class="date-input"
+                required
+                :class="{ 'has-value': reportDate }"
+                style="color: #000000 !important; background: #ffffff !important; border: 2px solid #d1d5db !important;"
+              />
+              <div class="input-border"></div>
+            </div>
+            <div class="field-hint">
+              <i class="pi pi-info-circle"></i>
+              <span>Generate report for the selected date across all power plants</span>
             </div>
           </div>
 
           <!-- Generate Button -->
-          <button 
-            type="submit"
-            :disabled="!canGenerate || generating"
-            class="btn-generate glass-button"
-          >
-            <i v-if="!generating" class="pi pi-download"></i>
-            <i v-else class="pi pi-spin pi-spinner"></i>
-            <span>{{ generating ? 'Generating...' : 'Generate Report' }}</span>
-          </button>
+          <div class="button-section">
+            <button 
+              type="submit"
+              :disabled="!canGenerate || generating"
+              class="btn-generate btn-generate-prominent"
+              :class="{ 'generating': generating }"
+            >
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <i v-if="!generating" class="pi pi-download"></i>
+                  <i v-else class="pi pi-spin pi-spinner"></i>
+                </div>
+                <span class="btn-text">{{ generating ? 'Generating Report...' : 'Generate Report' }}</span>
+              </div>
+              <div class="btn-ripple"></div>
+            </button>
+            
+            <div v-if="!canGenerate" class="validation-message">
+              <i class="pi pi-exclamation-triangle"></i>
+              <span v-if="!reportDate">Please select a report date to continue</span>
+              <span v-else-if="!selectedPlants || selectedPlants.length === 0">Loading plants... Please wait</span>
+            </div>
+          </div>
         </form>
       </div>
     </div>
 
     <!-- Generation History -->
-    <div v-if="generationHistory.length > 0" class="card glass-card glass-fade-in mt-4">
+    <div v-if="generationHistory.length > 0" class="history-card">
       <div class="card-header">
-        <h3 class="card-title">
-          <i class="pi pi-history"></i>
-          Generation History
-        </h3>
+        <div class="card-title" style="color: #000000 !important;">
+          <i class="pi pi-history" style="color: #000000 !important;"></i>
+          <span style="color: #000000 !important;">Recent Reports</span>
+        </div>
         <div class="menu-wrapper">
           <button @click="toggleMenu" class="btn-menu" ref="menuButton">
             <i class="pi pi-ellipsis-v"></i>
@@ -145,36 +118,37 @@
             v-for="(item, index) in generationHistory" 
             :key="index"
             class="history-item"
+            @click="downloadHistoryReport(item)"
           >
             <div class="history-icon">
               <i class="pi pi-file-excel"></i>
             </div>
-            <div class="history-details" @click="downloadHistoryReport(item)" style="cursor: pointer;">
+            <div class="history-details">
               <div class="history-main">
-                <span class="history-filename">{{ item.filename }}</span>
-                <span class="history-plant-badge">{{ item.plantName }}</span>
+                <span class="history-filename" style="color: #000000 !important;">{{ item.filename }}</span>
+                <span class="history-plant-badge" style="color: #000000 !important;">{{ item.plantName }}</span>
               </div>
               <div class="history-meta">
-                <span class="history-type">
-                  <i class="pi pi-tag"></i>
+                <span class="history-type" style="color: #000000 !important;">
+                  <i class="pi pi-tag" style="color: #000000 !important;"></i>
                   {{ item.reportTypeName }}
                 </span>
-                <span class="history-exact-time">
-                  <i class="pi pi-clock"></i>
+                <span class="history-exact-time" style="color: #000000 !important;">
+                  <i class="pi pi-clock" style="color: #000000 !important;"></i>
                   {{ formatExactTime(item.timestamp) }}
                 </span>
               </div>
             </div>
             <div class="history-actions">
               <button 
-                @click="downloadHistoryReport(item)" 
+                @click.stop="downloadHistoryReport(item)" 
                 class="btn-download"
                 title="Download this report"
               >
                 <i class="pi pi-download"></i>
               </button>
               <button 
-                @click="regenerateReport(item)" 
+                @click.stop="regenerateReport(item)" 
                 class="btn-regenerate"
                 title="Load parameters to regenerate"
               >
@@ -202,9 +176,8 @@ export default {
   data() {
     return {
       plants: [],
-      selectedPlant: '',
-      startDate: '',
-      endDate: '',
+      selectedPlants: [],
+      reportDate: '',
       reportType: 'psr',
       generating: false,
       generationHistory: [],
@@ -215,24 +188,14 @@ export default {
           label: 'Plant Status Report (PSR)',
           description: 'Official PSR format for Mindanao plants',
           icon: 'pi pi-file-excel'
-        },
-        {
-          value: 'daily_status',
-          label: 'Daily Plant Status Report',
-          description: 'Daily status with capacity, load, and lake elevations',
-          icon: 'pi pi-calendar'
         }
       ]
     };
   },
   computed: {
     canGenerate() {
-      // For daily status report, only start date is required
-      if (this.reportType === 'daily_status') {
-        return this.selectedPlant && this.startDate;
-      }
-      // For other reports, both dates are required
-      return this.selectedPlant && this.startDate && this.endDate;
+      // Require both report date and plants to be loaded
+      return this.reportDate && this.selectedPlants && this.selectedPlants.length > 0;
     },
   },
   mounted() {
@@ -250,9 +213,27 @@ export default {
         // Handle both paginated and non-paginated responses
         this.plants = response.data.results || response.data;
         console.log('Loaded plants:', this.plants);
+        
+        // Always select all plants automatically
+        this.selectedPlants = this.plants.map(plant => plant.code);
+        console.log('Selected plants:', this.selectedPlants);
+        
+        // Ensure we have plants selected
+        if (this.selectedPlants.length === 0) {
+          console.warn('No plants were selected after loading');
+          toast.warning('No plants available for report generation');
+        } else {
+          console.log(`Successfully loaded ${this.selectedPlants.length} plants:`, this.selectedPlants);
+        }
       } catch (error) {
         console.error('Error loading plants:', error);
         toast.error('Error loading plants: ' + (error.message || 'Unknown error'));
+        
+        // Fallback: try to use hardcoded plant codes if API fails
+        console.log('Attempting fallback with hardcoded plant codes...');
+        this.selectedPlants = ['AGUS1', 'AGUS2', 'AGUS4', 'AGUS5', 'AGUS6', 'AGUS7', 'PULANGI4'];
+        this.plants = this.selectedPlants.map(code => ({ code, name: code }));
+        toast.info('Using fallback plant codes. Some features may be limited.');
       }
     },
     
@@ -310,9 +291,8 @@ export default {
     },
     
     async regenerateReport(historyItem) {
-      this.selectedPlant = historyItem.plantCode;
-      this.startDate = historyItem.startDate;
-      this.endDate = historyItem.endDate;
+      this.selectedPlants = [historyItem.plantCode];
+      this.reportDate = historyItem.reportDate;
       this.reportType = historyItem.reportType;
       
       // Scroll to top
@@ -331,10 +311,22 @@ export default {
       toast.info('Downloading report...');
 
       try {
+        // Parse plant codes - they might be comma-separated
+        const plantCodes = historyItem.plantCode.includes(',') 
+          ? historyItem.plantCode.split(',').map(code => code.trim())
+          : [historyItem.plantCode];
+
+        console.log('Downloading history report with data:', {
+          plant_codes: plantCodes,
+          start_date: historyItem.reportDate,
+          end_date: historyItem.reportDate,
+          report_type: historyItem.reportType,
+        });
+
         const response = await api.generateReport({
-          plant_codes: [historyItem.plantCode],
-          start_date: historyItem.startDate,
-          end_date: historyItem.endDate,
+          plant_codes: plantCodes,
+          start_date: historyItem.reportDate,
+          end_date: historyItem.reportDate,
           report_type: historyItem.reportType,
         });
 
@@ -351,34 +343,65 @@ export default {
         toast.success('Report downloaded successfully!');
       } catch (error) {
         console.error('Download report error:', error);
+        console.error('Error response:', error.response);
+        console.error('Error response data:', error.response?.data);
+        
         let errorMsg = 'Failed to download report';
         
         // Handle blob response errors
         if (error.response?.data instanceof Blob) {
           try {
             const text = await error.response.data.text();
+            console.error('Blob error text:', text);
             const errorData = JSON.parse(text);
             errorMsg = errorData.error || errorMsg;
+            
+            // Show detailed validation errors if available
+            if (errorData.plant_codes) {
+              errorMsg = `Plant validation error: ${errorData.plant_codes.join(', ')}`;
+            }
+            if (errorData.start_date) {
+              errorMsg = `Date validation error: ${errorData.start_date.join(', ')}`;
+            }
+            if (errorData.end_date) {
+              errorMsg = `Date validation error: ${errorData.end_date.join(', ')}`;
+            }
           } catch (e) {
+            console.error('Error parsing blob:', e);
             errorMsg = error.response?.statusText || errorMsg;
           }
         } else if (error.response?.data?.error) {
           errorMsg = error.response.data.error;
+        } else if (error.response?.data) {
+          // Handle validation errors
+          const data = error.response.data;
+          console.error('Validation error data:', data);
+          
+          if (data.plant_codes) {
+            errorMsg = `Plant validation error: ${Array.isArray(data.plant_codes) ? data.plant_codes.join(', ') : data.plant_codes}`;
+          } else if (data.start_date) {
+            errorMsg = `Start date validation error: ${Array.isArray(data.start_date) ? data.start_date.join(', ') : data.start_date}`;
+          } else if (data.end_date) {
+            errorMsg = `End date validation error: ${Array.isArray(data.end_date) ? data.end_date.join(', ') : data.end_date}`;
+          } else if (data.non_field_errors) {
+            errorMsg = `Validation error: ${Array.isArray(data.non_field_errors) ? data.non_field_errors.join(', ') : data.non_field_errors}`;
+          } else if (data.detail) {
+            errorMsg = `API error: ${data.detail}`;
+          } else {
+            errorMsg = `Validation error: ${JSON.stringify(data)}`;
+          }
         } else if (error.message) {
           errorMsg = error.message;
         }
         
-        toast.error(errorMsg, 6000);
+        toast.error(errorMsg, 8000);
       } finally {
         this.generating = false;
       }
     },
     
-    formatDateRange(startDate, endDate) {
-      if (startDate === endDate) {
-        return new Date(startDate).toLocaleDateString();
-      }
-      return `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`;
+    formatDateRange(reportDate) {
+      return new Date(reportDate).toLocaleDateString();
     },
     
     formatTimestamp(timestamp) {
@@ -414,16 +437,33 @@ export default {
     async generateReport() {
       if (!this.canGenerate) return;
 
+      // Ensure we have plants selected
+      if (!this.selectedPlants || this.selectedPlants.length === 0) {
+        toast.error('No plants selected. Please wait for plants to load or refresh the page.');
+        return;
+      }
+
+      console.log('Generating report with data:', {
+        plant_codes: this.selectedPlants,
+        start_date: this.reportDate,
+        end_date: this.reportDate,
+        report_type: this.reportType,
+      });
+
+      // Validate date format (should be YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(this.reportDate)) {
+        toast.error('Invalid date format. Please select a valid date.');
+        return;
+      }
+
       this.generating = true;
 
       try {
-        // For daily status report, automatically set end_date = start_date
-        const endDateToUse = this.reportType === 'daily_status' ? this.startDate : this.endDate;
-        
         const response = await api.generateReport({
-          plant_codes: [this.selectedPlant],
-          start_date: this.startDate,
-          end_date: endDateToUse,
+          plant_codes: this.selectedPlants,
+          start_date: this.reportDate,
+          end_date: this.reportDate,
           report_type: this.reportType,
         });
 
@@ -432,14 +472,9 @@ export default {
         const link = document.createElement('a');
         link.href = url;
         
-        // Set filename based on report type
-        const dateStr = this.startDate.replace(/-/g, '');
-        let filename;
-        if (this.reportType === 'daily_status') {
-          filename = `DAILY_PLANT_STATUS_${dateStr}.xlsx`;
-        } else {
-          filename = `PLANT_STATUS_${dateStr}.xlsx`;
-        }
+        // Set filename based on report date
+        const dateStr = this.reportDate.replace(/-/g, '');
+        const filename = `PLANT_STATUS_${dateStr}.xlsx`;
         
         link.setAttribute('download', filename);
         document.body.appendChild(link);
@@ -447,15 +482,17 @@ export default {
         link.remove();
 
         // Save to history
-        const selectedPlantObj = this.plants.find(p => p.code === this.selectedPlant);
+        const selectedPlantNames = this.plants
+          .filter(p => this.selectedPlants.includes(p.code))
+          .map(p => p.name)
+          .join(', ');
         const reportTypeName = this.reportTypes.find(t => t.value === this.reportType)?.label || this.reportType;
         
         this.saveToHistory({
           filename,
-          plantCode: this.selectedPlant,
-          plantName: selectedPlantObj?.name || this.selectedPlant,
-          startDate: this.startDate,
-          endDate: endDateToUse,
+          plantCode: this.selectedPlants.join(','),
+          plantName: selectedPlantNames,
+          reportDate: this.reportDate,
           reportType: this.reportType,
           reportTypeName,
         });
@@ -463,20 +500,36 @@ export default {
         toast.success('Report generated successfully!');
       } catch (error) {
         console.error('Generate report error:', error);
+        console.error('Error response:', error.response);
+        console.error('Error response data:', error.response?.data);
+        
         let errorMsg = 'Failed to generate report';
         
         // Handle blob response errors
         if (error.response?.data instanceof Blob) {
           try {
             const text = await error.response.data.text();
+            console.error('Blob error text:', text);
             const errorData = JSON.parse(text);
             errorMsg = errorData.error || errorMsg;
+            
+            // Show detailed validation errors if available
+            if (errorData.plant_codes) {
+              errorMsg = `Plant validation error: ${errorData.plant_codes.join(', ')}`;
+            }
+            if (errorData.start_date) {
+              errorMsg = `Date validation error: ${errorData.start_date.join(', ')}`;
+            }
+            if (errorData.end_date) {
+              errorMsg = `Date validation error: ${errorData.end_date.join(', ')}`;
+            }
             
             // Add helpful hint if no data found
             if (errorMsg.includes('No data found')) {
               errorMsg += '. Please upload Excel files first in the Upload Excel Reports page.';
             }
           } catch (e) {
+            console.error('Error parsing blob:', e);
             errorMsg = error.response?.statusText || errorMsg;
           }
         } else if (error.response?.data?.error) {
@@ -484,11 +537,29 @@ export default {
           if (errorMsg.includes('No data found')) {
             errorMsg += '. Please upload Excel files first in the Upload Excel Reports page.';
           }
+        } else if (error.response?.data) {
+          // Handle validation errors
+          const data = error.response.data;
+          console.error('Validation error data:', data);
+          
+          if (data.plant_codes) {
+            errorMsg = `Plant validation error: ${Array.isArray(data.plant_codes) ? data.plant_codes.join(', ') : data.plant_codes}`;
+          } else if (data.start_date) {
+            errorMsg = `Start date validation error: ${Array.isArray(data.start_date) ? data.start_date.join(', ') : data.start_date}`;
+          } else if (data.end_date) {
+            errorMsg = `End date validation error: ${Array.isArray(data.end_date) ? data.end_date.join(', ') : data.end_date}`;
+          } else if (data.non_field_errors) {
+            errorMsg = `Validation error: ${Array.isArray(data.non_field_errors) ? data.non_field_errors.join(', ') : data.non_field_errors}`;
+          } else if (data.detail) {
+            errorMsg = `API error: ${data.detail}`;
+          } else {
+            errorMsg = `Validation error: ${JSON.stringify(data)}`;
+          }
         } else if (error.message) {
           errorMsg = error.message;
         }
         
-        toast.error(errorMsg, 6000);
+        toast.error(errorMsg, 8000);
       } finally {
         this.generating = false;
       }
@@ -496,32 +567,179 @@ export default {
   },
 };
 </script>
-
 <style scoped>
+/* Variables */
+:root {
+  --primary-color: #003d82;
+  --primary-light: #0056b3;
+  --primary-dark: #002a5c;
+  --success-color: #10b981;
+  --success-light: #34d399;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
+/* Main Container */
 .generate-report-page {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
 /* Header */
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.title-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .page-title {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #1a202c;
-  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
   letter-spacing: -0.025em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.title-icon {
+  font-size: 2.25rem;
+  color: var(--primary-color);
+  filter: drop-shadow(0 2px 4px rgba(0, 61, 130, 0.2));
 }
 
 .page-description {
-  color: #718096;
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 600px;
+  line-height: 1.6;
+}
+.header-info {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.info-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-md);
+}
+
+.info-badge.success {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  color: var(--success-color);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.info-badge.primary {
+  background: linear-gradient(135deg, rgba(0, 61, 130, 0.1) 0%, rgba(0, 61, 130, 0.05) 100%);
+  color: var(--primary-color);
+  border-color: rgba(0, 61, 130, 0.2);
+}
+
+.info-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.info-badge i {
+  font-size: 1rem;
+}
+
+/* Main Card */
+.main-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-light);
+  backdrop-filter: blur(20px);
+}
+
+.card-header {
+  padding: 2rem 2rem 1rem 2rem;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #000000 !important;
+  margin: 0 0 0.5rem 0;
+}
+
+.card-title span {
+  color: #000000 !important;
+}
+
+.card-title i {
+  color: #000000 !important;
+}
+
+.card-title i {
+  color: var(--primary-color);
+  font-size: 1.375rem;
+}
+
+.card-subtitle {
   font-size: 0.9375rem;
+  color: var(--text-secondary);
   margin: 0;
 }
 
+.card-body {
+  padding: 2rem;
+}
 /* Form */
 .report-form {
   display: flex;
@@ -529,278 +747,275 @@ export default {
   gap: 2rem;
 }
 
-.form-section,
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
-.section-label,
 .field-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #2d3748;
+  color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.section-label i,
 .field-label i {
-  color: var(--npc-primary);
+  color: var(--primary-color);
   font-size: 1rem;
 }
 
-/* Plants Grid */
-.plants-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0.75rem;
-}
-
-.plant-checkbox {
+/* Date Input */
+.date-input-wrapper {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: #f7fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.plant-checkbox:hover {
-  border-color: var(--npc-primary);
-  background: #edf2f7;
-}
-
-.plant-checkbox.selected {
-  border-color: var(--npc-primary);
-  background: rgba(0, 61, 130, 0.04);
-}
-
-.checkbox-input,
-.radio-input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.plant-info {
-  flex: 1;
-  display: flex;
   flex-direction: column;
-  gap: 0.25rem;
 }
 
-.plant-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #2d3748;
-}
-
-.plant-code {
-  font-size: 0.75rem;
-  color: #718096;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-}
-
-.check-icon {
-  color: var(--npc-primary);
-  font-size: 1.125rem;
-  font-weight: bold;
-}
-
-/* Form Row */
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-/* Date Input */
 .date-input {
-  padding: 0.75rem 1rem;
-  border: 2px solid #e2e8f0;
-  border-radius: 0.5rem;
-  font-size: 0.9375rem;
-  color: #2d3748;
-  background: white;
-  transition: all 0.2s ease;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  color: #000000 !important;
+  background: #ffffff !important;
+  border: 2px solid #d1d5db !important;
+  border-radius: var(--radius-lg);
+  transition: all 0.3s ease;
+  outline: none;
+  font-family: inherit;
+  font-weight: 500;
 }
 
 .date-input:hover {
-  border-color: #cbd5e0;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .date-input:focus {
-  outline: none;
-  border-color: var(--npc-primary);
-  box-shadow: 0 0 0 3px rgba(0, 61, 130, 0.1);
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+  transform: translateY(-1px);
 }
 
-/* Field Hint */
+.date-input.has-value {
+  border-color: #10b981 !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.input-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-light) 100%);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.date-input:focus + .input-border {
+  transform: scaleX(1);
+}
 .field-hint {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-top: 0.25rem;
   font-size: 0.8125rem;
-  color: #718096;
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .field-hint i {
-  color: var(--npc-primary);
+  color: var(--primary-color);
   font-size: 0.875rem;
 }
 
-/* Report Types */
-.report-types {
-  display: flex;
+/* Button Section */
+.button-section {
+  display: flex !important;
   flex-direction: column;
-  gap: 0.75rem;
-}
-
-.report-type-option {
-  position: relative;
-  display: flex;
+  gap: 1.5rem;
   align-items: center;
-  padding: 1.25rem;
-  background: #f7fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  visibility: visible !important;
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(241, 245, 249, 0.6) 100%);
+  border-radius: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  backdrop-filter: blur(10px);
 }
 
-.report-type-option:hover {
-  border-color: var(--npc-primary);
-  background: #edf2f7;
-}
-
-.report-type-option.active {
-  border-color: var(--npc-primary);
-  background: rgba(0, 61, 130, 0.04);
-  box-shadow: 0 0 0 3px rgba(0, 61, 130, 0.05);
-}
-
-.radio-input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.type-content {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  width: 100%;
-}
-
-.type-content > i {
-  font-size: 1.5rem;
-  color: var(--npc-primary);
-}
-
-.type-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.type-name {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: #2d3748;
-}
-
-.type-desc {
-  font-size: 0.8125rem;
-  color: #718096;
-}
-
-/* Generate Button */
 .btn-generate {
-  display: flex;
+  position: relative;
+  display: flex !important;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, var(--npc-primary) 0%, #004a9f 100%);
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
+  width: 100%;
+  max-width: 450px;
+  padding: 1.25rem 2.5rem;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  color: #1f2937 !important;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  font-size: 1.1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  visibility: visible !important;
+  opacity: 1 !important;
+  text-transform: none;
+  letter-spacing: 0.025em;
+  backdrop-filter: blur(10px);
+}
+
+.btn-generate::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.btn-generate:hover::before {
+  left: 100%;
+}
+
+.btn-generate-prominent {
+  animation: none;
+  border: 2px solid #3b82f6;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.btn-generate-prominent:hover:not(:disabled) {
+  border-color: #2563eb;
+  box-shadow: 
+    0 10px 15px -3px rgba(59, 130, 246, 0.2),
+    0 4px 6px -2px rgba(59, 130, 246, 0.1),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
 }
 
 .btn-generate:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 61, 130, 0.2);
+  box-shadow: 
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.2);
+  border-color: #3b82f6;
+  background: linear-gradient(145deg, #f8fafc 0%, #ffffff 100%);
 }
 
 .btn-generate:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0px);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06),
+    inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
 }
 
 .btn-generate:disabled {
-  opacity: 0.5;
+  opacity: 0.5 !important;
   cursor: not-allowed;
+  transform: none;
+  display: flex !important;
+  visibility: visible !important;
+  animation: none;
+  background: linear-gradient(145deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-color: #d1d5db;
+  color: #9ca3af !important;
+  box-shadow: 
+    0 1px 2px 0 rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
-.btn-generate i {
-  font-size: 1.125rem;
+.btn-generate.generating {
+  background: linear-gradient(135deg, var(--text-secondary) 0%, var(--text-muted) 100%);
 }
 
-/* Responsive */
-@media (max-width: 640px) {
-  .plants-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* History Section */
-.mt-4 {
-  margin-top: 2rem;
-}
-
-.card-header {
+.btn-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
+  gap: 0.75rem;
+  z-index: 2;
+  position: relative;
 }
 
-.card-title {
+.btn-icon {
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  color: #3b82f6 !important;
+  transition: color 0.3s ease;
+}
+
+.btn-text {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  font-size: 1.1rem;
+  color: #1f2937 !important;
+  transition: color 0.3s ease;
+}
+.btn-ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  transform: scale(0);
+  transition: transform 0.6s ease;
+  z-index: 1;
+}
+
+.btn-generate:active .btn-ripple {
+  transform: scale(1);
+}
+
+.validation-message {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin: 0;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+  color: var(--warning-color);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-.card-title i {
-  color: var(--npc-primary);
-  font-size: 1.25rem;
+.validation-message i {
+  font-size: 1rem;
+}
+
+/* History Card */
+.history-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+}
+
+.history-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
 }
 
 .menu-wrapper {
@@ -814,32 +1029,27 @@ export default {
   width: 40px;
   height: 40px;
   background: transparent;
-  color: #718096;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-menu:hover {
-  background: #f7fafc;
-  color: #2d3748;
-  border-color: #cbd5e0;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--primary-color);
 }
-
-.btn-menu i {
-  font-size: 1.125rem;
-}
-
 .dropdown-menu {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
   min-width: 180px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.5rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
   overflow: hidden;
   z-index: 1000;
 }
@@ -863,7 +1073,7 @@ export default {
   padding: 0.75rem 1rem;
   background: transparent;
   border: none;
-  color: #2d3748;
+  color: var(--text-primary);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -872,42 +1082,19 @@ export default {
 }
 
 .menu-item:hover {
-  background: #f7fafc;
+  background: var(--bg-secondary);
 }
 
 .menu-item-danger {
-  color: #ef4444;
+  color: var(--danger-color);
 }
 
 .menu-item-danger:hover {
-  background: #fef2f2;
-  color: #dc2626;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger-color);
 }
 
-.menu-item i {
-  font-size: 1rem;
-}
-
-.btn-clear-history {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: transparent;
-  color: #ef4444;
-  border: 1px solid #ef4444;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-clear-history:hover {
-  background: #ef4444;
-  color: white;
-}
-
+/* History List */
 .history-list {
   display: flex;
   flex-direction: column;
@@ -917,9 +1104,15 @@ export default {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  transition: background-color 0.2s ease;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-light);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  color: #000000 !important;
+}
+
+.history-item * {
+  color: #000000 !important;
 }
 
 .history-item:last-child {
@@ -927,18 +1120,19 @@ export default {
 }
 
 .history-item:hover {
-  background-color: #f7fafc;
+  background: var(--bg-secondary);
+  transform: translateX(4px);
 }
-
 .history-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 0.5rem;
+  background: linear-gradient(135deg, var(--success-color) 0%, var(--success-light) 100%);
+  border-radius: var(--radius-lg);
   flex-shrink: 0;
+  box-shadow: var(--shadow-md);
 }
 
 .history-icon i {
@@ -951,16 +1145,11 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  transition: all 0.2s ease;
+  color: #000000 !important;
 }
 
-.history-details:hover {
-  color: var(--npc-primary);
-}
-
-.history-details:hover .history-filename {
-  color: var(--npc-primary);
-  text-decoration: underline;
+.history-details * {
+  color: #000000 !important;
 }
 
 .history-main {
@@ -968,22 +1157,26 @@ export default {
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+  color: #000000 !important;
+}
+
+.history-main * {
+  color: #000000 !important;
 }
 
 .history-filename {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #2d3748;
-  transition: all 0.2s ease;
+  color: #000000 !important;
 }
 
 .history-plant-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
-  background: var(--npc-primary);
-  color: white;
-  border-radius: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+  color: #000000 !important;
+  border-radius: var(--radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.025em;
@@ -995,33 +1188,32 @@ export default {
   gap: 1rem;
   flex-wrap: wrap;
   font-size: 0.8125rem;
-  color: #718096;
+  color: #000000 !important;
+}
+
+.history-meta * {
+  color: #000000 !important;
 }
 
 .history-meta > span {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-}
-
-.history-meta i {
-  font-size: 0.75rem;
-  color: #a0aec0;
+  color: #000000 !important;
 }
 
 .history-type {
   font-weight: 500;
+  color: #000000 !important;
 }
 
 .history-exact-time {
-  color: #4a5568;
-  font-weight: 500;
-  background: #f7fafc;
+  color: #000000 !important;
+  background: #f5f5f5 !important;
   padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  border: 1px solid #d0d0d0 !important;
 }
-
 .history-actions {
   display: flex;
   align-items: center;
@@ -1038,47 +1230,87 @@ export default {
   height: 40px;
   background: transparent;
   border: 1px solid;
-  border-radius: 0.375rem;
+  border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .btn-download {
-  color: #10b981;
-  border-color: #10b981;
+  color: var(--success-color);
+  border-color: var(--success-color);
 }
 
 .btn-download:hover {
-  background: #10b981;
+  background: var(--success-color);
   color: white;
   transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-regenerate {
-  color: var(--npc-primary);
-  border-color: var(--npc-primary);
+  color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .btn-regenerate:hover {
-  background: var(--npc-primary);
+  background: var(--primary-color);
   color: white;
   transform: rotate(180deg);
 }
 
-.btn-download i,
-.btn-regenerate i {
-  font-size: 1rem;
-}
-
+/* Responsive Design */
 @media (max-width: 768px) {
+  .generate-report-page {
+    padding: 1rem 0.5rem;
+  }
+  
+  .page-title {
+    font-size: 2rem;
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .header-info {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .info-badge {
+    justify-content: center;
+  }
+  
+  .card-header,
+  .card-body {
+    padding: 1.5rem 1rem;
+  }
+  
   .history-item {
     flex-direction: column;
     align-items: flex-start;
+    gap: 1rem;
   }
   
   .history-details {
     width: 100%;
+  }
+  
+  .history-actions {
+    align-self: flex-end;
+  }
+  
+  .btn-generate {
+    font-size: 1rem;
+    padding: 1rem 1.5rem;
+  }
+}
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.75rem;
+  }
+  
+  .card-title {
+    font-size: 1.25rem;
   }
   
   .history-meta {
@@ -1086,15 +1318,26 @@ export default {
     align-items: flex-start;
     gap: 0.5rem;
   }
-  
-  .history-actions {
-    align-self: flex-end;
+}
+
+/* Animation Classes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
   }
-  
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+.main-card,
+.history-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.history-card {
+  animation-delay: 0.2s;
 }
 </style>

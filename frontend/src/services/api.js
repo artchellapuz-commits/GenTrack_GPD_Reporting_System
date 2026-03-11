@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.VUE_APP_API_URL || '/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -13,13 +13,25 @@ const apiClient = axios.create({
 // Request interceptor for adding auth token
 apiClient.interceptors.request.use(
   (config) => {
+    console.log('API Request:', {
+      method: config.method?.toUpperCase(),
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      data: config.data,
+      headers: config.headers
+    });
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Token ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('API Request Error:', error);
+    return Promise.reject(error);
+  }
 );
 
 // Response interceptor for error handling
@@ -100,8 +112,28 @@ export default {
 
   // Generate Excel report
   generateReport(data) {
+    console.log('API: Sending generateReport request with data:', data);
     return apiClient.post('/generation-reports/generate-report/', data, {
       responseType: 'blob',
+      timeout: 60000, // 60 second timeout
+    }).then(response => {
+      console.log('API: generateReport response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        dataType: typeof response.data,
+        dataSize: response.data?.size || 'unknown'
+      });
+      return response;
+    }).catch(error => {
+      console.error('API: generateReport error:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: error.config
+      });
+      throw error;
     });
   },
 };
