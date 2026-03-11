@@ -136,4 +136,12 @@ export default {
       throw error;
     });
   },
+
+  // Preview report data before generating Excel
+  previewReport(data) {
+    console.log('API: Sending previewReport request with data:', data);
+    return apiClient.post('/generation-reports/preview-report/', data, {
+      timeout: 30000, // 30 second timeout
+    });
+  },
 };

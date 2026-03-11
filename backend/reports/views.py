@@ -387,6 +387,194 @@ class GenerationReportViewSet(mixins.ListModelMixin,
             
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'], url_path='preview-report')
+    def preview_report(self, request):
+        """Preview report data in exact Excel format structure"""
+        serializer = ReportGenerationSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        data = serializer.validated_data
+        
+        # Get filtered data
+        reports = GenerationReport.objects.filter(
+            plant__code__in=data['plant_codes'],
+            report_date__gte=data['start_date'],
+            report_date__lte=data['end_date']
+        ).select_related('plant', 'unit').order_by('report_date', 'plant', 'unit')
+        
+        if not reports.exists():
+            return Response({'error': 'No data found for the specified criteria'}, 
+                          status=status.HTTP_404_NOT_FOUND)
+        
+        # Use PSRExporter to get the exact Excel structure
+        try:
+            from .services.psr_exporter import PSRExporter
+            
+            exporter = PSRExporter(reports, data['start_date'], data.get('report_type', 'psr'))
+            
+            # Get organized data by plant
+            organized_data = exporter._organize_data()
+            
+            # Build Excel-like structure for preview
+            preview_structure = {
+                'header': {
+                    'title': 'PLANT STATUS REPORT' if data.get('report_type', 'psr') == 'psr' else 'DAILY PLANT STATUS',
+                    'subtitle': 'MINDANAO GENERATION',
+                    'portfolio': '(PSALM PORTFOLIO)',
+                    'date_text': f'as of 0800H {data["start_date"].strftime("%A, %d %B %Y")}' if data.get('report_type', 'psr') == 'psr' else f'as of 12:00 NN    {data["start_date"].strftime("%A, %B %d, %Y")}',
+                    'report_date': data['start_date'].strftime('%Y-%m-%d')
+                },
+                'plants_data': [],
+                'totals': {
+                    'total_capacity': 0,
+                    'total_nominated': 0,
+                    'total_actual': 0,
+                    'total_variance': 0
+                },
+                'forecasted_load': {
+                    'mindanao_load': 1850.0,
+                    'luzon_visayas': 8500.0,
+                    'total_philippines': 10350.0
+                },
+                'ipp_data': [
+                    {'name': 'STEAG', 'capacity': 232, 'nominated': 200, 'actual': 195, 'variance': -5},
+                    {'name': 'THERMA SOUTH', 'capacity': 300, 'nominated': 280, 'actual': 275, 'variance': -5},
+                    {'name': 'THERMA MOBILE', 'capacity': 100, 'nominated': 90, 'actual': 85, 'variance': -5},
+                    {'name': 'FDC MISAMIS', 'capacity': 405, 'nominated': 380, 'actual': 370, 'variance': -10},
+                    {'name': 'PALM CONCEPCION', 'capacity': 135, 'nominated': 120, 'actual': 115, 'variance': -5}
+                ],
+                'notes': [
+                    'Note: All generation figures are in MW',
+                    'Variance = Actual - Nominated',
+                    'Negative variance indicates under-generation',
+                    'Forecasted inflow of Lake Lanao is stable and operating at Normal Stage.',
+                    'Agus 6 HEP: 30cms of water spilled due to partially opened spillway gate no. 1.'
+                ],
+                'signatures': {
+                    'first_row': [
+                        {
+                            'role': 'Prepared by:',
+                            'name': 'O.M. LAVA',
+                            'title': 'Prin. Engr. A, GPD'
+                        },
+                        {
+                            'role': 'Checked and Reviewed by:',
+                            'name': 'JMM MATA',
+                            'title': 'Manager, GPD'
+                        },
+                        {
+                            'role': 'Checked and Reviewed by:',
+                            'name': 'EL ADIONG',
+                            'title': 'Acting Manager, GPD'
+                        },
+                        {
+                            'role': 'Approved by:',
+                            'name': 'C.C. AMIGABLE JR.',
+                            'title': 'Dept. Manager, GPD'
+                        }
+                    ],
+                    'second_row': [
+                        {
+                            'role': 'Prepared by:',
+                            'name': 'D.R.B. CAIRO',
+                            'title': 'Prin. Engr. B, GPD'
+                        },
+                        {
+                            'role': 'Checked and Reviewed by:',
+                            'name': 'JMM MATA',
+                            'title': 'Manager, GPD'
+                        },
+                        {
+                            'role': 'Checked and Reviewed by:',
+                            'name': 'EL ADIONG',
+                            'title': 'OIC-Dept Manager, GPD'
+                        },
+                        {
+                            'role': 'Approved by:',
+                            'name': 'DB ESMADE JR.',
+                            'title': 'Acting Dept. Manager, GPD'
+                        }
+                    ]
+                },
+                'footer_note': 'Agus 2 HEP is limited to 40 MW/per unit due to water constraints as per Environmental Compliance Certificate "that Agus 2 shall not be operated at full capacity..." This is to prevent risk of flooding at lakeshore areas and Baloi plains.'
+            }
+            
+            # Process each plant according to PSR structure
+            for plant_code in exporter.PLANTS_CONFIG:
+                if plant_code in data['plant_codes']:
+                    plant_config = exporter.PLANTS_CONFIG[plant_code]
+                    plant_data = organized_data.get(plant_code, {})
+                    
+                    plant_info = {
+                        'code': plant_code,
+                        'name': plant_config['name'],
+                        'units': [],
+                        'plant_totals': {
+                            'capacity': 0,
+                            'nominated': 0,
+                            'actual': 0,
+                            'variance': 0
+                        }
+                    }
+                    
+                    # Process each unit
+                    for unit_config in plant_config['units']:
+                        unit_num = unit_config['num']
+                        unit_report_data = plant_data.get(unit_num, {})
+                        
+                        # Calculate actual generation (convert from kWh to MW if needed)
+                        actual_generation = unit_report_data.get('generation', 0) / 1000  # Convert kWh to MWh, then approximate MW
+                        if actual_generation > 0:
+                            actual_generation = min(actual_generation / 24, unit_config['capacity'])  # Rough MW calculation
+                        
+                        variance = actual_generation - unit_config['nominated']
+                        
+                        unit_info = {
+                            'number': unit_num,
+                            'label': unit_config['label'],
+                            'capacity': unit_config['capacity'],
+                            'nominated': unit_config['nominated'],
+                            'actual': round(actual_generation, 1),
+                            'variance': round(variance, 1),
+                            'operating_hours': unit_report_data.get('operating_hours', 0),
+                            'forced_outage': unit_report_data.get('forced_outage', 0),
+                            'scheduled_outage': unit_report_data.get('scheduled_outage', 0),
+                            'remarks': unit_report_data.get('remarks', '')
+                        }
+                        
+                        plant_info['units'].append(unit_info)
+                        
+                        # Add to plant totals
+                        plant_info['plant_totals']['capacity'] += unit_config['capacity']
+                        plant_info['plant_totals']['nominated'] += unit_config['nominated']
+                        plant_info['plant_totals']['actual'] += actual_generation
+                        plant_info['plant_totals']['variance'] += variance
+                    
+                    # Round plant totals
+                    for key in plant_info['plant_totals']:
+                        if key != 'capacity':  # capacity is already integer
+                            plant_info['plant_totals'][key] = round(plant_info['plant_totals'][key], 1)
+                    
+                    preview_structure['plants_data'].append(plant_info)
+                    
+                    # Add to grand totals
+                    preview_structure['totals']['total_capacity'] += plant_info['plant_totals']['capacity']
+                    preview_structure['totals']['total_nominated'] += plant_info['plant_totals']['nominated']
+                    preview_structure['totals']['total_actual'] += plant_info['plant_totals']['actual']
+                    preview_structure['totals']['total_variance'] += plant_info['plant_totals']['variance']
+            
+            # Round grand totals
+            for key in preview_structure['totals']:
+                if key != 'total_capacity':
+                    preview_structure['totals'][key] = round(preview_structure['totals'][key], 1)
+            
+            return Response(preview_structure)
+            
+        except Exception as e:
+            return Response({'error': f'Failed to generate preview: {str(e)}'}, 
+                          status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class HistoricalDataViewSet(viewsets.ReadOnlyModelViewSet):

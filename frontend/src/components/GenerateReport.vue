@@ -73,10 +73,10 @@
             >
               <div class="btn-content">
                 <div class="btn-icon">
-                  <i v-if="!generating" class="pi pi-download"></i>
+                  <i v-if="!generating" class="pi pi-eye"></i>
                   <i v-else class="pi pi-spin pi-spinner"></i>
                 </div>
-                <span class="btn-text">{{ generating ? 'Generating Report...' : 'Generate Report' }}</span>
+                <span class="btn-text">{{ generating ? 'Loading Preview...' : 'Preview Report' }}</span>
               </div>
               <div class="btn-ripple"></div>
             </button>
@@ -88,6 +88,252 @@
             </div>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Report Preview Section -->
+    <div v-if="showPreview && reportPreview" class="preview-card">
+      <div class="card-header">
+        <div class="card-title">
+          <i class="pi pi-file-excel"></i>
+          <span>Excel Report Preview</span>
+        </div>
+        <div class="preview-actions">
+          <button @click="downloadExcel" class="btn-download-excel" style="color: #ffffff !important; background: #10b981 !important; border: 2px solid #10b981 !important;">
+            <i class="pi pi-download" style="color: #ffffff !important;"></i>
+            <span style="color: #ffffff !important; font-weight: 600 !important;">Download Excel</span>
+          </button>
+          <button @click="closePreview" class="btn-close-preview" style="background: #ffffff !important; color: #000000 !important; border: 3px solid #000000 !important; display: flex !important; visibility: visible !important; opacity: 1 !important;">
+            <i class="pi pi-times" style="color: #000000 !important; font-size: 1.4rem !important; font-weight: 900 !important;"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <!-- Excel-like Header -->
+        <div class="excel-header">
+          <div class="header-row title-row">
+            <div class="header-cell title-cell">{{ reportPreview.header.title }}</div>
+          </div>
+          <div class="header-row subtitle-row">
+            <div class="header-cell subtitle-cell">{{ reportPreview.header.subtitle }}</div>
+          </div>
+          <div class="header-row portfolio-row">
+            <div class="header-cell portfolio-cell">{{ reportPreview.header.portfolio }}</div>
+          </div>
+          <div class="header-row date-row">
+            <div class="header-cell date-cell">{{ reportPreview.header.date_text }}</div>
+          </div>
+        </div>
+
+        <!-- Excel-like Table -->
+        <div class="excel-table-container">
+          <table class="excel-table">
+            <thead>
+              <tr class="excel-header-row">
+                <th class="excel-th plant-col">PLANT</th>
+                <th class="excel-th capacity-col">CAPACITY<br>(MW)</th>
+                <th class="excel-th nominated-col">NOMINATED<br>(MW)</th>
+                <th class="excel-th actual-col">ACTUAL<br>(MW)</th>
+                <th class="excel-th variance-col">VARIANCE<br>(MW)</th>
+                <th class="excel-th hours-col">OPERATING<br>HOURS</th>
+                <th class="excel-th outage-col">FORCED<br>OUTAGE</th>
+                <th class="excel-th outage-col">SCHEDULED<br>OUTAGE</th>
+                <th class="excel-th remarks-col">REMARKS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Plant Data -->
+              <template v-for="plant in reportPreview.plants_data" :key="plant.code">
+                <!-- Plant Header Row -->
+                <tr class="plant-header-row">
+                  <td class="excel-td plant-name-cell" :colspan="9">{{ plant.name }}</td>
+                </tr>
+                <!-- Unit Rows -->
+                <tr v-for="unit in plant.units" :key="`${plant.code}-${unit.number}`" class="unit-row">
+                  <td class="excel-td unit-cell">{{ unit.label }}</td>
+                  <td class="excel-td number-cell">{{ unit.capacity }}</td>
+                  <td class="excel-td number-cell">{{ unit.nominated }}</td>
+                  <td class="excel-td number-cell">{{ unit.actual }}</td>
+                  <td class="excel-td number-cell" :class="{ 'negative': unit.variance < 0 }">{{ unit.variance }}</td>
+                  <td class="excel-td number-cell">{{ unit.operating_hours }}</td>
+                  <td class="excel-td number-cell">{{ unit.forced_outage }}</td>
+                  <td class="excel-td number-cell">{{ unit.scheduled_outage }}</td>
+                  <td class="excel-td remarks-cell">{{ unit.remarks || '-' }}</td>
+                </tr>
+                <!-- Plant Total Row -->
+                <tr class="plant-total-row">
+                  <td class="excel-td total-label-cell">{{ plant.name }} TOTAL</td>
+                  <td class="excel-td total-number-cell">{{ plant.plant_totals.capacity }}</td>
+                  <td class="excel-td total-number-cell">{{ plant.plant_totals.nominated }}</td>
+                  <td class="excel-td total-number-cell">{{ plant.plant_totals.actual }}</td>
+                  <td class="excel-td total-number-cell" :class="{ 'negative': plant.plant_totals.variance < 0 }">{{ plant.plant_totals.variance }}</td>
+                  <td class="excel-td total-number-cell" colspan="4">-</td>
+                </tr>
+              </template>
+              
+              <!-- Grand Total Row -->
+              <tr class="grand-total-row">
+                <td class="excel-td grand-total-label">PSALM TOTAL</td>
+                <td class="excel-td grand-total-number">{{ reportPreview.totals.total_capacity }}</td>
+                <td class="excel-td grand-total-number">{{ reportPreview.totals.total_nominated }}</td>
+                <td class="excel-td grand-total-number">{{ reportPreview.totals.total_actual }}</td>
+                <td class="excel-td grand-total-number" :class="{ 'negative': reportPreview.totals.total_variance < 0 }">{{ reportPreview.totals.total_variance }}</td>
+                <td class="excel-td grand-total-number" colspan="4">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Forecasted Load Section -->
+        <div class="excel-section forecasted-load-section">
+          <h4 class="section-title">FORECASTED LOAD</h4>
+          <table class="excel-table small-table">
+            <tbody>
+              <tr>
+                <td class="excel-td label-cell">Mindanao</td>
+                <td class="excel-td number-cell">{{ reportPreview.forecasted_load.mindanao_load }} MW</td>
+              </tr>
+              <tr>
+                <td class="excel-td label-cell">Luzon + Visayas</td>
+                <td class="excel-td number-cell">{{ reportPreview.forecasted_load.luzon_visayas }} MW</td>
+              </tr>
+              <tr class="total-row">
+                <td class="excel-td total-label-cell">Total Philippines</td>
+                <td class="excel-td total-number-cell">{{ reportPreview.forecasted_load.total_philippines }} MW</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- IPP Section -->
+        <div class="excel-section ipp-section">
+          <h4 class="section-title">INDEPENDENT POWER PRODUCERS (IPP)</h4>
+          <table class="excel-table">
+            <thead>
+              <tr class="excel-header-row">
+                <th class="excel-th">IPP PLANT</th>
+                <th class="excel-th">CAPACITY (MW)</th>
+                <th class="excel-th">NOMINATED (MW)</th>
+                <th class="excel-th">ACTUAL (MW)</th>
+                <th class="excel-th">VARIANCE (MW)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="ipp in reportPreview.ipp_data" :key="ipp.name" class="ipp-row">
+                <td class="excel-td">{{ ipp.name }}</td>
+                <td class="excel-td number-cell">{{ ipp.capacity }}</td>
+                <td class="excel-td number-cell">{{ ipp.nominated }}</td>
+                <td class="excel-td number-cell">{{ ipp.actual }}</td>
+                <td class="excel-td number-cell" :class="{ 'negative': ipp.variance < 0 }">{{ ipp.variance }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Notes Section -->
+        <div class="excel-section notes-section">
+          <h4 class="section-title">NOTES</h4>
+          <ul class="notes-list">
+            <li v-for="note in reportPreview.notes" :key="note">{{ note }}</li>
+          </ul>
+        </div>
+
+        <!-- Signature Sections -->
+        <div class="excel-section signatures-section">
+          <h4 class="section-title">AUTHORIZATION</h4>
+          
+          <!-- First Row of Signatures -->
+          <div class="signature-row">
+            <table class="signature-table">
+              <thead>
+                <tr>
+                  <th v-for="sig in reportPreview.signatures.first_row" :key="sig.name" class="signature-header">
+                    {{ sig.role }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Signature space -->
+                <tr class="signature-space">
+                  <td v-for="sig in reportPreview.signatures.first_row" :key="`space-${sig.name}`" class="signature-cell">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr class="signature-space">
+                  <td v-for="sig in reportPreview.signatures.first_row" :key="`space2-${sig.name}`" class="signature-cell">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr class="signature-space">
+                  <td v-for="sig in reportPreview.signatures.first_row" :key="`space3-${sig.name}`" class="signature-cell">
+                    &nbsp;
+                  </td>
+                </tr>
+                <!-- Names -->
+                <tr class="signature-names">
+                  <td v-for="sig in reportPreview.signatures.first_row" :key="`name-${sig.name}`" class="signature-name">
+                    {{ sig.name }}
+                  </td>
+                </tr>
+                <!-- Titles -->
+                <tr class="signature-titles">
+                  <td v-for="sig in reportPreview.signatures.first_row" :key="`title-${sig.name}`" class="signature-title">
+                    {{ sig.title }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Second Row of Signatures -->
+          <div class="signature-row">
+            <table class="signature-table">
+              <thead>
+                <tr>
+                  <th v-for="sig in reportPreview.signatures.second_row" :key="sig.name" class="signature-header">
+                    {{ sig.role }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Signature space -->
+                <tr class="signature-space">
+                  <td v-for="sig in reportPreview.signatures.second_row" :key="`space-${sig.name}`" class="signature-cell">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr class="signature-space">
+                  <td v-for="sig in reportPreview.signatures.second_row" :key="`space2-${sig.name}`" class="signature-cell">
+                    &nbsp;
+                  </td>
+                </tr>
+                <tr class="signature-space">
+                  <td v-for="sig in reportPreview.signatures.second_row" :key="`space3-${sig.name}`" class="signature-cell">
+                    &nbsp;
+                  </td>
+                </tr>
+                <!-- Names -->
+                <tr class="signature-names">
+                  <td v-for="sig in reportPreview.signatures.second_row" :key="`name-${sig.name}`" class="signature-name">
+                    {{ sig.name }}
+                  </td>
+                </tr>
+                <!-- Titles -->
+                <tr class="signature-titles">
+                  <td v-for="sig in reportPreview.signatures.second_row" :key="`title-${sig.name}`" class="signature-title">
+                    {{ sig.title }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Footer Note -->
+        <div class="excel-section footer-note-section">
+          <p class="footer-note">{{ reportPreview.footer_note }}</p>
+        </div>
       </div>
     </div>
 
@@ -182,6 +428,8 @@ export default {
       generating: false,
       generationHistory: [],
       showMenu: false,
+      reportPreview: null,
+      showPreview: false,
       reportTypes: [
         {
           value: 'psr',
@@ -443,13 +691,6 @@ export default {
         return;
       }
 
-      console.log('Generating report with data:', {
-        plant_codes: this.selectedPlants,
-        start_date: this.reportDate,
-        end_date: this.reportDate,
-        report_type: this.reportType,
-      });
-
       // Validate date format (should be YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
       if (!dateRegex.test(this.reportDate)) {
@@ -457,7 +698,80 @@ export default {
         return;
       }
 
+      console.log('Generating report preview with data:', {
+        plant_codes: this.selectedPlants,
+        start_date: this.reportDate,
+        end_date: this.reportDate,
+        report_type: this.reportType,
+      });
+
       this.generating = true;
+
+      try {
+        const response = await api.previewReport({
+          plant_codes: this.selectedPlants,
+          start_date: this.reportDate,
+          end_date: this.reportDate,
+          report_type: this.reportType,
+        });
+
+        this.reportPreview = response.data;
+        this.showPreview = true;
+        
+        // Scroll to preview section
+        this.$nextTick(() => {
+          const previewElement = document.querySelector('.preview-card');
+          if (previewElement) {
+            previewElement.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+
+        toast.success('Report preview loaded successfully!');
+      } catch (error) {
+        console.error('Generate report preview error:', error);
+        console.error('Error response:', error.response);
+        console.error('Error response data:', error.response?.data);
+        
+        let errorMsg = 'Failed to generate report preview';
+        
+        // Handle validation errors
+        if (error.response?.data) {
+          const data = error.response.data;
+          console.error('Validation error data:', data);
+          
+          if (data.plant_codes) {
+            errorMsg = `Plant validation error: ${Array.isArray(data.plant_codes) ? data.plant_codes.join(', ') : data.plant_codes}`;
+          } else if (data.start_date) {
+            errorMsg = `Start date validation error: ${Array.isArray(data.start_date) ? data.start_date.join(', ') : data.start_date}`;
+          } else if (data.end_date) {
+            errorMsg = `End date validation error: ${Array.isArray(data.end_date) ? data.end_date.join(', ') : data.end_date}`;
+          } else if (data.non_field_errors) {
+            errorMsg = `Validation error: ${Array.isArray(data.non_field_errors) ? data.non_field_errors.join(', ') : data.non_field_errors}`;
+          } else if (data.detail) {
+            errorMsg = `API error: ${data.detail}`;
+          } else if (data.error) {
+            errorMsg = data.error;
+            if (errorMsg.includes('No data found')) {
+              errorMsg += '. Please upload Excel files first in the Upload Excel Reports page.';
+            }
+          } else {
+            errorMsg = `Validation error: ${JSON.stringify(data)}`;
+          }
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        
+        toast.error(errorMsg, 8000);
+      } finally {
+        this.generating = false;
+      }
+    },
+
+    async downloadExcel() {
+      if (!this.reportPreview) return;
+
+      this.generating = true;
+      toast.info('Generating Excel file...');
 
       try {
         const response = await api.generateReport({
@@ -480,6 +794,7 @@ export default {
         document.body.appendChild(link);
         link.click();
         link.remove();
+        window.URL.revokeObjectURL(url);
 
         // Save to history
         const selectedPlantNames = this.plants
@@ -497,72 +812,28 @@ export default {
           reportTypeName,
         });
 
-        toast.success('Report generated successfully!');
+        toast.success('Excel file downloaded successfully!');
       } catch (error) {
-        console.error('Generate report error:', error);
-        console.error('Error response:', error.response);
-        console.error('Error response data:', error.response?.data);
-        
-        let errorMsg = 'Failed to generate report';
-        
-        // Handle blob response errors
-        if (error.response?.data instanceof Blob) {
-          try {
-            const text = await error.response.data.text();
-            console.error('Blob error text:', text);
-            const errorData = JSON.parse(text);
-            errorMsg = errorData.error || errorMsg;
-            
-            // Show detailed validation errors if available
-            if (errorData.plant_codes) {
-              errorMsg = `Plant validation error: ${errorData.plant_codes.join(', ')}`;
-            }
-            if (errorData.start_date) {
-              errorMsg = `Date validation error: ${errorData.start_date.join(', ')}`;
-            }
-            if (errorData.end_date) {
-              errorMsg = `Date validation error: ${errorData.end_date.join(', ')}`;
-            }
-            
-            // Add helpful hint if no data found
-            if (errorMsg.includes('No data found')) {
-              errorMsg += '. Please upload Excel files first in the Upload Excel Reports page.';
-            }
-          } catch (e) {
-            console.error('Error parsing blob:', e);
-            errorMsg = error.response?.statusText || errorMsg;
-          }
-        } else if (error.response?.data?.error) {
-          errorMsg = error.response.data.error;
-          if (errorMsg.includes('No data found')) {
-            errorMsg += '. Please upload Excel files first in the Upload Excel Reports page.';
-          }
-        } else if (error.response?.data) {
-          // Handle validation errors
-          const data = error.response.data;
-          console.error('Validation error data:', data);
-          
-          if (data.plant_codes) {
-            errorMsg = `Plant validation error: ${Array.isArray(data.plant_codes) ? data.plant_codes.join(', ') : data.plant_codes}`;
-          } else if (data.start_date) {
-            errorMsg = `Start date validation error: ${Array.isArray(data.start_date) ? data.start_date.join(', ') : data.start_date}`;
-          } else if (data.end_date) {
-            errorMsg = `End date validation error: ${Array.isArray(data.end_date) ? data.end_date.join(', ') : data.end_date}`;
-          } else if (data.non_field_errors) {
-            errorMsg = `Validation error: ${Array.isArray(data.non_field_errors) ? data.non_field_errors.join(', ') : data.non_field_errors}`;
-          } else if (data.detail) {
-            errorMsg = `API error: ${data.detail}`;
-          } else {
-            errorMsg = `Validation error: ${JSON.stringify(data)}`;
-          }
-        } else if (error.message) {
-          errorMsg = error.message;
-        }
-        
-        toast.error(errorMsg, 8000);
+        console.error('Download Excel error:', error);
+        toast.error('Failed to download Excel file: ' + (error.message || 'Unknown error'), 6000);
       } finally {
         this.generating = false;
       }
+    },
+
+    closePreview() {
+      this.showPreview = false;
+      this.reportPreview = null;
+    },
+
+    formatNumber(value) {
+      if (!value) return '0';
+      return new Intl.NumberFormat().format(value);
+    },
+
+    formatDate(dateString) {
+      if (!dateString) return '-';
+      return new Date(dateString).toLocaleDateString();
     },
   },
 };
@@ -597,9 +868,9 @@ export default {
 
 /* Main Container */
 .generate-report-page {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
+  width: 100%;
+  margin: 0;
+  padding: 1rem;
   min-height: 100vh;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
@@ -700,6 +971,15 @@ export default {
   margin-bottom: 2rem;
   border: 1px solid var(--border-light);
   backdrop-filter: blur(20px);
+  width: 100%;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* When preview is shown, make main card smaller */
+.generate-report-page:has(.preview-card) .main-card {
+  max-width: 600px;
 }
 
 .card-header {
@@ -1333,11 +1613,387 @@ export default {
 }
 
 .main-card,
-.history-card {
+.history-card,
+.preview-card {
   animation: fadeInUp 0.6s ease-out;
 }
 
 .history-card {
   animation-delay: 0.2s;
+}
+
+.preview-card {
+  animation-delay: 0.3s;
+}
+
+/* Preview Card Styles */
+.preview-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-light);
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-download-excel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border: 2px solid #10b981 !important;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
+}
+
+.btn-download-excel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3) !important;
+  background: #059669 !important;
+  color: #ffffff !important;
+  border-color: #059669 !important;
+}
+
+.btn-download-excel i {
+  color: #ffffff !important;
+  font-size: 1rem !important;
+}
+
+.btn-download-excel span {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+.btn-close-preview {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 44px !important;
+  height: 44px !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 3px solid #000000 !important;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.4rem !important;
+  font-weight: 900 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1000 !important;
+}
+
+.btn-close-preview:hover {
+  background: #f8f8f8 !important;
+  color: #000000 !important;
+  border-color: #000000 !important;
+  transform: scale(1.15) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.btn-close-preview:active {
+  transform: scale(1.05) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Excel-like Header */
+.excel-header {
+  margin-bottom: 2rem;
+  text-align: center;
+  background: #2F4F4F;
+  color: white;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+}
+
+.header-row {
+  margin-bottom: 0.5rem;
+}
+
+.header-row:last-child {
+  margin-bottom: 0;
+}
+
+.title-cell {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.subtitle-cell {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.portfolio-cell {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.date-cell {
+  font-size: 0.9rem;
+  font-weight: normal;
+}
+
+/* Excel-like Table */
+.excel-table-container {
+  overflow-x: auto;
+  border: 2px solid #000;
+  border-radius: 4px;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.excel-table {
+  width: 100%;
+  min-width: 1200px;
+  border-collapse: collapse;
+  font-family: 'Calibri', Arial, sans-serif;
+  font-size: 11px;
+  background: white;
+}
+
+.excel-th {
+  background: #D9D9D9;
+  border: 1px solid #000;
+  padding: 8px 4px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 10px;
+  vertical-align: middle;
+  color: #000;
+}
+
+.excel-th.plant-col {
+  width: 200px;
+  min-width: 200px;
+}
+
+.excel-th.capacity-col,
+.excel-th.nominated-col,
+.excel-th.actual-col,
+.excel-th.variance-col {
+  width: 100px;
+  min-width: 100px;
+}
+
+.excel-th.hours-col,
+.excel-th.outage-col {
+  width: 120px;
+  min-width: 120px;
+}
+
+.excel-th.remarks-col {
+  width: 300px;
+  min-width: 300px;
+}
+
+.excel-td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: #000;
+  vertical-align: middle;
+}
+
+.plant-header-row {
+  background: #E6E6E6;
+}
+
+.plant-name-cell {
+  font-weight: bold;
+  text-align: center;
+  background: #E6E6E6;
+}
+
+.unit-cell {
+  padding-left: 20px;
+  text-align: left;
+}
+
+.number-cell {
+  text-align: center;
+}
+
+.number-cell.negative {
+  color: #FF0000;
+}
+
+.plant-total-row {
+  background: #F2F2F2;
+  font-weight: bold;
+}
+
+.total-label-cell {
+  font-weight: bold;
+  text-align: left;
+  padding-left: 10px;
+}
+
+.total-number-cell {
+  text-align: center;
+  font-weight: bold;
+}
+
+.grand-total-row {
+  background: #D9D9D9;
+  font-weight: bold;
+  border-top: 2px solid #000;
+}
+
+.grand-total-label {
+  font-weight: bold;
+  text-align: left;
+  padding-left: 10px;
+}
+
+.grand-total-number {
+  text-align: center;
+  font-weight: bold;
+}
+
+.remarks-cell {
+  text-align: left;
+  max-width: 150px;
+  word-wrap: break-word;
+}
+
+/* Excel Sections */
+.excel-section {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: #FAFAFA;
+  width: 100%;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #000;
+  text-align: center;
+  background: #D9D9D9;
+  padding: 0.5rem;
+  border: 1px solid #000;
+  border-radius: 4px;
+}
+
+.small-table {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.label-cell {
+  text-align: left;
+  font-weight: normal;
+  padding-left: 10px;
+}
+
+.ipp-row:nth-child(even) {
+  background: #F9F9F9;
+}
+
+.notes-list {
+  list-style-type: disc;
+  padding-left: 2rem;
+  margin: 0;
+}
+
+.notes-list li {
+  margin-bottom: 0.5rem;
+  color: #000;
+  font-size: 0.9rem;
+}
+
+/* Signature Sections */
+.signatures-section {
+  background: white;
+  border: 2px solid #000;
+}
+
+.signature-row {
+  margin-bottom: 2rem;
+}
+
+.signature-row:last-child {
+  margin-bottom: 0;
+}
+
+.signature-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Calibri', Arial, sans-serif;
+}
+
+.signature-header {
+  background: #F2F2F2;
+  border: 1px solid #000;
+  padding: 8px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: normal;
+  color: #000;
+  width: 25%;
+}
+
+.signature-cell {
+  border: 1px solid #000;
+  padding: 8px;
+  height: 20px;
+  background: white;
+}
+
+.signature-space {
+  height: 20px;
+}
+
+.signature-name {
+  border: 1px solid #000;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: bold;
+  color: #000;
+  text-align: left;
+}
+
+.signature-title {
+  border: 1px solid #000;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: normal;
+  color: #000;
+  text-align: left;
+}
+
+/* Footer Note */
+.footer-note-section {
+  background: white;
+  border: 1px solid #ccc;
+  margin-top: 2rem;
+}
+
+.footer-note {
+  font-size: 10px;
+  color: #000;
+  line-height: 1.4;
+  margin: 0;
+  padding: 1rem;
+  font-style: italic;
 }
 </style>
