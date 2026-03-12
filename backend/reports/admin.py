@@ -5,7 +5,7 @@ from .models import (
     Plant, Unit, UploadedFile, GenerationReport, 
     PlantCapacity, HistoricalData, WaterNomination, 
     ActualGeneration, Testimonial, UserProfile, AuditLog,
-    PasswordResetRequest
+    PasswordResetRequest, ESignature, ReportSignature
 )
 
 
@@ -251,3 +251,48 @@ class PasswordResetRequestAdmin(admin.ModelAdmin):
 admin.site.site_header = "NPC Reporting System Administration"
 admin.site.site_title = "NPC Admin"
 admin.site.index_title = "Welcome to NPC Reporting System Administration"
+
+@admin.register(ESignature)
+class ESignatureAdmin(admin.ModelAdmin):
+    list_display = ['signatory_name', 'signatory_title', 'signature_type', 'is_active', 'is_default', 'created_at']
+    list_filter = ['signature_type', 'is_active', 'is_default', 'created_at']
+    search_fields = ['signatory_name', 'signatory_title', 'signatory_role']
+    readonly_fields = ['created_at', 'updated_at']
+    fieldsets = [
+        ('Signatory Information', {
+            'fields': ['signatory_name', 'signatory_title', 'signatory_role']
+        }),
+        ('Signature Data', {
+            'fields': ['signature_image', 'signature_type', 'signature_data']
+        }),
+        ('Settings', {
+            'fields': ['is_active', 'is_default', 'created_by']
+        }),
+        ('Timestamps', {
+            'fields': ['created_at', 'updated_at'],
+            'classes': ['collapse']
+        })
+    ]
+
+
+@admin.register(ReportSignature)
+class ReportSignatureAdmin(admin.ModelAdmin):
+    list_display = ['signatory_name', 'signatory_role', 'report_type', 'report_date', 'signed_at', 'is_verified']
+    list_filter = ['report_type', 'signatory_role', 'is_verified', 'signed_at', 'report_date']
+    search_fields = ['signatory_name', 'signatory_role']
+    readonly_fields = ['signed_at', 'verification_hash']
+    date_hierarchy = 'report_date'
+    fieldsets = [
+        ('Report Information', {
+            'fields': ['report_date', 'report_type']
+        }),
+        ('Signature Information', {
+            'fields': ['signature', 'signatory_name', 'signatory_role']
+        }),
+        ('Signing Details', {
+            'fields': ['signed_by', 'signed_at', 'ip_address']
+        }),
+        ('Verification', {
+            'fields': ['is_verified', 'verification_hash']
+        })
+    ]

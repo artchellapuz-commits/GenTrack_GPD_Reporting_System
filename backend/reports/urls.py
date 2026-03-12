@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PlantViewSet, UnitViewSet, UploadedFileViewSet, 
     GenerationReportViewSet, HistoricalDataViewSet, PlantCapacityViewSet,
-    WaterNominationViewSet, ActualGenerationViewSet, TestimonialViewSet, AuditLogViewSet
+    WaterNominationViewSet, ActualGenerationViewSet, TestimonialViewSet, AuditLogViewSet,
+    ESignatureViewSet, ReportSignatureViewSet
 )
 from .auth_views import AuthViewSet, UserViewSet, PasswordResetRequestViewSet
 from .views_scheduled import ScheduledReportViewSet, ReportExecutionViewSet
@@ -23,6 +24,8 @@ router.register(r'water-nominations', WaterNominationViewSet, basename='waternom
 router.register(r'actual-generations', ActualGenerationViewSet, basename='actualgeneration')
 router.register(r'testimonials', TestimonialViewSet, basename='testimonial')
 router.register(r'audit-logs', AuditLogViewSet, basename='auditlog')
+router.register(r'e-signatures', ESignatureViewSet, basename='esignature')
+router.register(r'report-signatures', ReportSignatureViewSet, basename='reportsignature')
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'password-reset-requests', PasswordResetRequestViewSet, basename='password-reset-request')

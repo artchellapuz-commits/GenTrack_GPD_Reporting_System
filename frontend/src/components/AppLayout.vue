@@ -763,6 +763,8 @@ export default {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .layout-static-inactive .layout-main-container {
@@ -1120,6 +1122,8 @@ export default {
   padding: 2rem;
   background: #f8fafc;
   margin-top: 70px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Mobile Overlay */

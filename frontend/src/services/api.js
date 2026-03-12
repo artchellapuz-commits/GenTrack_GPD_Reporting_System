@@ -144,4 +144,42 @@ export default {
       timeout: 30000, // 30 second timeout
     });
   },
+
+  // E-Signatures
+  getESignatures(params = {}) {
+    return apiClient.get('/e-signatures/', { params });
+  },
+
+  getESignaturesBySignatory(signatoryName) {
+    return apiClient.get('/e-signatures/by-signatory/', {
+      params: { name: signatoryName }
+    });
+  },
+
+  createESignature(data) {
+    return apiClient.post('/e-signatures/create-from-data/', data);
+  },
+
+  updateESignature(id, data) {
+    return apiClient.put(`/e-signatures/${id}/`, data);
+  },
+
+  deleteESignature(id) {
+    return apiClient.delete(`/e-signatures/${id}/`);
+  },
+
+  // Report Signatures
+  getReportSignatures(params = {}) {
+    return apiClient.get('/report-signatures/', { params });
+  },
+
+  getReportSignaturesForReport(reportDate, reportType = 'PSR') {
+    return apiClient.get('/report-signatures/for-report/', {
+      params: { report_date: reportDate, report_type: reportType }
+    });
+  },
+
+  signReport(data) {
+    return apiClient.post('/report-signatures/sign-report/', data);
+  },
 };

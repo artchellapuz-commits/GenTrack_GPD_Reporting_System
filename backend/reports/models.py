@@ -497,6 +497,82 @@ class AuditLog(models.Model):
         return f"{self.user.username if self.user else 'System'} - {self.action} - {self.timestamp}"
 
 
+class ESignature(models.Model):
+    """Electronic signatures for report authorization"""
+    
+    SIGNATURE_TYPE_CHOICES = [
+        ('DRAW', 'Hand Drawn'),
+        ('UPLOAD', 'Uploaded Image'),
+        ('TYPE', 'Typed Text'),
+    ]
+    
+    # Signatory information
+    signatory_name = models.CharField(max_length=100, help_text="Name of the person signing")
+    signatory_title = models.CharField(max_length=100, blank=True, help_text="Job title of the signatory")
+    signatory_role = models.CharField(max_length=100, blank=True, help_text="Role in the authorization (e.g., 'Prepared by', 'Approved by')")
+    
+    # Signature data
+    signature_image = models.ImageField(upload_to='signatures/%Y/%m/', help_text="Signature image file")
+    signature_type = models.CharField(max_length=10, choices=SIGNATURE_TYPE_CHOICES, default='DRAW')
+    signature_data = models.TextField(blank=True, help_text="Base64 encoded signature data for backup")
+    
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_signatures')
+    is_active = models.BooleanField(default=True)
+    is_default = models.BooleanField(default=False, help_text="Default signature for this signatory")
+    
+    # Audit fields
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'e_signatures'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['signatory_name', 'is_active']),
+            models.Index(fields=['created_by']),
+            models.Index(fields=['is_default', 'signatory_name']),
+        ]
+    
+    def __str__(self):
+        return f"{self.signatory_name} - {self.get_signature_type_display()}"
+
+
+class ReportSignature(models.Model):
+    """Track which signatures are applied to which reports"""
+    
+    # Report identification
+    report_date = models.DateField(help_text="Date of the report")
+    report_type = models.CharField(max_length=50, default='PSR', help_text="Type of report (PSR, etc.)")
+    
+    # Signature information
+    signature = models.ForeignKey(ESignature, on_delete=models.CASCADE, related_name='report_usages')
+    signatory_name = models.CharField(max_length=100, help_text="Name of the signatory")
+    signatory_role = models.CharField(max_length=100, help_text="Role in authorization")
+    
+    # Signing metadata
+    signed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='report_signatures')
+    signed_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    
+    # Verification
+    is_verified = models.BooleanField(default=True)
+    verification_hash = models.CharField(max_length=64, blank=True, help_text="Hash for signature verification")
+    
+    class Meta:
+        db_table = 'report_signatures'
+        unique_together = ['report_date', 'report_type', 'signatory_name', 'signatory_role']
+        ordering = ['-signed_at']
+        indexes = [
+            models.Index(fields=['report_date', 'report_type'], name='report_sig_date_type_idx'),
+            models.Index(fields=['signatory_name'], name='report_sig_name_idx'),
+            models.Index(fields=['signed_by', 'signed_at'], name='report_sig_user_time_idx'),
+        ]
+    
+    def __str__(self):
+        return f"{self.signatory_name} - {self.report_type} - {self.report_date}"
+
+
 class PasswordResetRequest(models.Model):
     """Password reset requests from users"""
     
@@ -533,4 +609,3 @@ class PasswordResetRequest(models.Model):
     
     def __str__(self):
         return f"{self.username} - {self.status} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
-

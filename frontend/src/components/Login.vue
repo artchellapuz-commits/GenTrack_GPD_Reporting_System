@@ -224,7 +224,7 @@ export default {
     return {
       currentRiverIndex: 0,
       riverImages: [
-         require('@/assets/River2.8.jpg'),
+         require('@/assets/River2.1.jpg'),
         require('@/assets/River1.5.jpg'),
         require('@/assets/River1.3.jpg'),
         require('@/assets/River1.4.jpg'),
@@ -241,7 +241,7 @@ export default {
         require('@/assets/River2.5.jpg'),
         require('@/assets/River2.6.jpg'),
         require('@/assets/River2.7.jpg'),
-        require('@/assets/River2.1.jpg'),
+        require('@/assets/River2.8.jpg'),
         require('@/assets/River2.9.jpg'),
         require('@/assets/River3.0.jpg'),
         require('@/assets/River3.1.jpg'),

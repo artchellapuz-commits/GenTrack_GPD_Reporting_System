@@ -4,7 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from .models import (
     Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, 
     HistoricalData, WaterNomination, ActualGeneration, Testimonial,
-    UserProfile, AuditLog, PasswordResetRequest
+    UserProfile, AuditLog, PasswordResetRequest, ESignature, ReportSignature
 )
 
 
@@ -382,3 +382,109 @@ class PasswordResetRequestSerializer(serializers.ModelSerializer):
                   'admin_notes', 'created_at', 'updated_at']
         read_only_fields = ['id', 'processed_by', 'processed_at', 
                            'created_at', 'updated_at', 'ip_address']
+
+class ESignatureSerializer(serializers.ModelSerializer):
+    """Serializer for E-Signature model"""
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+    
+    class Meta:
+        model = ESignature
+        fields = [
+            'id', 'signatory_name', 'signatory_title', 'signatory_role',
+            'signature_image', 'signature_type', 'signature_data',
+            'created_by', 'created_by_name', 'is_active', 'is_default',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'created_by_name']
+    
+    def create(self, validated_data):
+        # Set created_by to current user if available
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['created_by'] = request.user
+        return super().create(validated_data)
+
+
+class ReportSignatureSerializer(serializers.ModelSerializer):
+    """Serializer for Report Signature model"""
+    signature_details = ESignatureSerializer(source='signature', read_only=True)
+    signed_by_name = serializers.CharField(source='signed_by.username', read_only=True)
+    
+    class Meta:
+        model = ReportSignature
+        fields = [
+            'id', 'report_date', 'report_type', 'signature', 'signature_details',
+            'signatory_name', 'signatory_role', 'signed_by', 'signed_by_name',
+            'signed_at', 'ip_address', 'is_verified', 'verification_hash'
+        ]
+        read_only_fields = ['id', 'signed_at', 'signed_by_name', 'verification_hash']
+    
+    def create(self, validated_data):
+        # Set signed_by to current user if available
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['signed_by'] = request.user
+            # Set IP address from request
+            try:
+                validated_data['ip_address'] = self.get_client_ip(request)
+            except Exception:
+                validated_data['ip_address'] = '127.0.0.1'  # Fallback IP
+        return super().create(validated_data)
+    
+    def get_client_ip(self, request):
+        """Get client IP address from request"""
+        try:
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip = x_forwarded_for.split(',')[0].strip()
+            else:
+                ip = request.META.get('REMOTE_ADDR', '127.0.0.1')
+            return ip or '127.0.0.1'
+        except Exception:
+            return '127.0.0.1'
+
+
+class ESignatureCreateSerializer(serializers.Serializer):
+    """Serializer for creating e-signatures from frontend data"""
+    signatory_name = serializers.CharField(max_length=100)
+    signatory_title = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    signatory_role = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    signature_type = serializers.ChoiceField(choices=ESignature.SIGNATURE_TYPE_CHOICES)
+    signature_data = serializers.CharField(help_text="Base64 encoded signature data")
+    is_default = serializers.BooleanField(default=False)
+    
+    def create(self, validated_data):
+        # Convert base64 data to image file
+        import base64
+        import io
+        from django.core.files.base import ContentFile
+        
+        signature_data = validated_data.pop('signature_data')
+        
+        # Remove data URL prefix if present
+        if signature_data.startswith('data:image'):
+            signature_data = signature_data.split(',')[1]
+        
+        # Decode base64 data
+        try:
+            image_data = base64.b64decode(signature_data)
+        except Exception as e:
+            raise serializers.ValidationError(f"Invalid base64 data: {str(e)}")
+        
+        # Create filename
+        filename = f"{validated_data['signatory_name'].replace(' ', '_').lower()}_signature.png"
+        
+        # Create signature instance
+        signature = ESignature.objects.create(
+            **validated_data,
+            signature_image=ContentFile(image_data, filename),
+            signature_data=signature_data  # Keep original base64 for backup
+        )
+        
+        # Set created_by if available
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            signature.created_by = request.user
+            signature.save()
+        
+        return signature

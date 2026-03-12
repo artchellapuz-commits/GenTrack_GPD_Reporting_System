@@ -8,15 +8,17 @@ from datetime import datetime
 import hashlib
 import os
 import tempfile
+import json
 
-from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData, WaterNomination, ActualGeneration, Testimonial, AuditLog
+from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData, WaterNomination, ActualGeneration, Testimonial, AuditLog, ESignature, ReportSignature
 from .serializers import (
     PlantSerializer, UnitSerializer, UploadedFileSerializer,
     GenerationReportSerializer, GenerationReportListSerializer,
     ExcelUploadSerializer, ReportGenerationSerializer,
     PlantCapacitySerializer, HistoricalDataSerializer, HistoricalDataUploadSerializer,
     WaterNominationSerializer, ActualGenerationSerializer, NominationVarianceSerializer,
-    TestimonialSerializer, AuditLogSerializer
+    TestimonialSerializer, AuditLogSerializer, ESignatureSerializer, ReportSignatureSerializer,
+    ESignatureCreateSerializer
 )
 from .pagination import CustomPageNumberPagination
 from .services.excel_importer import ExcelImporter
@@ -417,7 +419,7 @@ class GenerationReportViewSet(mixins.ListModelMixin,
             # Get organized data by plant
             organized_data = exporter._organize_data()
             
-            # Build Excel-like structure for preview
+            # Build Excel-like structure for preview with ALL PSR sections
             preview_structure = {
                 'header': {
                     'title': 'PLANT STATUS REPORT' if data.get('report_type', 'psr') == 'psr' else 'DAILY PLANT STATUS',
@@ -434,6 +436,10 @@ class GenerationReportViewSet(mixins.ListModelMixin,
                     'total_variance': 0
                 },
                 'forecasted_load': {
+                    'date': 'Jan 02, 2026',
+                    'agus_load': 500.8,
+                    'pulangi_load': 150,
+                    'total_load': 650.8,
                     'mindanao_load': 1850.0,
                     'luzon_visayas': 8500.0,
                     'total_philippines': 10350.0
@@ -446,12 +452,68 @@ class GenerationReportViewSet(mixins.ListModelMixin,
                     {'name': 'PALM CONCEPCION', 'capacity': 135, 'nominated': 120, 'actual': 115, 'variance': -5}
                 ],
                 'notes': [
-                    'Note: All generation figures are in MW',
-                    'Variance = Actual - Nominated',
-                    'Negative variance indicates under-generation',
-                    'Forecasted inflow of Lake Lanao is stable and operating at Normal Stage.',
-                    'Agus 6 HEP: 30cms of water spilled due to partially opened spillway gate no. 1.'
+                    'Dependable Capacity (DC) is the maximum capacity, modified for ambient limitations for a specific period of time, such as month or a season.',
+                    'Available Capacity (AC) is the dependable capacity, modified for equipment limitations for any time.',
+                    'The usual occurrence of Peak is at 1800H.',
+                    'AGUS 5 HEP gate no. 2 dogged at 0.10m for Newtech Pulp Inc. (NPI) plant water use.',
+                    'AGUS 6 HEP unit 5 is derated at 46 MW due generator turbine control system problem.',
+                    'AGUS 6 HEP unit 3 is derated at 40 MW due to take-off transformer cooling problem.'
                 ],
+                # NEW: Right-side sections from PSR Excel
+                'storage_data': [
+                    {'lake': 'Lake Lanao', 'level': '701.20', 'remarks': 'Normal'},
+                    {'lake': 'Agus 2 Forebay', 'level': '637.30', 'remarks': ''},
+                    {'lake': 'Agus 4 Forebay', 'level': '358.50', 'remarks': ''},
+                    {'lake': 'Agus 5 Forebay', 'level': '242.80', 'remarks': ''},
+                    {'lake': 'Agus 6 Forebay', 'level': '199.80', 'remarks': ''},
+                    {'lake': 'Agus 7 Forebay', 'level': '34.60', 'remarks': ''},
+                    {'lake': 'Pulangi IV Reservoir', 'level': '283.50', 'remarks': ''},
+                ],
+                'inflow_outflow_data': [
+                    {'plant': 'Lake Lanao', 'inflow': '0.00', 'outflow': '0.00', 'remarks': ''},
+                    {'plant': 'Agus 1', 'inflow': '0.00', 'outflow': '0.00', 'remarks': ''},
+                    {'plant': 'Agus 2', 'inflow': '0.00', 'outflow': '0.00', 'remarks': ''},
+                    {'plant': 'Agus 4', 'inflow': '0.00', 'outflow': '0.00', 'remarks': ''},
+                    {'plant': 'Agus 5', 'inflow': '0.00', 'outflow': '0.00', 'remarks': ''},
+                    {'plant': 'Agus 6', 'inflow': '0.00', 'outflow': '0.00', 'remarks': ''},
+                    {'plant': 'Agus 7', 'inflow': '0.00', 'outflow': '0.00', 'remarks': ''},
+                    {'plant': 'Pulangi IV', 'inflow': '0.00', 'outflow': '0.00', 'remarks': ''},
+                ],
+                'generation_data': exporter._calculate_generation_data(),
+                'capacity_factor_data': exporter._calculate_capacity_factor(),
+                'gate_elevation_data': [
+                    {'plant': 'Lake Lanao', 'gates': ['0.100', '0.100'], 'elevation': '701.190'},
+                    {'plant': 'Agus 2', 'gates': ['0.000', '0.000'], 'elevation': '637.800', 'note': 'Mr. Dennis'},
+                    {'plant': 'Agus 4', 'gates': ['0.500', '0.000'], 'elevation': '358.800'},
+                    {'plant': 'Agus 5', 'gates': ['0.550', '0.000', '0.100'], 'elevation': '243.300'},
+                    {'plant': 'Agus 6', 'gates': ['0.200', '0.200', '0.200', '0.000'], 'elevation': '199.800'},
+                    {'plant': 'Agus 7', 'gates': ['0.000', '0.000', '0.000'], 'elevation': '34.100'},
+                    {'plant': 'Pulangi IV', 'gates': ['0.000', '0.000', '0.000', '0.000', '0.000', '0.000'], 'elevation': '285.450'},
+                ],
+                'operational_reference': {
+                    'riparian_flow': [
+                        {'plant': 'AGUS 1', 'cms_mv': '0.85', 'cms': '85.0'},
+                        {'plant': 'AGUS 2', 'cms_mv': '0.90', 'cms': '90.0'},
+                        {'plant': 'AGUS 3', 'cms_mv': '0.88', 'cms': '88.0'},
+                        {'plant': 'AGUS 4', 'cms_mv': '0.92', 'cms': '92.0'},
+                        {'plant': 'AGUS 5', 'cms_mv': '0.87', 'cms': '87.0'},
+                        {'plant': 'AGUS 6', 'cms_mv': '0.89', 'cms': '89.0'},
+                        {'plant': 'AGUS 7', 'cms_mv': '0.91', 'cms': '91.0'},
+                    ],
+                    'spillage_data': [
+                        {'location': 'Lake Lanao', 'value': '0.00'},
+                        {'location': 'Agus 2', 'value': '0.00'},
+                        {'location': 'Agus 4', 'value': '0.00'},
+                        {'location': 'Agus 5', 'value': '0.00'},
+                        {'location': 'Agus 6', 'value': '0.00'},
+                        {'location': 'Agus 7', 'value': '0.00'},
+                        {'location': 'Pulangi IV', 'value': '0.00'},
+                    ]
+                },
+                'input_workflow': {
+                    'sections': ['INPUT 2', 'PROCESS', 'OUTPUT'],
+                    'notes': ['Dependable Capacity = Pmax', 'MLRD GATES OPENING: Status: Operational']
+                },
                 'signatures': {
                     'first_row': [
                         {
@@ -498,7 +560,16 @@ class GenerationReportViewSet(mixins.ListModelMixin,
                         }
                     ]
                 },
-                'footer_note': 'Agus 2 HEP is limited to 40 MW/per unit due to water constraints as per Environmental Compliance Certificate "that Agus 2 shall not be operated at full capacity..." This is to prevent risk of flooding at lakeshore areas and Baloi plains.'
+                'footer_note': 'Agus 2 HEP is limited to 40 MW/per unit due to water constraints as per Environmental Compliance Certificate "that Agus 2 shall not be operated at full capacity..." This is to prevent risk of flooding at lakeshore areas and Baloi plains.',
+                'additional_notes': [
+                    'The Available Capacity in this report includes equipment limitation and water outflow consideration based on the 2020 Lake Lanao Operating Guide Curve.',
+                    'AGUS 6 HEP units 1 & 2 up-rated from 25MW to 34.5MW. Turned-over to NPC last 14 February 2020.',
+                    'AGUS 2 HEP is limited to 120 MW total load to prevent risk of flooding at lakeshore areas and Baloi plains as per Environmental Compliance Certificate dated January 14, 1992.',
+                    'AGUS 5 HEP gate no. 2 dogged at 0.10m for Newtech Pulp Inc. (NPI) plant water use.',
+                    'The usual occurrence of Peak is at 1800H.',
+                    'Forecast inflow of Lake Lanao is stable and operating at Normal Stage.',
+                    'Agus 6 HEP: 18cms of water spilled due to partially opened spillway gate no. 1.'
+                ]
             }
             
             # Process each plant according to PSR structure
@@ -529,19 +600,25 @@ class GenerationReportViewSet(mixins.ListModelMixin,
                         if actual_generation > 0:
                             actual_generation = min(actual_generation / 24, unit_config['capacity'])  # Rough MW calculation
                         
-                        variance = actual_generation - unit_config['nominated']
+                        # For the new PSR format, we need different data mapping
+                        # Available Capacity = Nominated capacity
+                        # Lake Lanao Projected Ave. Outflow = Actual generation
+                        # Load at 0800H = Variance (or could be a different calculation)
                         
                         unit_info = {
                             'number': unit_num,
                             'label': unit_config['label'],
-                            'capacity': unit_config['capacity'],
-                            'nominated': unit_config['nominated'],
-                            'actual': round(actual_generation, 1),
-                            'variance': round(variance, 1),
+                            'capacity': unit_config['capacity'],  # Rated Capacity
+                            'nominated': unit_config['nominated'],  # Available Capacity
+                            'actual': round(actual_generation, 1),  # Lake Lanao Projected Ave. Outflow
+                            'variance': round(unit_config['nominated'] - actual_generation, 1),  # Load at 0800H (difference)
                             'operating_hours': unit_report_data.get('operating_hours', 0),
                             'forced_outage': unit_report_data.get('forced_outage', 0),
                             'scheduled_outage': unit_report_data.get('scheduled_outage', 0),
-                            'remarks': unit_report_data.get('remarks', '')
+                            'remarks': unit_report_data.get('remarks', '') or (
+                                'Lake Lanao Elevation is 701.19 m.a.s.l. (G1- 0.10 m, G2- 0.10 m)' 
+                                if plant_code == 'AGUS1' else ''
+                            )
                         }
                         
                         plant_info['units'].append(unit_info)
@@ -550,7 +627,7 @@ class GenerationReportViewSet(mixins.ListModelMixin,
                         plant_info['plant_totals']['capacity'] += unit_config['capacity']
                         plant_info['plant_totals']['nominated'] += unit_config['nominated']
                         plant_info['plant_totals']['actual'] += actual_generation
-                        plant_info['plant_totals']['variance'] += variance
+                        plant_info['plant_totals']['variance'] += (unit_config['nominated'] - actual_generation)
                     
                     # Round plant totals
                     for key in plant_info['plant_totals']:
@@ -993,3 +1070,108 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         response['Content-Disposition'] = f'attachment; filename="Audit_Logs_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx"'
         
         return response
+
+class ESignatureViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing e-signatures"""
+    queryset = ESignature.objects.filter(is_active=True)
+    serializer_class = ESignatureSerializer
+    permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        signatory_name = self.request.query_params.get('signatory_name')
+        if signatory_name:
+            queryset = queryset.filter(signatory_name__icontains=signatory_name)
+        return queryset.order_by('-created_at')
+    
+    @action(detail=False, methods=['post'], url_path='create-from-data')
+    def create_from_data(self, request):
+        """Create e-signature from base64 data"""
+        serializer = ESignatureCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            try:
+                signature = serializer.save()
+                response_serializer = ESignatureSerializer(signature)
+                return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                return Response(
+                    {'error': f'Failed to create signature: {str(e)}'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'], url_path='by-signatory')
+    def by_signatory(self, request):
+        """Get signatures for a specific signatory"""
+        signatory_name = request.query_params.get('name')
+        if not signatory_name:
+            return Response(
+                {'error': 'name parameter is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        signatures = self.get_queryset().filter(signatory_name__iexact=signatory_name)
+        serializer = self.get_serializer(signatures, many=True)
+        return Response(serializer.data)
+
+
+class ReportSignatureViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing report signatures"""
+    queryset = ReportSignature.objects.all()
+    serializer_class = ReportSignatureSerializer
+    permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        report_date = self.request.query_params.get('report_date')
+        report_type = self.request.query_params.get('report_type', 'PSR')
+        
+        if report_date:
+            queryset = queryset.filter(report_date=report_date)
+        if report_type:
+            queryset = queryset.filter(report_type=report_type)
+            
+        return queryset.order_by('-signed_at')
+    
+    @action(detail=False, methods=['post'], url_path='sign-report')
+    def sign_report(self, request):
+        """Sign a report with an e-signature"""
+        data = request.data.copy()
+        
+        # Generate verification hash
+        import hashlib
+        import json
+        hash_data = {
+            'report_date': data.get('report_date'),
+            'report_type': data.get('report_type'),
+            'signatory_name': data.get('signatory_name'),
+            'signatory_role': data.get('signatory_role'),
+            'timestamp': datetime.now().isoformat()
+        }
+        verification_hash = hashlib.sha256(json.dumps(hash_data, sort_keys=True).encode()).hexdigest()
+        data['verification_hash'] = verification_hash
+        
+        serializer = self.get_serializer(data=data, context={'request': request})
+        if serializer.is_valid():
+            signature = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'], url_path='for-report')
+    def for_report(self, request):
+        """Get all signatures for a specific report"""
+        report_date = request.query_params.get('report_date')
+        report_type = request.query_params.get('report_type', 'PSR')
+        
+        if not report_date:
+            return Response(
+                {'error': 'report_date parameter is required'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        signatures = self.get_queryset().filter(
+            report_date=report_date,
+            report_type=report_type
+        )
+        serializer = self.get_serializer(signatures, many=True)
+        return Response(serializer.data)
