@@ -92,39 +92,164 @@
     </div>
 
     <!-- Report Preview Section -->
-    <div v-if="showPreview && reportPreview" class="preview-card">
-      <div class="card-header">
-        <div class="card-title">
-          <i class="pi pi-file-excel"></i>
-          <span>Excel Report Preview</span>
+    <div v-if="showPreview && reportPreview" class="preview-card modern-preview">
+      <div class="preview-header">
+        <div class="preview-title-section">
+          <div class="preview-icon">
+            <i class="pi pi-file-excel"></i>
+          </div>
+          <div class="preview-title-content">
+            <h3 class="preview-title">Excel Report Preview</h3>
+            <p class="preview-subtitle">Plant Status Report - {{ reportPreview.header.date_text }}</p>
+          </div>
         </div>
+        
         <div class="preview-actions">
-          <button @click="downloadExcel" class="btn-download-excel" style="color: #ffffff !important; background: #10b981 !important; border: 2px solid #10b981 !important;">
-            <i class="pi pi-download" style="color: #ffffff !important;"></i>
-            <span style="color: #ffffff !important; font-weight: 600 !important;">Download Excel</span>
-          </button>
-          <button @click="closePreview" class="btn-close-preview" style="background: #ffffff !important; color: #000000 !important; border: 3px solid #000000 !important; display: flex !important; visibility: visible !important; opacity: 1 !important;">
-            <i class="pi pi-times" style="color: #000000 !important; font-size: 1.4rem !important; font-weight: 900 !important;"></i>
-          </button>
+          <div class="action-group">
+            <button @click="zoomOut" class="btn-zoom" :disabled="zoomLevel <= 0.5" title="Zoom Out">
+              <i class="pi pi-search-minus"></i>
+            </button>
+            <span class="zoom-indicator">{{ Math.round(zoomLevel * 100) }}%</span>
+            <button @click="zoomIn" class="btn-zoom" :disabled="zoomLevel >= 2" title="Zoom In">
+              <i class="pi pi-search-plus"></i>
+            </button>
+          </div>
+          
+          <div class="action-group">
+            <button @click="toggleFullscreen" class="btn-action secondary" title="Toggle Fullscreen">
+              <i :class="isFullscreen ? 'pi pi-window-minimize' : 'pi pi-window-maximize'"></i>
+            </button>
+            <button @click="downloadExcel" class="btn-action primary" title="Download Excel">
+              <i class="pi pi-download"></i>
+              <span>Download Excel</span>
+            </button>
+            <button @click="closePreview" class="btn-action close" title="Close Preview">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
         </div>
       </div>
       
-      <div class="card-body">
-        <div class="preview-content-wrapper">
-          <!-- Main Content (Left Side) -->
-          <div class="main-content-left">
-            <!-- Excel-like Header with Logo and Officials -->
-        <div class="excel-header-with-logo">
-          <!-- Logo and Title Row -->
-          <div class="logo-title-row">
-            <div class="logo-container">
-              <img src="@/assets/NPC-logo.png" alt="NPC Logo" class="npc-logo" />
-            </div>
-            <div class="title-container">
-              <h1 class="main-title">MINDANAO GENERATION</h1>
-              <h2 class="subtitle-title">(PSALM PORTFOLIO)</h2>
+      <div class="preview-body" :class="{ 'fullscreen': isFullscreen }">
+        <div class="preview-toolbar">
+          <div class="toolbar-left">
+            <div class="page-info">
+              <span class="page-indicator">Page 1 of 1</span>
             </div>
           </div>
+          
+          <div class="toolbar-center">
+            <div class="view-options">
+              <button 
+                @click="viewMode = 'normal'" 
+                :class="['view-btn', { active: viewMode === 'normal' }]"
+                title="Normal View"
+              >
+                <i class="pi pi-eye"></i>
+                <span>Normal</span>
+              </button>
+              <button 
+                @click="viewMode = 'print'" 
+                :class="['view-btn', { active: viewMode === 'print' }]"
+                title="Print Layout"
+              >
+                <i class="pi pi-print"></i>
+                <span>Print Layout</span>
+              </button>
+            </div>
+          </div>
+          
+          <div class="toolbar-right">
+            <div class="export-options">
+              <button @click="exportToPDF" class="btn-export" title="Export to PDF">
+                <i class="pi pi-file-pdf"></i>
+                <span>PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- User-Friendly Horizontal Scrollbar with Navigation -->
+        <div v-if="showPreview" class="user-friendly-scrollbar" ref="stickyScrollContainer" style="display: none;">
+          <div class="scrollbar-wrapper">
+            <!-- Left Arrow Button -->
+            <button 
+              class="scroll-arrow scroll-left" 
+              @click="scrollLeft"
+              :disabled="scrollPosition <= 0"
+              title="Scroll Left"
+            >
+              <i class="pi pi-chevron-left"></i>
+            </button>
+            
+            <!-- Scrollbar Track with Progress Indicator -->
+            <div class="scrollbar-track-container">
+              <div class="scrollbar-track" ref="stickyScrollTrack">
+                <div class="scrollbar-progress" :style="{ width: scrollProgress + '%' }"></div>
+                <div class="scrollbar-thumb" ref="stickyScrollThumb">
+                  <div class="thumb-grip"></div>
+                </div>
+              </div>
+              
+              <!-- Position Indicator -->
+              <div class="position-indicator">
+                <span class="current-position">{{ Math.round(scrollProgress) }}%</span>
+                <span class="position-text">of document width</span>
+              </div>
+            </div>
+            
+            <!-- Right Arrow Button -->
+            <button 
+              class="scroll-arrow scroll-right" 
+              @click="scrollRight"
+              :disabled="scrollPosition >= maxScrollPosition"
+              title="Scroll Right"
+            >
+              <i class="pi pi-chevron-right"></i>
+            </button>
+            
+            <!-- Quick Navigation Buttons -->
+            <div class="quick-nav">
+              <button 
+                class="quick-nav-btn" 
+                @click="scrollToStart"
+                title="Go to Start"
+              >
+                <i class="pi pi-step-backward"></i>
+              </button>
+              <button 
+                class="quick-nav-btn" 
+                @click="scrollToEnd"
+                title="Go to End"
+              >
+                <i class="pi pi-step-forward"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-content-container" 
+             :style="{ transform: `scale(${zoomLevel})` }"
+             @scroll="handleHorizontalScroll"
+             ref="previewContainer">
+          <div class="excel-document" :class="{ 'print-mode': viewMode === 'print' }">
+            <div class="document-shadow"></div>
+            
+            <div class="preview-content-wrapper">
+              <!-- Main Content (Left Side) -->
+              <div class="main-content-left">
+                <!-- Excel-like Header with Logo and Officials -->
+            <div class="excel-header-with-logo">
+              <!-- Logo and Title Row -->
+              <div class="logo-title-row">
+                <div class="logo-container">
+                  <img src="@/assets/NPC-logo.png" alt="NPC Logo" class="npc-logo" />
+                </div>
+                <div class="title-container">
+                  <h1 class="main-title">MINDANAO GENERATION</h1>
+                  <h2 class="subtitle-title">(PSALM PORTFOLIO)</h2>
+                </div>
+              </div>
           
           <!-- Officials Row -->
           <div class="officials-row">
@@ -1284,8 +1409,11 @@
 
         </div> <!-- Close right-side-content -->
         </div> <!-- Close preview-content-wrapper -->
-      </div>
-    </div>
+            </div> <!-- Close excel-document -->
+          </div> <!-- Close preview-content-container -->
+        </div> <!-- Close preview-body -->
+      </div> <!-- Close modern-preview -->
+    </div> <!-- Close preview card -->
 
     <!-- Generation History -->
     <div v-if="generationHistory.length > 0" class="history-card">
@@ -1508,7 +1636,6 @@
         </div>
       </div>
     </div>
-  </div>
   </AppLayout>
 </template>
 
@@ -1551,6 +1678,17 @@ export default {
       typedSignature: '',
       selectedFont: 'cursive',
       signatures: {}, // Store signatures by signatory name
+      
+      // Preview enhancements
+      zoomLevel: 1,
+      isFullscreen: false,
+      viewMode: 'normal', // 'normal' or 'print'
+      
+      // User-friendly scrollbar data
+      scrollPosition: 0,
+      maxScrollPosition: 0,
+      scrollProgress: 0,
+      
       reportTypes: [
         {
           value: 'psr',
@@ -1869,6 +2007,33 @@ export default {
         }
       },
       immediate: false
+    },
+    
+    // Watch for preview visibility to initialize sticky scrollbar
+    showPreview: {
+      handler(newVal) {
+        if (newVal) {
+          // Wait for DOM to be fully rendered
+          this.$nextTick(() => {
+            setTimeout(() => {
+              console.log('Initializing scrollbar from watcher');
+              this.initStickyScrollbar();
+              
+              // Additional delay to test scrollbar
+              setTimeout(() => {
+                console.log('Testing scrollbar after initialization');
+                this.testScrollbar();
+              }, 1000);
+            }, 200); // Increased delay to ensure content is rendered
+          });
+        } else {
+          // Hide scrollbar when preview is closed
+          if (this.$refs.stickyScrollContainer) {
+            this.$refs.stickyScrollContainer.style.display = 'none';
+          }
+        }
+      },
+      immediate: false
     }
   },
   
@@ -1898,12 +2063,268 @@ export default {
       this.loadReportSignatures();
     }
     
+    // Initialize sticky scrollbar
+    this.initStickyScrollbar();
+    
     document.addEventListener('click', this.closeMenu);
   },
   beforeUnmount() {
     document.removeEventListener('click', this.closeMenu);
+    
+    // Cleanup sticky scrollbar event listeners
+    if (this._stickyScrollbarCleanup) {
+      this._stickyScrollbarCleanup();
+    }
   },
   methods: {
+    // Preview interaction methods
+    zoomIn() {
+      if (this.zoomLevel < 2) {
+        this.zoomLevel = Math.min(2, this.zoomLevel + 0.1);
+      }
+    },
+    
+    zoomOut() {
+      if (this.zoomLevel > 0.5) {
+        this.zoomLevel = Math.max(0.5, this.zoomLevel - 0.1);
+      }
+    },
+    
+    toggleFullscreen() {
+      this.isFullscreen = !this.isFullscreen;
+      if (this.isFullscreen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'auto';
+      }
+    },
+    
+    exportToPDF() {
+      // PDF export functionality
+      toast.info('PDF export feature coming soon!');
+    },
+
+    // Sticky horizontal scrollbar methods
+    handleHorizontalScroll(event) {
+      const container = event.target;
+      const scrollLeft = container.scrollLeft;
+      const scrollWidth = container.scrollWidth;
+      const clientWidth = container.clientWidth;
+      
+      // Update scroll position data
+      this.scrollPosition = scrollLeft;
+      this.maxScrollPosition = scrollWidth - clientWidth;
+      this.scrollProgress = this.maxScrollPosition > 0 ? (scrollLeft / this.maxScrollPosition) * 100 : 0;
+      
+      console.log('Scroll event:', { 
+        scrollLeft, 
+        scrollWidth, 
+        clientWidth, 
+        scrollProgress: this.scrollProgress 
+      });
+      
+      if (this.$refs.stickyScrollThumb && this.$refs.stickyScrollTrack && this.$refs.stickyScrollContainer) {
+        const hasHorizontalScroll = scrollWidth > clientWidth;
+        
+        if (hasHorizontalScroll) {
+          this.$refs.stickyScrollContainer.style.display = 'block';
+          
+          const thumbWidth = Math.max((clientWidth / scrollWidth) * 100, 8); // Minimum 8% width
+          const maxThumbPosition = 100 - thumbWidth;
+          const thumbPosition = this.maxScrollPosition > 0 ? 
+            Math.min((scrollLeft / this.maxScrollPosition) * maxThumbPosition, maxThumbPosition) : 0;
+          
+          console.log('Updating thumb:', { thumbWidth, thumbPosition });
+          
+          this.$refs.stickyScrollThumb.style.width = `${thumbWidth}%`;
+          this.$refs.stickyScrollThumb.style.left = `${thumbPosition}%`;
+        } else {
+          this.$refs.stickyScrollContainer.style.display = 'none';
+        }
+      } else {
+        console.log('Scrollbar refs not available:', {
+          thumb: !!this.$refs.stickyScrollThumb,
+          track: !!this.$refs.stickyScrollTrack,
+          container: !!this.$refs.stickyScrollContainer
+        });
+      }
+    },
+
+    // Navigation methods for user-friendly scrollbar
+    scrollLeft() {
+      if (this.$refs.previewContainer) {
+        const container = this.$refs.previewContainer;
+        const scrollAmount = container.clientWidth * 0.3; // Scroll 30% of visible width
+        container.scrollLeft = Math.max(0, container.scrollLeft - scrollAmount);
+      }
+    },
+
+    scrollRight() {
+      if (this.$refs.previewContainer) {
+        const container = this.$refs.previewContainer;
+        const scrollAmount = container.clientWidth * 0.3; // Scroll 30% of visible width
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        container.scrollLeft = Math.min(maxScroll, container.scrollLeft + scrollAmount);
+      }
+    },
+
+    scrollToStart() {
+      if (this.$refs.previewContainer) {
+        this.$refs.previewContainer.scrollLeft = 0;
+      }
+    },
+
+    scrollToEnd() {
+      if (this.$refs.previewContainer) {
+        const container = this.$refs.previewContainer;
+        container.scrollLeft = container.scrollWidth - container.clientWidth;
+      }
+    },
+
+    initStickyScrollbar() {
+      this.$nextTick(() => {
+        if (!this.$refs.stickyScrollTrack || !this.$refs.previewContainer || !this.$refs.stickyScrollContainer) {
+          console.log('User-friendly scrollbar refs not available');
+          return;
+        }
+
+        const container = this.$refs.previewContainer;
+        const stickyContainer = this.$refs.stickyScrollContainer;
+        const track = this.$refs.stickyScrollTrack;
+        const thumb = this.$refs.stickyScrollThumb;
+        
+        console.log('Initializing user-friendly scrollbar...');
+        console.log('Refs:', { track, thumb, container, stickyContainer });
+        
+        // Check if horizontal scrolling is needed
+        const checkScrollNeed = () => {
+          const hasHorizontalScroll = container.scrollWidth > container.clientWidth;
+          console.log('Scroll check:', { 
+            scrollWidth: container.scrollWidth, 
+            clientWidth: container.clientWidth, 
+            hasHorizontalScroll 
+          });
+          
+          if (hasHorizontalScroll) {
+            stickyContainer.style.display = 'block';
+            this.handleHorizontalScroll({ target: container });
+          } else {
+            stickyContainer.style.display = 'none';
+          }
+          
+          return hasHorizontalScroll;
+        };
+        
+        // Initial check
+        if (!checkScrollNeed()) {
+          console.log('No horizontal scroll needed, hiding scrollbar');
+          return;
+        }
+        
+        console.log('Setting up user-friendly scrollbar event listeners');
+        
+        // Handle track clicks
+        track.addEventListener('click', (e) => {
+          if (e.target === thumb || thumb.contains(e.target)) {
+            console.log('Clicked on thumb, ignoring');
+            return; // Don't handle clicks on thumb
+          }
+          
+          const rect = track.getBoundingClientRect();
+          const clickPosition = (e.clientX - rect.left) / rect.width;
+          const maxScroll = container.scrollWidth - container.clientWidth;
+          const scrollLeft = clickPosition * maxScroll;
+          
+          console.log('Track clicked:', { clickPosition, scrollLeft });
+          
+          // Smooth scroll to position
+          container.scrollTo({
+            left: scrollLeft,
+            behavior: 'smooth'
+          });
+        });
+
+        // Handle thumb dragging with improved UX
+        let isDragging = false;
+        let startX = 0;
+        let startScrollLeft = 0;
+
+        thumb.addEventListener('mousedown', (e) => {
+          console.log('Thumb mousedown');
+          isDragging = true;
+          startX = e.clientX;
+          startScrollLeft = container.scrollLeft;
+          e.preventDefault();
+          document.body.style.userSelect = 'none';
+          thumb.style.transform = 'scaleY(1.1)';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (!isDragging) return;
+          
+          const deltaX = e.clientX - startX;
+          const trackWidth = track.offsetWidth;
+          const scrollRatio = deltaX / trackWidth;
+          const maxScroll = container.scrollWidth - container.clientWidth;
+          
+          const newScrollLeft = Math.max(0, Math.min(maxScroll, startScrollLeft + (scrollRatio * maxScroll)));
+          console.log('Dragging:', { deltaX, scrollRatio, newScrollLeft });
+          container.scrollLeft = newScrollLeft;
+        });
+
+        document.addEventListener('mouseup', () => {
+          if (isDragging) {
+            console.log('Thumb mouseup');
+            isDragging = false;
+            document.body.style.userSelect = '';
+            thumb.style.transform = '';
+          }
+        });
+
+        // Handle window resize
+        const resizeHandler = () => {
+          this.$nextTick(() => {
+            checkScrollNeed();
+          });
+        };
+        
+        window.addEventListener('resize', resizeHandler);
+        
+        // Store cleanup function
+        this._stickyScrollbarCleanup = () => {
+          window.removeEventListener('resize', resizeHandler);
+        };
+        
+        console.log('User-friendly scrollbar initialized successfully');
+      });
+    },
+
+    // Method to manually update scrollbar (useful for debugging)
+    updateStickyScrollbar() {
+      if (this.$refs.previewContainer) {
+        console.log('Manual scrollbar update triggered');
+        this.handleHorizontalScroll({ target: this.$refs.previewContainer });
+      }
+    },
+
+    // Debug method to test scrollbar
+    testScrollbar() {
+      console.log('Testing scrollbar...');
+      if (this.$refs.stickyScrollThumb) {
+        // Test by manually setting thumb position
+        this.$refs.stickyScrollThumb.style.left = '50%';
+        this.$refs.stickyScrollThumb.style.width = '20%';
+        console.log('Thumb should now be at 50% position');
+        
+        setTimeout(() => {
+          this.$refs.stickyScrollThumb.style.left = '0%';
+          console.log('Thumb reset to 0%');
+        }, 2000);
+      } else {
+        console.log('Thumb ref not available');
+      }
+    },
+
     async loadPlants() {
       try {
         const response = await api.getPlants();
@@ -2861,10 +3282,526 @@ export default {
   box-sizing: border-box;
 }
 
-/* Preview content wrapper */
+/* Modern Preview Card */
+.modern-preview {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin: 2rem 0;
+  border: 1px solid #e5e7eb;
+}
+
+.preview-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.preview-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.preview-title-content h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.preview-subtitle {
+  margin: 0.25rem 0 0 0;
+  opacity: 0.9;
+  font-size: 0.9rem;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.btn-zoom {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-zoom:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-zoom:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.zoom-indicator {
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  min-width: 45px;
+  text-align: center;
+}
+
+.btn-action {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.btn-action.primary {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.btn-action.secondary {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-action.close {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.btn-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.preview-body {
+  background: #f8fafc;
+  min-height: 600px;
+  position: relative;
+  overflow: auto;
+}
+
+.preview-body.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: #f8fafc;
+}
+
+.preview-toolbar {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.page-indicator {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.view-options {
+  display: flex;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+
+.view-btn {
+  background: transparent;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.view-btn.active {
+  background: white;
+  color: #374151;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-export {
+  background: #f59e0b;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.btn-export:hover {
+  background: #d97706;
+}
+
+.preview-content-container {
+  padding: 2rem;
+  display: flex;
+  justify-content: flex-start;
+  transform-origin: top center;
+  transition: transform 0.2s ease;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* User-Friendly Horizontal Scrollbar Styles */
+.user-friendly-scrollbar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: none; /* Hidden by default */
+}
+
+.scrollbar-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(12px);
+  min-width: 600px;
+  max-width: 90vw;
+}
+
+/* Navigation Arrows */
+.scroll-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.scroll-arrow:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.scroll-arrow:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.scroll-arrow:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Scrollbar Track Container */
+.scrollbar-track-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scrollbar-track {
+  position: relative;
+  height: 24px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+/* Progress Indicator */
+.scrollbar-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #dbeafe, #bfdbfe);
+  border-radius: 12px;
+  transition: width 0.3s ease;
+}
+
+/* Enhanced Thumb */
+.scrollbar-thumb {
+  position: absolute;
+  top: 2px;
+  left: 0; /* Ensure it starts at 0 */
+  height: calc(100% - 4px);
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border-radius: 10px;
+  cursor: grab;
+  transition: all 0.2s ease;
+  min-width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  z-index: 10; /* Ensure it's above other elements */
+}
+
+.scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: scaleY(1.1);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+.scrollbar-thumb:active {
+  cursor: grabbing;
+  background: linear-gradient(135deg, #1d4ed8, #1e3a8a);
+}
+
+/* Thumb Grip */
+.thumb-grip {
+  width: 16px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+  position: relative;
+}
+
+.thumb-grip::before,
+.thumb-grip::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 1px;
+}
+
+.thumb-grip::before {
+  top: -3px;
+}
+
+.thumb-grip::after {
+  bottom: -3px;
+}
+
+/* Position Indicator */
+.position-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.current-position {
+  font-weight: 600;
+  color: #3b82f6;
+  min-width: 32px;
+  text-align: center;
+}
+
+.position-text {
+  font-size: 10px;
+}
+
+/* Quick Navigation */
+.quick-nav {
+  display: flex;
+  gap: 6px;
+}
+
+.quick-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: white;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.quick-nav-btn:hover {
+  background: #f8fafc;
+  border-color: #3b82f6;
+  color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.quick-nav-btn:active {
+  transform: translateY(0);
+}
+
+/* Show scrollbar only when preview is visible */
+.preview-card.modern-preview .user-friendly-scrollbar {
+  display: block;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .scrollbar-wrapper {
+    min-width: 400px;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  
+  .scroll-arrow {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+  
+  .quick-nav-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 10px;
+  }
+  
+  .position-indicator {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .scrollbar-wrapper {
+    min-width: 300px;
+  }
+  
+  .quick-nav {
+    display: none; /* Hide quick nav on very small screens */
+  }
+}
+
+/* Animation for smooth appearance */
+.user-friendly-scrollbar {
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Hide native scrollbar on the preview container */
+.preview-content-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.preview-content-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.preview-content-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.preview-content-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.excel-document {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  position: relative;
+  min-width: 1200px;
+  width: max-content;
+  overflow: visible;
+}
+
+.excel-document.print-mode {
+  box-shadow: 0 0 0 1px #e5e7eb;
+  border-radius: 0;
+}
+
+.document-shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.02) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Legacy preview card - updated for modern design */
+.preview-card:not(.modern-preview) {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin: 2rem 0;
+  overflow: hidden;
+}
+
+/* Enhanced content wrapper */
 .preview-content-wrapper {
-  display: flex; /* Use flexbox for side-by-side layout */
+  display: flex;
   gap: 2rem;
+  padding: 2rem;
+  background: white;
   width: max-content;
   min-width: 100%;
 }
