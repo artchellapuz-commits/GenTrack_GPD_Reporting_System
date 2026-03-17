@@ -384,7 +384,7 @@ class PasswordResetRequestSerializer(serializers.ModelSerializer):
                            'created_at', 'updated_at', 'ip_address']
 
 class ESignatureSerializer(serializers.ModelSerializer):
-    """Serializer for E-Signature model"""
+    """Serializer for E-Signature model with security features"""
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
     
     class Meta:
@@ -402,13 +402,70 @@ class ESignatureSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             validated_data['created_by'] = request.user
+        
         return super().create(validated_data)
+        
+        # Encrypt signature data if enabled
+        if settings.enable_encryption and validated_data.get('signature_data'):
+            encryptor = SignatureEncryption()
+            validated_data['signature_data'] = encryptor.encrypt_signature_data(
+                validated_data['signature_data']
+            )
+        
+        # Create signature
+        signature = super().create(validated_data)
+        
+        # Generate verification hash if enabled
+        if settings.enable_verification_hash:
+            # Decrypt data temporarily for hash generation
+            data_for_hash = validated_data.get('signature_data', '')
+            if settings.enable_encryption:
+                encryptor = SignatureEncryption()
+                data_for_hash = encryptor.decrypt_signature_data(data_for_hash)
+            
+            signature.verification_hash = SignatureVerifier.generate_signature_hash(
+                data_for_hash,
+                signature.signatory_name,
+                signature.created_at.isoformat()
+            )
+            signature.save(update_fields=['verification_hash'])
+        
+        # Log creation
+        self._log_audit(request, 'CREATE', signature, True)
+        
+        return signature
+    
+    def _log_audit(self, request, action, signature, success, failure_reason=''):
+        """Log signature operation to audit log"""
+        from .models import SignatureAuditLog
+        
+        if not request:
+            return
+        
+        SignatureAuditLog.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            action=action,
+            signature=signature,
+            ip_address=self._get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            device_fingerprint=request.data.get('device_fingerprint', ''),
+            success=success,
+            failure_reason=failure_reason
+        )
+    
+    def _get_client_ip(self, request):
+        """Get client IP address from request"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR', '127.0.0.1')
 
 
 class ReportSignatureSerializer(serializers.ModelSerializer):
-    """Serializer for Report Signature model"""
+    """Serializer for Report Signature model with enhanced security"""
     signature_details = ESignatureSerializer(source='signature', read_only=True)
     signed_by_name = serializers.CharField(source='signed_by.username', read_only=True)
+    is_verified = serializers.SerializerMethodField()
     
     class Meta:
         model = ReportSignature
@@ -417,9 +474,15 @@ class ReportSignatureSerializer(serializers.ModelSerializer):
             'signatory_name', 'signatory_role', 'signed_by', 'signed_by_name',
             'signed_at', 'ip_address', 'is_verified', 'verification_hash'
         ]
-        read_only_fields = ['id', 'signed_at', 'signed_by_name', 'verification_hash']
+        read_only_fields = ['id', 'signed_at', 'signed_by_name', 'verification_hash', 'is_verified']
+    
+    def get_is_verified(self, obj):
+        """Check if report signature is verified"""
+        return obj.is_verified and bool(obj.verification_hash)
     
     def create(self, validated_data):
+        from .signature_utils.signature_crypto import SignatureVerifier
+        
         # Set signed_by to current user if available
         request = self.context.get('request')
         if request and request.user.is_authenticated:
@@ -428,8 +491,43 @@ class ReportSignatureSerializer(serializers.ModelSerializer):
             try:
                 validated_data['ip_address'] = self.get_client_ip(request)
             except Exception:
-                validated_data['ip_address'] = '127.0.0.1'  # Fallback IP
-        return super().create(validated_data)
+                validated_data['ip_address'] = '127.0.0.1'
+        
+        # Create report signature
+        report_sig = super().create(validated_data)
+        
+        # Generate verification hash
+        report_sig.verification_hash = SignatureVerifier.generate_report_signature_hash(
+            str(report_sig.report_date),
+            report_sig.report_type,
+            report_sig.signatory_name,
+            report_sig.signature.id,
+            report_sig.signed_at.isoformat()
+        )
+        report_sig.save(update_fields=['verification_hash'])
+        
+        # Log application
+        self._log_audit(request, 'APPLY', report_sig, True)
+        
+        return report_sig
+    
+    def _log_audit(self, request, action, report_signature, success, failure_reason=''):
+        """Log report signature operation to audit log"""
+        from .models import SignatureAuditLog
+        
+        if not request:
+            return
+        
+        SignatureAuditLog.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            action=action,
+            report_signature=report_signature,
+            ip_address=self.get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            device_fingerprint=request.data.get('device_fingerprint', ''),
+            success=success,
+            failure_reason=failure_reason
+        )
     
     def get_client_ip(self, request):
         """Get client IP address from request"""

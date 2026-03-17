@@ -44,6 +44,12 @@
           <span class="nav-text">Generate Report</span>
         </router-link>
         
+        <!-- Signatory Authorization - Show for all authenticated users -->
+        <router-link to="/signatory-authorization" @click="closeSidebar" class="nav-item">
+          <i class="pi pi-user-edit"></i>
+          <span class="nav-text">Request Signature Access</span>
+        </router-link>
+        
         <!-- Water Nomination with Dropdown - Only for Operator, Manager, Admin -->
         <div v-if="canUpload" class="nav-item-dropdown">
           <a href="#" @click.prevent="toggleWaterNominationDropdown" class="nav-item">

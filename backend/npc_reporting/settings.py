@@ -225,3 +225,46 @@ LOGGING = {
 # Create logs directory if it doesn't exist
 import os
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+
+# ============================================================================
+# SIGNATURE SECURITY SETTINGS
+# ============================================================================
+
+# Cryptographic Keys for Signature Security
+# IMPORTANT: Change these in production and keep them secret!
+SIGNATURE_SECRET_KEY = os.getenv('SIGNATURE_SECRET_KEY', SECRET_KEY)
+
+# Generate encryption key: from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())
+SIGNATURE_ENCRYPTION_KEY = os.getenv(
+    'SIGNATURE_ENCRYPTION_KEY',
+    'gAAAAABl_default_key_change_in_production_12345678901234567890='
+)
+
+# 2FA Settings
+SIGNATURE_2FA_ENABLED = os.getenv('SIGNATURE_2FA_ENABLED', 'True') == 'True'
+SIGNATURE_OTP_VALIDITY_MINUTES = int(os.getenv('SIGNATURE_OTP_VALIDITY_MINUTES', '5'))
+SIGNATURE_MAX_OTP_ATTEMPTS = int(os.getenv('SIGNATURE_MAX_OTP_ATTEMPTS', '3'))
+
+# Rate Limiting
+SIGNATURE_RATE_LIMIT_HOUR = int(os.getenv('SIGNATURE_RATE_LIMIT_HOUR', '10'))
+SIGNATURE_RATE_LIMIT_DAY = int(os.getenv('SIGNATURE_RATE_LIMIT_DAY', '50'))
+
+# Audit Settings
+SIGNATURE_AUDIT_RETENTION_DAYS = int(os.getenv('SIGNATURE_AUDIT_RETENTION_DAYS', '2555'))  # 7 years
+SIGNATURE_LOG_GEOLOCATION = os.getenv('SIGNATURE_LOG_GEOLOCATION', 'False') == 'True'
+
+# Security Features
+SIGNATURE_ENABLE_ENCRYPTION = os.getenv('SIGNATURE_ENABLE_ENCRYPTION', 'True') == 'True'
+SIGNATURE_ENABLE_VERIFICATION_HASH = os.getenv('SIGNATURE_ENABLE_VERIFICATION_HASH', 'True') == 'True'
+SIGNATURE_REQUIRE_DEVICE_FINGERPRINT = os.getenv('SIGNATURE_REQUIRE_DEVICE_FINGERPRINT', 'True') == 'True'
+
+# Notification Settings
+SIGNATURE_NOTIFY_ON_SIGNATURE = os.getenv('SIGNATURE_NOTIFY_ON_SIGNATURE', 'True') == 'True'
+SIGNATURE_NOTIFY_ON_SUSPICIOUS = os.getenv('SIGNATURE_NOTIFY_ON_SUSPICIOUS', 'True') == 'True'
+
+# Add signature audit logger
+LOGGING['loggers']['signature_audit'] = {
+    'handlers': ['file'],
+    'level': 'INFO',
+    'propagate': False,
+}

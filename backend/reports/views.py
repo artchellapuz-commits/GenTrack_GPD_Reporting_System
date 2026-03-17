@@ -1072,54 +1072,35 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         return response
 
 class ESignatureViewSet(viewsets.ModelViewSet):
-    """ViewSet for managing e-signatures"""
+    """ViewSet for managing e-signatures with enhanced security"""
     queryset = ESignature.objects.filter(is_active=True)
     serializer_class = ESignatureSerializer
-    permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
+    permission_classes = [IsAuthenticated]  # SECURITY: Require authentication
     
     def get_queryset(self):
+        """Filter signatures based on user permissions"""
         queryset = super().get_queryset()
+        
+        # Superusers see all signatures
+        if self.request.user.is_superuser:
+            queryset_filtered = queryset
+        else:
+            # Regular users see only their own signatures
+            queryset_filtered = queryset.filter(created_by=self.request.user)
+        
+        # Apply additional filters
         signatory_name = self.request.query_params.get('signatory_name')
         if signatory_name:
-            queryset = queryset.filter(signatory_name__icontains=signatory_name)
-        return queryset.order_by('-created_at')
-    
-    @action(detail=False, methods=['post'], url_path='create-from-data')
-    def create_from_data(self, request):
-        """Create e-signature from base64 data"""
-        serializer = ESignatureCreateSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            try:
-                signature = serializer.save()
-                response_serializer = ESignatureSerializer(signature)
-                return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-            except Exception as e:
-                return Response(
-                    {'error': f'Failed to create signature: {str(e)}'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=False, methods=['get'], url_path='by-signatory')
-    def by_signatory(self, request):
-        """Get signatures for a specific signatory"""
-        signatory_name = request.query_params.get('name')
-        if not signatory_name:
-            return Response(
-                {'error': 'name parameter is required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            queryset_filtered = queryset_filtered.filter(signatory_name__icontains=signatory_name)
         
-        signatures = self.get_queryset().filter(signatory_name__iexact=signatory_name)
-        serializer = self.get_serializer(signatures, many=True)
-        return Response(serializer.data)
+        return queryset_filtered.order_by('-created_at')
 
 
 class ReportSignatureViewSet(viewsets.ModelViewSet):
-    """ViewSet for managing report signatures"""
+    """ViewSet for managing report signatures with enhanced security"""
     queryset = ReportSignature.objects.all()
     serializer_class = ReportSignatureSerializer
-    permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
+    permission_classes = [IsAuthenticated]  # SECURITY: Require authentication
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -1175,3 +1156,188 @@ class ReportSignatureViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(signatures, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'], url_path='request-2fa')
+    def request_2fa(self, request):
+        """Request 2FA code for signature operation"""
+        from .signature_utils.signature_2fa import Signature2FA
+        from .models import SignatureVerificationToken, SignatureSecuritySettings
+        from datetime import timedelta
+        
+        signatory_name = request.data.get('signatory_name')
+        signature_intent = request.data.get('signature_intent', {})
+        
+        if not signatory_name:
+            return Response(
+                {'error': 'signatory_name is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check if user is authorized for this signatory
+        from .models import SignatoryAuthorization
+        try:
+            auth = SignatoryAuthorization.objects.get(
+                user=request.user,
+                signatory_name=signatory_name,
+                is_active=True
+            )
+            if not auth.is_valid():
+                return Response(
+                    {'error': 'Your authorization for this signatory has expired'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        except SignatoryAuthorization.DoesNotExist:
+            if not request.user.is_superuser:
+                return Response(
+                    {'error': 'You are not authorized to sign as this signatory'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        
+        # Generate OTP
+        otp_code, secret = Signature2FA.generate_simple_otp()
+        
+        # Get settings
+        settings = SignatureSecuritySettings.get_settings()
+        
+        # Create verification token
+        token = SignatureVerificationToken.objects.create(
+            user=request.user,
+            token=otp_code,
+            secret=secret,
+            signature_intent=signature_intent,
+            expires_at=timezone.now() + timedelta(minutes=settings.otp_validity_minutes),
+            ip_address=self._get_client_ip(request)
+        )
+        
+        # Send OTP via email
+        email_sent = Signature2FA.send_otp_email(request.user, otp_code, signatory_name)
+        
+        # Log 2FA request
+        from .models import SignatureAuditLog
+        SignatureAuditLog.objects.create(
+            user=request.user,
+            action='2FA_REQUEST',
+            ip_address=self._get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            success=True,
+            additional_data={'signatory_name': signatory_name}
+        )
+        
+        return Response({
+            'token_id': token.id,
+            'message': 'Verification code sent to your email' if email_sent else 'Verification code generated',
+            'expires_at': token.expires_at,
+            'otp_code': otp_code if not email_sent else None  # Only return if email failed
+        })
+    
+    @action(detail=False, methods=['post'], url_path='verify-2fa')
+    def verify_2fa(self, request):
+        """Verify 2FA code and return authorization"""
+        from .signature_utils.signature_2fa import Signature2FA
+        from .models import SignatureVerificationToken, SignatureAuditLog
+        
+        token_id = request.data.get('token_id')
+        otp_code = request.data.get('otp_code')
+        
+        if not token_id or not otp_code:
+            return Response(
+                {'error': 'token_id and otp_code are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            token = SignatureVerificationToken.objects.get(id=token_id, user=request.user)
+        except SignatureVerificationToken.DoesNotExist:
+            return Response(
+                {'error': 'Invalid token'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Check if token is valid
+        if not token.is_valid():
+            SignatureAuditLog.objects.create(
+                user=request.user,
+                action='2FA_FAILURE',
+                ip_address=self._get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                success=False,
+                failure_reason='Token expired or max attempts reached'
+            )
+            return Response(
+                {'error': 'Token has expired or maximum attempts reached'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify OTP
+        is_valid = Signature2FA.verify_simple_otp(
+            token.token,
+            otp_code,
+            token.created_at
+        )
+        
+        token.increment_attempts()
+        
+        if is_valid:
+            token.is_used = True
+            token.verified_at = timezone.now()
+            token.save()
+            
+            # Log successful 2FA
+            SignatureAuditLog.objects.create(
+                user=request.user,
+                action='2FA_SUCCESS',
+                ip_address=self._get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                success=True
+            )
+            
+            return Response({
+                'verified': True,
+                'message': 'Verification successful',
+                'signature_intent': token.signature_intent
+            })
+        else:
+            # Log failed 2FA
+            SignatureAuditLog.objects.create(
+                user=request.user,
+                action='2FA_FAILURE',
+                ip_address=self._get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                success=False,
+                failure_reason='Invalid OTP code'
+            )
+            
+            return Response(
+                {'error': 'Invalid verification code', 'attempts_remaining': token.max_attempts - token.attempts},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['post'], url_path='sign-with-2fa')
+    def sign_with_2fa(self, request):
+        """Sign report with 2FA verification"""
+        from .permissions import CanSignAsSignatory
+        
+        # Verify 2FA first
+        token_id = request.data.get('token_id')
+        otp_code = request.data.get('otp_code')
+        
+        if not token_id or not otp_code:
+            return Response(
+                {'error': 'token_id and otp_code are required for 2FA'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Verify the 2FA code
+        verify_response = self.verify_2fa(request)
+        if verify_response.status_code != 200:
+            return verify_response
+        
+        # If 2FA verified, proceed with signing
+        return self.sign_report(request)
+    
+    def _get_client_ip(self, request):
+        """Get client IP address from request"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR', '127.0.0.1')

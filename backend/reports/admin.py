@@ -5,7 +5,10 @@ from .models import (
     Plant, Unit, UploadedFile, GenerationReport, 
     PlantCapacity, HistoricalData, WaterNomination, 
     ActualGeneration, Testimonial, UserProfile, AuditLog,
-    PasswordResetRequest, ESignature, ReportSignature
+    PasswordResetRequest, ESignature, ReportSignature,
+    SignatoryAuthorization, SignatureVerificationToken, 
+    SignatureSecuritySettings, SignatoryAuthorizationRequest, 
+    Document, SignatureRequest, DigitalSignature, SignatureAuditLog
 )
 
 
@@ -296,3 +299,281 @@ class ReportSignatureAdmin(admin.ModelAdmin):
             'fields': ['is_verified', 'verification_hash']
         })
     ]
+
+
+
+@admin.register(SignatoryAuthorization)
+class SignatoryAuthorizationAdmin(admin.ModelAdmin):
+    list_display = ['user', 'signatory_name', 'is_active', 'requires_2fa', 'authorization_date', 'expiry_date', 'is_valid_status']
+    list_filter = ['is_active', 'requires_2fa', 'authorization_date']
+    search_fields = ['user__username', 'signatory_name', 'authorized_by__username']
+    readonly_fields = ['authorization_date']
+    date_hierarchy = 'authorization_date'
+    
+    fieldsets = (
+        ('Authorization', {
+            'fields': ('user', 'signatory_name', 'is_active')
+        }),
+        ('Security', {
+            'fields': ('requires_2fa', 'expiry_date')
+        }),
+        ('Tracking', {
+            'fields': ('authorized_by', 'authorization_date', 'notes')
+        }),
+    )
+    
+    def is_valid_status(self, obj):
+        return '✓' if obj.is_valid() else '✗'
+    is_valid_status.short_description = 'Valid'
+    is_valid_status.boolean = True
+    
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.authorized_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(SignatureAuditLog)
+class SignatureAuditLogAdmin(admin.ModelAdmin):
+    list_display = ['signature_request', 'action', 'timestamp', 'ip_address']
+    list_filter = ['action', 'timestamp']
+    search_fields = ['signature_request__signer_name', 'signature_request__document__title', 'ip_address']
+    readonly_fields = ['signature_request', 'action', 'details', 'ip_address', 
+                      'user_agent', 'timestamp']
+    date_hierarchy = 'timestamp'
+    ordering = ['-timestamp']
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+
+@admin.register(SignatureVerificationToken)
+class SignatureVerificationTokenAdmin(admin.ModelAdmin):
+    list_display = ['user', 'token', 'is_used', 'is_valid_status', 'attempts', 'created_at', 'expires_at']
+    list_filter = ['is_used', 'created_at', 'expires_at']
+    search_fields = ['user__username', 'ip_address']
+    readonly_fields = ['user', 'token', 'secret', 'signature_intent', 'created_at', 
+                      'expires_at', 'is_used', 'verified_at', 'attempts', 'ip_address']
+    date_hierarchy = 'created_at'
+    ordering = ['-created_at']
+    
+    def is_valid_status(self, obj):
+        return '✓' if obj.is_valid() else '✗'
+    is_valid_status.short_description = 'Valid'
+    is_valid_status.boolean = True
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(SignatureSecuritySettings)
+class SignatureSecuritySettingsAdmin(admin.ModelAdmin):
+    list_display = ['id', 'require_2fa_for_all', 'enable_encryption', 'enable_verification_hash', 'updated_at']
+    readonly_fields = ['updated_at']
+    
+    fieldsets = (
+        ('2FA Settings', {
+            'fields': ('require_2fa_for_all', 'otp_validity_minutes', 'max_otp_attempts')
+        }),
+        ('Rate Limiting', {
+            'fields': ('max_signatures_per_hour', 'max_signatures_per_day')
+        }),
+        ('Audit Settings', {
+            'fields': ('audit_retention_days', 'log_geolocation')
+        }),
+        ('Security Features', {
+            'fields': ('enable_encryption', 'enable_verification_hash', 'require_device_fingerprint')
+        }),
+        ('Notifications', {
+            'fields': ('notify_on_signature', 'notify_on_suspicious')
+        }),
+        ('Metadata', {
+            'fields': ('updated_at', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        # Only allow one settings instance
+        return not SignatureSecuritySettings.objects.exists()
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
+    
+    def save_model(self, request, obj, form, change):
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(SignatoryAuthorizationRequest)
+class SignatoryAuthorizationRequestAdmin(admin.ModelAdmin):
+    list_display = ['user', 'signatory_name', 'role', 'email', 'status', 'created_at', 'reviewed_by', 'reviewed_at']
+    list_filter = ['status', 'role', 'requires_2fa', 'created_at', 'reviewed_at']
+    search_fields = ['user__username', 'user__email', 'email', 'signatory_name', 'justification']
+    readonly_fields = ['user', 'signatory_name', 'role', 'email', 'justification', 'created_at', 'updated_at']
+    date_hierarchy = 'created_at'
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Request Information', {
+            'fields': ('user', 'signatory_name', 'role', 'email', 'justification', 'status')
+        }),
+        ('Authorization Settings', {
+            'fields': ('requires_2fa', 'expiry_date')
+        }),
+        ('Admin Review', {
+            'fields': ('reviewed_by', 'reviewed_at', 'admin_notes')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def save_model(self, request, obj, form, change):
+        """Auto-set reviewed_by and reviewed_at when status changes"""
+        if change and 'status' in form.changed_data:
+            if obj.status in ['APPROVED', 'REJECTED']:
+                if not obj.reviewed_by:
+                    obj.reviewed_by = request.user
+                if not obj.reviewed_at:
+                    from django.utils import timezone
+                    obj.reviewed_at = timezone.now()
+        super().save_model(request, obj, form, change)
+    
+    actions = ['approve_requests', 'reject_requests']
+    
+    def approve_requests(self, request, queryset):
+        """Approve selected requests"""
+        approved_count = 0
+        for auth_request in queryset.filter(status='PENDING'):
+            try:
+                auth_request.approve(request.user, 'Bulk approved by admin')
+                approved_count += 1
+            except Exception as e:
+                self.message_user(request, f'Error approving request {auth_request.id}: {e}', level='ERROR')
+        
+        if approved_count > 0:
+            self.message_user(request, f'{approved_count} request(s) approved successfully.')
+    approve_requests.short_description = 'Approve selected requests'
+    
+    def reject_requests(self, request, queryset):
+        """Reject selected requests"""
+        rejected_count = 0
+        for auth_request in queryset.filter(status='PENDING'):
+            try:
+                auth_request.reject(request.user, 'Bulk rejected by admin')
+                rejected_count += 1
+            except Exception as e:
+                self.message_user(request, f'Error rejecting request {auth_request.id}: {e}', level='ERROR')
+        
+        if rejected_count > 0:
+            self.message_user(request, f'{rejected_count} request(s) rejected.')
+    reject_requests.short_description = 'Reject selected requests'
+    
+    def get_queryset(self, request):
+        """Show pending requests first"""
+        qs = super().get_queryset(request)
+        return qs.extra(
+            select={'status_order': "CASE WHEN status='PENDING' THEN 0 ELSE 1 END"}
+        ).order_by('status_order', '-created_at')
+
+# E-signature workflow admin configurations
+
+@admin.register(Document)
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = ['title', 'document_type', 'status', 'created_by', 'created_at', 'signature_count']
+    list_filter = ['document_type', 'status', 'created_at']
+    search_fields = ['title', 'content', 'created_by__username']
+    readonly_fields = ['created_at', 'updated_at']
+    date_hierarchy = 'created_at'
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Document Information', {
+            'fields': ('title', 'document_type', 'content', 'file_path', 'status')
+        }),
+        ('Metadata', {
+            'fields': ('created_by', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def signature_count(self, obj):
+        return obj.signature_requests.count()
+    signature_count.short_description = 'Signature Requests'
+
+
+@admin.register(SignatureRequest)
+class SignatureRequestAdmin(admin.ModelAdmin):
+    list_display = ['signer_name', 'signer_email', 'document', 'status', 'sent_at', 'signed_at', 'expires_at']
+    list_filter = ['status', 'sent_at', 'signed_at', 'expires_at', 'created_at']
+    search_fields = ['signer_name', 'signer_email', 'document__title', 'token']
+    readonly_fields = ['token', 'sent_at', 'signed_at', 'created_at', 'updated_at', 'signing_url']
+    date_hierarchy = 'created_at'
+    ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Signer Information', {
+            'fields': ('signer_name', 'signer_email', 'signer_role')
+        }),
+        ('Document & Status', {
+            'fields': ('document', 'status', 'expires_at')
+        }),
+        ('Signature Placement', {
+            'fields': ('signature_x', 'signature_y', 'signature_page'),
+            'classes': ('collapse',)
+        }),
+        ('Security & Tracking', {
+            'fields': ('token', 'signing_url', 'ip_address', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+        ('Timestamps', {
+            'fields': ('sent_at', 'signed_at', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def signing_url(self, obj):
+        return obj.generate_signing_url()
+    signing_url.short_description = 'Signing URL'
+
+
+@admin.register(DigitalSignature)
+class DigitalSignatureAdmin(admin.ModelAdmin):
+    list_display = ['signer_name', 'document_title', 'signature_type', 'signing_timestamp', 'verification_hash']
+    list_filter = ['signature_type', 'signing_timestamp']
+    search_fields = ['signature_request__signer_name', 'signature_request__document__title', 'verification_hash']
+    readonly_fields = ['verification_hash', 'signing_timestamp', 'signer_name', 'document_title']
+    date_hierarchy = 'signing_timestamp'
+    ordering = ['-signing_timestamp']
+    
+    fieldsets = (
+        ('Signature Information', {
+            'fields': ('signature_request', 'signer_name', 'document_title')
+        }),
+        ('Signature Data', {
+            'fields': ('signature_image', 'signature_type', 'signature_data', 'width', 'height')
+        }),
+        ('Verification & Security', {
+            'fields': ('verification_hash', 'signing_timestamp', 'ip_address', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def signer_name(self, obj):
+        return obj.signature_request.signer_name
+    signer_name.short_description = 'Signer Name'
+    
+    def document_title(self, obj):
+        return obj.signature_request.document.title
+    document_title.short_description = 'Document Title'

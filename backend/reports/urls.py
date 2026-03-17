@@ -6,6 +6,8 @@ from .views import (
     WaterNominationViewSet, ActualGenerationViewSet, TestimonialViewSet, AuditLogViewSet,
     ESignatureViewSet, ReportSignatureViewSet
 )
+from .views_authorization import SignatoryAuthorizationViewSet
+from .views_signature import DocumentViewSet, SignatureRequestViewSet, DigitalSignatureViewSet, SigningViewSet
 from .auth_views import AuthViewSet, UserViewSet, PasswordResetRequestViewSet
 from .views_scheduled import ScheduledReportViewSet, ReportExecutionViewSet
 from .views_analytics import (
@@ -26,6 +28,14 @@ router.register(r'testimonials', TestimonialViewSet, basename='testimonial')
 router.register(r'audit-logs', AuditLogViewSet, basename='auditlog')
 router.register(r'e-signatures', ESignatureViewSet, basename='esignature')
 router.register(r'report-signatures', ReportSignatureViewSet, basename='reportsignature')
+router.register(r'signatory-authorizations', SignatoryAuthorizationViewSet, basename='signatoryauthorization')
+
+# E-signature workflow routes
+router.register(r'documents', DocumentViewSet, basename='document')
+router.register(r'signature-requests', SignatureRequestViewSet, basename='signaturerequest')
+router.register(r'digital-signatures', DigitalSignatureViewSet, basename='digitalsignature')
+router.register(r'signing', SigningViewSet, basename='signing')
+
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'password-reset-requests', PasswordResetRequestViewSet, basename='password-reset-request')

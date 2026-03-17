@@ -1,6 +1,7 @@
 import axios from 'axios';
+import { getAccessToken } from '../utils/auth';
 
-const API_BASE_URL = process.env.VUE_APP_API_URL || '/api';
+const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:8000/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -22,9 +23,10 @@ apiClient.interceptors.request.use(
       headers: config.headers
     });
     
-    const token = localStorage.getItem('token');
+    // Use the auth utility to get the token
+    const token = getAccessToken();
     if (token) {
-      config.headers.Authorization = `Token ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -39,8 +41,13 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Import clearAuth dynamically to avoid circular imports
+      import('../utils/auth').then(({ clearAuth }) => {
+        clearAuth();
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      });
     }
     return Promise.reject(error);
   }
@@ -181,5 +188,77 @@ export default {
 
   signReport(data) {
     return apiClient.post('/report-signatures/sign-report/', data);
+  },
+
+  // Signatory Authorization Requests (User-friendly)
+  getUserSignatoryAuthorizations() {
+    return apiClient.get('/signatory-authorizations/my-authorizations/');
+  },
+
+  getUserAuthorizationRequests() {
+    return apiClient.get('/signatory-authorizations/my-requests/');
+  },
+
+  requestSignatoryAuthorization(data) {
+    return apiClient.post('/signatory-authorizations/request/', data);
+  },
+
+  // Admin endpoints for authorization management
+  getPendingAuthorizationRequests() {
+    return apiClient.get('/signatory-authorizations/pending-requests/');
+  },
+
+  approveAuthorizationRequest(requestId, data = {}) {
+    return apiClient.post(`/signatory-authorizations/approve-request/${requestId}/`, data);
+  },
+
+  rejectAuthorizationRequest(requestId, data = {}) {
+    return apiClient.post(`/signatory-authorizations/reject-request/${requestId}/`, data);
+  },
+
+  cancelAuthorizationRequest(requestId) {
+    return apiClient.post(`/signatory-authorizations/cancel-request/${requestId}/`);
+  },
+
+  // 2FA Security Methods
+  requestSignatory2FA(data) {
+    return apiClient.post('/e-signatures/request-2fa/', data);
+  },
+
+  verifySignatory2FA(data) {
+    return apiClient.post('/e-signatures/verify-2fa/', data);
+  },
+
+  // E-signature workflow methods
+  async createDocument(documentData) {
+    return apiClient.post('/documents/', documentData);
+  },
+
+  async getDocuments() {
+    return apiClient.get('/documents/');
+  },
+
+  async getDocument(id) {
+    return apiClient.get(`/documents/${id}/`);
+  },
+
+  async requestSignatures(documentId, signatureData) {
+    return apiClient.post(`/documents/${documentId}/request_signatures/`, signatureData);
+  },
+
+  async getSignatureRequests() {
+    return apiClient.get('/signature-requests/');
+  },
+
+  async verifySignatureToken(token) {
+    return apiClient.get(`/signing/verify/${token}/`);
+  },
+
+  async signDocument(token, signatureData) {
+    return apiClient.post(`/signing/sign/${token}/`, signatureData);
+  },
+
+  async getDigitalSignatures() {
+    return apiClient.get('/digital-signatures/');
   },
 };

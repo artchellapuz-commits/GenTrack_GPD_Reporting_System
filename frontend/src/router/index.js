@@ -145,6 +145,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/signatory-authorization',
+    name: 'SignatoryAuthorization',
+    component: () => import('../components/SignatoryAuthorizationRequest.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/scheduled-reports',
     name: 'ScheduledReports',
     component: () => import('../components/ScheduledReports.vue'),
@@ -154,6 +160,18 @@ const routes = [
     path: '/analytics',
     name: 'AdvancedAnalytics',
     component: () => import('../components/AdvancedAnalytics.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/sign/:token',
+    name: 'SigningPage',
+    component: () => import('../components/SigningPage.vue'),
+    props: true
+  },
+  {
+    path: '/document-manager',
+    name: 'DocumentManager',
+    component: () => import('../components/DocumentManager.vue'),
     meta: { requiresAuth: true }
   },
 ];

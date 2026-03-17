@@ -40,10 +40,27 @@
               <span>Generate Report</span>
             </router-link>
           </li>
+          
+          
           <li class="menu-item">
             <router-link to="/view" class="menu-link">
               <i class="pi pi-chart-bar"></i>
               <span>View Reports</span>
+            </router-link>
+          </li>
+          
+          <!-- Document Manager - E-signature workflow -->
+          <li class="menu-item">
+            <router-link to="/document-manager" class="menu-link">
+              <i class="pi pi-file-edit"></i>
+              <span>Document Manager</span>
+            </router-link>
+          </li>
+          <!-- Request Signature Access -->
+          <li class="menu-item">
+            <router-link to="/signatory-authorization" class="menu-link">
+              <i class="pi pi-user-edit"></i>
+              <span>Request Signature Access</span>
             </router-link>
           </li>
           <!-- Archive - Show for everyone who can upload -->
@@ -56,7 +73,7 @@
           <li class="menu-divider"></li>
           
           <!-- Water Nomination with Dropdown - Only for Operator, Manager, Admin -->
-          <li class="menu-item menu-item-dropdown" v-if="canUpload">
+          <li class="menu-item menu-item-dropdown disabled" v-if="canUpload">
             <a href="#" @click.prevent="toggleWaterNominationDropdown" class="menu-link">
               <i class="pi pi-calendar"></i>
               <span>Water Nomination</span>
@@ -317,6 +334,8 @@ export default {
         '/upload': 'Upload Excel',
         '/view': 'View Reports',
         '/generate': 'Generate Report',
+        '/document-manager': 'Document Manager',
+        '/signatory-authorization': 'Request Signature Access',
         '/water-nomination': 'Manage Nominations',
         '/approval-queue': 'Approval Queue',
         '/audit-logs': 'Audit Logs',

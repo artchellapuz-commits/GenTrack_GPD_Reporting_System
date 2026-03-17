@@ -14,3 +14,7 @@ requests>=2.31.0
 
 # Email support (using console backend for development)
 # For production, configure SMTP settings in settings.py
+
+# Signature Security Dependencies
+cryptography>=41.0.0  # For encryption and digital signatures
+pyotp>=2.9.0  # For 2FA/OTP generation

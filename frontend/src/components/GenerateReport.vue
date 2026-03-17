@@ -2669,6 +2669,34 @@ export default {
           bottom: { style: 'thin' }, right: { style: 'thin' }
         };
 
+        // ─── Extract actual table data from preview DOM ───────────────────
+        const previewContainer = document.querySelector('.preview-content-wrapper');
+        if (!previewContainer) {
+          throw new Error('Preview container not found');
+        }
+
+        // Get the actual rendered table from the preview
+        const mainTable = previewContainer.querySelector('.main-content-left .excel-table');
+        const rightSideContent = previewContainer.querySelector('.right-side-content');
+
+        if (!mainTable) {
+          throw new Error('Main table not found in preview');
+        }
+
+        // ─── Set up wide worksheet to accommodate all content ─────────────
+        // Set column widths for main table columns
+        ws.getColumn(1).width = 30;  // A – PLANT NAME
+        ws.getColumn(2).width = 12;  // B – Rated Cap
+        ws.getColumn(3).width = 12;  // C – Available Cap
+        ws.getColumn(4).width = 16;  // D – Lake Lanao Outflow
+        ws.getColumn(5).width = 13;  // E – Load @0800H
+        ws.getColumn(6).width = 70;  // F – REMARKS
+        
+        // Add extra columns for right-side content
+        for (let i = 7; i <= 50; i++) {
+          ws.getColumn(i).width = 15;
+        }
+
         // Apply style to a cell
         const sc = (cell, { font, alignment, fill, border, numFmt } = {}) => {
           if (font)      cell.font      = font;
@@ -2691,403 +2719,21 @@ export default {
           try { ws.mergeCells(r1, c1, r2, c2); } catch(e) {}
         };
 
-        // ─── column widths ───────────────────────────────────────────────
-        ws.getColumn(1).width = 30;  // A – PLANT NAME
-        ws.getColumn(2).width = 12;  // B – Rated Cap
-        ws.getColumn(3).width = 12;  // C – Available Cap
-        ws.getColumn(4).width = 16;  // D – Lake Lanao Outflow
-        ws.getColumn(5).width = 13;  // E – Load @0800H
-        ws.getColumn(6).width = 70;  // F – REMARKS
-
         let r = 1;
 
         // ════════════════════════════════════════════════════════════════
-        // 1. HEADER
+        // CREATE COMPLETE WIDE TABLE FROM PREVIEW
         // ════════════════════════════════════════════════════════════════
-
-        // Row 1 – spacer
-        ws.getRow(r).height = 20; r++;
-
-        // Row 2 – MINDANAO GENERATION
-        ws.getRow(r).height = 28;
-        safeMerge(ws, r, 1, r, 6);
-        sv(ws, r, 1, 'MINDANAO GENERATION', {
-          font: { bold: true, size: 20 },
-          alignment: { horizontal: 'center', vertical: 'middle' }
-        });
-        r++;
-
-        // Row 3 – (PSALM PORTFOLIO)
-        ws.getRow(r).height = 18;
-        safeMerge(ws, r, 1, r, 6);
-        sv(ws, r, 1, '(PSALM PORTFOLIO)', {
-          font: { bold: true, size: 14 },
-          alignment: { horizontal: 'center', vertical: 'middle' }
-        });
-        r++;
-
-        // Row 4 – spacer
-        ws.getRow(r).height = 8; r++;
-
-        // Row 5 – FOR : officials
-        ws.getRow(r).height = 18;
-        sv(ws, r, 1, 'FOR     :', { font: { bold: true, size: 13 }, alignment: { horizontal: 'right' } });
-        sv(ws, r, 2, 'MR. LARRY I. SABELLINA',          { font: { bold: true, size: 13 } });
-        sv(ws, r, 4, 'MR. DENNIS EDWARD A. DELA SERNA', { font: { bold: true, size: 13 } });
-        sv(ws, r, 6, 'MR. ARNOLD C. FRANCISCO',         { font: { bold: true, size: 13 } });
-        r++;
-
-        // Row 6 – Official titles
-        ws.getRow(r).height = 16;
-        sv(ws, r, 2, 'VP, Mindanao Generation',    { font: { size: 11 } });
-        sv(ws, r, 4, 'President and CEO, PSALM',   { font: { size: 11 } });
-        sv(ws, r, 6, 'VP - PAIMG, PSALM',           { font: { size: 11 } });
-        r++;
-
-        // Row 7 – spacer
-        ws.getRow(r).height = 6; r++;
-
-        // Row 8 – PLANT STATUS REPORT banner
-        ws.getRow(r).height = 28;
-        safeMerge(ws, r, 1, r, 6);
-        sv(ws, r, 1, 'PLANT STATUS REPORT', {
-          font: { bold: true, size: 18, italic: true, color: { argb: WHITE } },
-          alignment: { horizontal: 'center', vertical: 'middle' },
-          fill: mkFill(DARK_TEAL)
-        });
-        r++;
-
-        // Row 9 – Date
-        ws.getRow(r).height = 22;
-        safeMerge(ws, r, 1, r, 6);
-        sv(ws, r, 1, this.reportPreview.header.date_text, {
-          font: { bold: true, size: 13, color: { argb: WHITE } },
-          alignment: { horizontal: 'center', vertical: 'middle' },
-          fill: mkFill(DARK_TEAL)
-        });
-        r++;
-
-        // Row 10 – small spacer
-        ws.getRow(r).height = 5; r++;
-
-        // ════════════════════════════════════════════════════════════════
-        // 2. COLUMN HEADERS  (4 merged rows)
-        // ════════════════════════════════════════════════════════════════
-        const hdrStart = r;
-        const hdrCols = [
-          { col: 1, label: 'PLANT NAME',                        size: 13 },
-          { col: 2, label: 'Rated\nCapacity\n(MW)',             size: 11 },
-          { col: 3, label: 'Available\nCapacity (MW)',          size: 11 },
-          { col: 4, label: 'Lake Lanao\nProjected Ave.\nOutflow', size: 11 },
-          { col: 5, label: 'Load at\n0800H',                   size: 11 },
-          { col: 6, label: 'REMARKS',                          size: 13 },
-        ];
-        hdrCols.forEach(h => {
-          safeMerge(ws, hdrStart, h.col, hdrStart + 3, h.col);
-          sv(ws, hdrStart, h.col, h.label, {
-            font:      { bold: true, size: h.size },
-            alignment: { horizontal: 'center', vertical: 'middle', wrapText: true },
-            fill:      mkFill(GREY_HDR),
-            border:    thinBorder
-          });
-        });
-        for (let hr = hdrStart; hr < hdrStart + 4; hr++) ws.getRow(hr).height = 16;
-        r += 4;
-
-        // ════════════════════════════════════════════════════════════════
-        // 3. PLANT DATA ROWS
-        // ════════════════════════════════════════════════════════════════
-        //
-        // This data mirrors the hardcoded HTML table in the preview exactly.
-        // Structure: plant row (with rowspan on col D for Outflow) + unit rows.
-        //
-        const plantDefs = [
-          {
-            name: 'AGUS 1', rated: 80.0, avail: 70.0,
-            outflow: '136 CMS @\n60 HW', outflowSpan: 3,
-            load: 60.00,
-            remarks: 'Lake Lanao Elevation is 701.19 m.a.s.l. (G1- 0.10 m, G2- 0.10 m)',
-            units: [
-              { label: 'unit 1', rated: 40.0, avail: 35.0, load: 30.00, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-              { label: 'unit 2', rated: 40.0, avail: 35.0, load: 30.00, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-            ]
-          },
-          {
-            name: 'AGUS 2', rated: 180.0, avail: 165.0,
-            outflow: '123 MW', outflowSpan: 4,
-            load: 120.00,
-            remarks: 'Forebay Elevation is 637.8 m.a.s.l. (G1- 0.00m, G2- 0.00 m)',
-            units: [
-              { label: 'unit 1', rated: 60.0, avail: 55.0, load: 40.00, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-              { label: 'unit 2', rated: 60.0, avail: 55.0, load: 40.00, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-              { label: 'unit 3', rated: 60.0, avail: 55.0, load: 40.00, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-            ]
-          },
-          {
-            name: 'AGUS 4', rated: 158.1, avail: 105.4,
-            outflow: '105 MW', outflowSpan: 4,
-            load: 96.00,
-            remarks: 'Forebay Elevation is 358.8 m.a.s.l. (G1- 0.50m, G2- 0.00 m)',
-            units: [
-              { label: 'unit 1', rated: 52.7, avail: 0.0,  load: 0.00, loadRed: true, remarks: 'Extended GOMP (28 Dec. 2025 - 21 Feb. 2026).' },
-              { label: 'unit 2', rated: 52.7, avail: 52.7, load: 48.00, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-              { label: 'unit 3', rated: 52.7, avail: 52.7, load: 48.00, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-            ]
-          },
-          {
-            name: 'AGUS 5', rated: 55.0, avail: 53.0,
-            outflow: '40 MW', outflowSpan: 3,
-            load: 39.08,
-            remarks: 'Forebay Elevation is 243.3 m.a.s.l. (G1- 0.55m, G2- 0.00 m, G3- 0.10 m)',
-            units: [
-              { label: 'unit 1', rated: 27.5, avail: 25.50, load: 19.50, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-              { label: 'unit 2', rated: 27.5, avail: 27.50, load: 19.58, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-            ]
-          },
-          {
-            name: 'AGUS 6', rated: 219.0, avail: 144.8,
-            outflow: '184 MW', outflowSpan: 6,
-            load: 144.80,
-            remarks: 'Forebay Elevation is 199.8 m.a.s.l. (G1- 0.20m, G2- 0.20 m, G3- 0.20 m, G4- 0.00 m)',
-            units: [
-              { label: 'unit 1', rated: 34.5, avail: 34.5, load: 34.50, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-              { label: 'unit 2', rated: 34.5, avail: 34.5, load: 34.50, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-              { label: 'unit 3', rated: 50.0, avail: 0.0,  load: 0.00, loadRed: true, remarks: 'Extended GOMP (31 Dec. 2025- 13 Feb. 2026).' },
-              { label: 'unit 4', rated: 50.0, avail: 32.0, load: 32.00, remarks: 'OPERATIONAL. Limited to 32 MW due to gen. rotor pole & stator core temp./cooling issues.' },
-              { label: 'unit 5', rated: 50.0, avail: 43.8, load: 43.80, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-            ]
-          },
-          {
-            name: 'AGUS 7', rated: 54.0, avail: 48.1,
-            outflow: '35 MW', outflowSpan: 3,
-            load: 40.00,
-            remarks: 'Forebay Elevation is 34.1 m.a.s.l. (G1- 0.00m, G2- 0.00 m, G3- 0.00 m)',
-            units: [
-              { label: 'unit 1', rated: 27.0, avail: 26.14, load: 20.00, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-              { label: 'unit 2', rated: 27.0, avail: 22.00, load: 20.00, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-            ]
-          },
-        ];
-        const pulangiDef = {
-          name: 'PULANGI IV', rated: 255.0, avail: 225.0,
-          outflow: '100 MW', outflowSpan: 4,
-          load: 135.61,
-          remarks: 'Reservoir Elevation is 285.45 m.a.s.l. (G1- 0.00m, G2- 0.00 m, G3- 0.00 m, G4- 0.00 m, G5- 0.00 m, G6- 0.00 m). Bottom Sluice Gate: (G1- 0.10m, G2- 0.00 m)',
-          units: [
-            { label: 'unit 1', rated: 85.0, avail: 75.0, load: 57.75, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-            { label: 'unit 2', rated: 85.0, avail: 75.0, load: 57.26, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-            { label: 'unit 3', rated: 85.0, avail: 75.0, load: 20.60, remarks: 'OPERATIONAL. Maximized with respect to ave. outflow.' },
-          ]
-        };
-
-        const writePlant = (plantDef) => {
-          const plantRow = r;
-          ws.getRow(r).height = 22;
-
-          // Col A – plant name (italic bold)
-          sv(ws, r, 1, plantDef.name, {
-            font: { bold: true, italic: true, size: 13 },
-            alignment: { vertical: 'middle' },
-            border: thinBorder
-          });
-          // Col B – Rated
-          sv(ws, r, 2, plantDef.rated, {
-            font: { bold: true, size: 12 },
-            alignment: { horizontal: 'center', vertical: 'middle' },
-            border: thinBorder, numFmt: '0.0'
-          });
-          // Col C – Available
-          sv(ws, r, 3, plantDef.avail, {
-            font: { bold: true, size: 12 },
-            alignment: { horizontal: 'center', vertical: 'middle' },
-            border: thinBorder, numFmt: '0.0'
-          });
-          // Col D – Outflow (will be merged below)
-          sv(ws, r, 4, plantDef.outflow, {
-            font: { bold: true, size: 11 },
-            alignment: { horizontal: 'center', vertical: 'middle', wrapText: true },
-            border: thinBorder
-          });
-          // Col E – Load
-          sv(ws, r, 5, plantDef.load, {
-            font: { bold: true, size: 12 },
-            alignment: { horizontal: 'center', vertical: 'middle' },
-            border: thinBorder, numFmt: '0.00'
-          });
-          // Col F – Remarks
-          sv(ws, r, 6, plantDef.remarks, {
-            font: { size: 11 },
-            alignment: { horizontal: 'left', vertical: 'middle', wrapText: true },
-            border: thinBorder
-          });
-          r++;
-
-          // Unit rows
-          plantDef.units.forEach(unit => {
-            ws.getRow(r).height = 18;
-            sv(ws, r, 1, unit.label, {
-              font: { size: 11 },
-              alignment: { horizontal: 'center', vertical: 'middle' },
-              border: thinBorder
-            });
-            sv(ws, r, 2, unit.rated, {
-              font: { size: 11 },
-              alignment: { horizontal: 'right', vertical: 'middle' },
-              border: thinBorder, numFmt: '0.0'
-            });
-            sv(ws, r, 3, unit.avail, {
-              font: { size: 11 },
-              alignment: { horizontal: 'right', vertical: 'middle' },
-              border: thinBorder, numFmt: '0.0'
-            });
-            // Col D – blank (part of merged outflow cell)
-            ws.getCell(r, 4).border = thinBorder;
-            sv(ws, r, 5, unit.load, {
-              font: { size: 11, color: unit.loadRed ? { argb: 'FFFF0000' } : undefined },
-              alignment: { horizontal: 'right', vertical: 'middle' },
-              border: thinBorder, numFmt: '0.00'
-            });
-            sv(ws, r, 6, unit.remarks, {
-              font: { size: 11 },
-              alignment: { horizontal: 'left', vertical: 'middle', wrapText: true },
-              border: thinBorder
-            });
-            r++;
-          });
-
-          // Merge outflow cell downward
-          if (plantDef.outflowSpan > 1) {
-            safeMerge(ws, plantRow, 4, plantRow + plantDef.outflowSpan - 1, 4);
-          }
-        };
-
-        // Write AGUS plants
-        plantDefs.forEach(p => writePlant(p));
-
-        // TOTAL AGUS row
-        ws.getRow(r).height = 22;
-        const totAgus = [
-          { col: 1, val: 'TOTAL AGUS', fmt: null },
-          { col: 2, val: 746.1,        fmt: '0.0' },
-          { col: 3, val: 586.3,        fmt: '0.0' },
-          { col: 4, val: '547 MW',     fmt: null },
-          { col: 5, val: 499.88,       fmt: '0.00' },
-          { col: 6, val: '',           fmt: null },
-        ];
-        totAgus.forEach(({ col, val, fmt }) => {
-          const cell = ws.getCell(r, col);
-          cell.value = val;
-          cell.font  = { bold: true, size: col === 1 ? 13 : 12 };
-          cell.alignment = { horizontal: col === 1 ? 'center' : 'center', vertical: 'middle' };
-          cell.fill  = mkFill(YELLOW);
-          cell.border = thinBorder;
-          if (fmt) cell.numFmt = fmt;
-        });
-        r++;
-
-        // PULANGI IV
-        writePlant(pulangiDef);
-
-        // TOTAL HYDRO row
-        ws.getRow(r).height = 22;
-        const totHydro = [
-          { col: 1, val: 'TOTAL HYDRO', fmt: null },
-          { col: 2, val: 1001.1,        fmt: '0.0' },
-          { col: 3, val: 811.3,         fmt: '0.0' },
-          { col: 4, val: '647 MW',      fmt: null },
-          { col: 5, val: 635.49,        fmt: '0.00' },
-          { col: 6, val: '',            fmt: null },
-        ];
-        totHydro.forEach(({ col, val, fmt }) => {
-          const cell = ws.getCell(r, col);
-          cell.value = val;
-          cell.font  = { bold: true, size: col === 1 ? 13 : 12 };
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          cell.fill  = mkFill(YELLOW);
-          cell.border = thinBorder;
-          if (fmt) cell.numFmt = fmt;
-        });
-        r++;
-
-        // ════════════════════════════════════════════════════════════════
-        // 4. FORECASTED LOAD (yellow banner)
-        // ════════════════════════════════════════════════════════════════
-        const fl = this.reportPreview.forecasted_load;
-        const forecastText = `Agus-Pulangi Forecasted Load @ 6pm, ${fl.date}: Agus = ${fl.agus_load} MW & Pulangui IV = ${fl.pulangi_load} MW, Total Load: ${fl.total_load} MW`;
-        ws.getRow(r).height = 18;
-        safeMerge(ws, r, 1, r, 6);
-        sv(ws, r, 1, forecastText, {
-          font: { bold: true, size: 11 },
-          alignment: { horizontal: 'left', vertical: 'middle' },
-          fill: mkFill(YELLOW)
-        });
-        r++;
-
-        // ════════════════════════════════════════════════════════════════
-        // 5. IPP ROWS
-        // ════════════════════════════════════════════════════════════════
-        const ippDefs = [
-          { name: 'MCFPP (STEAG), unit 1', rated: 116.0, avail: 105.0, outflow: 105.00, load: 61.50, remarks: 'Normal Operation' },
-          { name: 'MCFPP (STEAG), unit 2', rated: 116.0, avail: 105.0, outflow: 105.00, load: 62.60, remarks: 'Normal Operation' },
-        ];
-        ippDefs.forEach(ipp => {
-          ws.getRow(r).height = 18;
-          sv(ws, r, 1, ipp.name,    { font: { size: 11 }, alignment: { horizontal: 'left',   vertical: 'middle' }, border: thinBorder });
-          sv(ws, r, 2, ipp.rated,   { font: { size: 11 }, alignment: { horizontal: 'center', vertical: 'middle' }, border: thinBorder });
-          sv(ws, r, 3, ipp.avail,   { font: { size: 11 }, alignment: { horizontal: 'center', vertical: 'middle' }, border: thinBorder });
-          sv(ws, r, 4, ipp.outflow, { font: { size: 11 }, alignment: { horizontal: 'center', vertical: 'middle' }, border: thinBorder, numFmt: '0.00' });
-          sv(ws, r, 5, ipp.load,    { font: { size: 11 }, alignment: { horizontal: 'center', vertical: 'middle' }, border: thinBorder, numFmt: '0.00' });
-          sv(ws, r, 6, ipp.remarks, { font: { size: 11 }, alignment: { horizontal: 'left',   vertical: 'middle' }, border: thinBorder });
-          r++;
+        
+        // Extract all content from preview and create wide Excel sheet
+        r = this._exportPreviewToExcel(ws, mainTable, rightSideContent, r, {
+          DARK_TEAL, YELLOW, LIGHT_BLUE, BLUE_FILL, GREY_HDR, WHITE,
+          mkFill, thinBorder, safeMerge, sv
         });
 
-        // TOTAL IPP
-        ws.getRow(r).height = 18;
-        [{ col:1,val:'TOTAL IPP' },{ col:2,val:232.00 },{ col:3,val:210.00 },{ col:4,val:210.00 },{ col:5,val:124.10 },{ col:6,val:'' }]
-          .forEach(({ col, val }) => {
-            const c = ws.getCell(r, col);
-            c.value = val; c.font = { bold: true, size: 11 };
-            c.alignment = { horizontal: col === 1 ? 'left' : 'center', vertical: 'middle' };
-            c.fill   = mkFill(LIGHT_BLUE); c.border = thinBorder;
-            if (typeof val === 'number') c.numFmt = '0.00';
-          });
-        r++;
-
-        // TOTAL NPC-PSALM
-        ws.getRow(r).height = 18;
-        [{ col:1,val:'TOTAL NPC-PSALM' },{ col:2,val:'1,233.10' },{ col:3,val:'1,021.3' },{ col:4,val:'857.00' },{ col:5,val:'759.59' },{ col:6,val:'' }]
-          .forEach(({ col, val }) => {
-            const c = ws.getCell(r, col);
-            c.value = val; c.font = { bold: true, size: 11 };
-            c.alignment = { horizontal: col === 1 ? 'left' : 'center', vertical: 'middle' };
-            c.fill   = mkFill(BLUE_FILL); c.border = thinBorder;
-          });
-        r++;
-        ws.getRow(r).height = 6; r++; // gap
-
-        // ════════════════════════════════════════════════════════════════
-        // 6. NOTES
-        // ════════════════════════════════════════════════════════════════
-        ws.getRow(r).height = 16;
-        safeMerge(ws, r, 1, r, 6);
-        sv(ws, r, 1, 'Note:', { font: { bold: true, size: 11 }, alignment: { horizontal: 'left', vertical: 'middle' } });
-        r++;
-        (this.reportPreview.notes || []).forEach((note, idx) => {
-          ws.getRow(r).height = 18;
-          safeMerge(ws, r, 1, r, 6);
-          sv(ws, r, 1, `${idx + 1}. ${note}`, {
-            font: { size: 10 },
-            alignment: { horizontal: 'left', vertical: 'middle', wrapText: true }
-          });
-          r++;
-        });
-
-        // ════════════════════════════════════════════════════════════════
-        // 7. SIGNATURES
-        // ════════════════════════════════════════════════════════════════
         ws.getRow(r).height = 10; r++;
         ws.getRow(r).height = 16;
-        safeMerge(ws, r, 1, r, 6);
+        safeMerge(ws, r, 1, r, 20);
         sv(ws, r, 1, 'AUTHORIZATION', {
           font: { bold: true, size: 13 }, alignment: { horizontal: 'center', vertical: 'middle' }
         });
@@ -3099,8 +2745,8 @@ export default {
           // Role header row
           ws.getRow(r).height = 14;
           sigs.forEach((sig, i) => {
-            const c1 = i * Math.floor(6 / total) + 1;
-            const c2 = (i + 1) * Math.floor(6 / total);
+            const c1 = i * Math.floor(20 / total) + 1;
+            const c2 = (i + 1) * Math.floor(20 / total);
             if (c1 < c2) safeMerge(ws, r, c1, r, c2);
             sv(ws, r, c1, sig.role, { font: { size: 10, italic: true }, alignment: { horizontal: 'center', vertical: 'middle' } });
           });
@@ -3110,8 +2756,8 @@ export default {
           // Name row
           ws.getRow(r).height = 16;
           sigs.forEach((sig, i) => {
-            const c1 = i * Math.floor(6 / total) + 1;
-            const c2 = (i + 1) * Math.floor(6 / total);
+            const c1 = i * Math.floor(20 / total) + 1;
+            const c2 = (i + 1) * Math.floor(20 / total);
             if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) {} }
             sv(ws, r, c1, sig.name, { font: { bold: true, size: 11, underline: true }, alignment: { horizontal: 'center', vertical: 'middle' } });
           });
@@ -3119,8 +2765,8 @@ export default {
           // Title row
           ws.getRow(r).height = 14;
           sigs.forEach((sig, i) => {
-            const c1 = i * Math.floor(6 / total) + 1;
-            const c2 = (i + 1) * Math.floor(6 / total);
+            const c1 = i * Math.floor(20 / total) + 1;
+            const c2 = (i + 1) * Math.floor(20 / total);
             if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) {} }
             sv(ws, r, c1, sig.title, { font: { size: 10 }, alignment: { horizontal: 'center', vertical: 'middle' } });
           });
@@ -3136,12 +2782,12 @@ export default {
         // ════════════════════════════════════════════════════════════════
         ws.getRow(r).height = 10; r++;
         ws.getRow(r).height = 16;
-        safeMerge(ws, r, 1, r, 6);
+        safeMerge(ws, r, 1, r, 20);
         sv(ws, r, 1, 'Note:', { font: { bold: true, size: 11 }, alignment: { horizontal: 'left', vertical: 'middle' } });
         r++;
         (this.reportPreview.additional_notes || []).forEach((note, idx) => {
           ws.getRow(r).height = 22;
-          safeMerge(ws, r, 1, r, 6);
+          safeMerge(ws, r, 1, r, 20);
           sv(ws, r, 1, `${idx + 1}. ${note}`, {
             font: { size: 10 },
             alignment: { horizontal: 'left', vertical: 'middle', wrapText: true }
@@ -3155,7 +2801,7 @@ export default {
         ws.getRow(r).height = 8; r++;
         if (this.reportPreview.footer_note) {
           ws.getRow(r).height = 40;
-          safeMerge(ws, r, 1, r, 6);
+          safeMerge(ws, r, 1, r, 20);
           sv(ws, r, 1, this.reportPreview.footer_note, {
             font: { italic: true, size: 10 },
             alignment: { horizontal: 'left', vertical: 'middle', wrapText: true }
@@ -3335,6 +2981,299 @@ export default {
         }
       }
       return true;
+    },
+
+    // Helper method to export preview content to Excel
+    _exportPreviewToExcel(ws, mainTable, rightSideContent, startRow, styles) {
+      const { DARK_TEAL, YELLOW, LIGHT_BLUE, BLUE_FILL, GREY_HDR, WHITE,
+              mkFill, thinBorder, safeMerge, sv } = styles;
+      
+      let r = startRow;
+      
+      // Extract header information
+      const headerDate = this.reportPreview.header?.date_text || 'as of 0800H Thursday, 12 March 2026';
+      
+      // Header section
+      ws.getRow(r).height = 20; r++;
+      ws.getRow(r).height = 28;
+      safeMerge(ws, r, 1, r, 30);
+      sv(ws, r, 1, 'MINDANAO GENERATION', {
+        font: { bold: true, size: 20 },
+        alignment: { horizontal: 'center', vertical: 'middle' }
+      });
+      r++;
+      
+      ws.getRow(r).height = 18;
+      safeMerge(ws, r, 1, r, 30);
+      sv(ws, r, 1, '(PSALM PORTFOLIO)', {
+        font: { bold: true, size: 14 },
+        alignment: { horizontal: 'center', vertical: 'middle' }
+      });
+      r++;
+      
+      ws.getRow(r).height = 8; r++;
+      
+      // Officials section
+      ws.getRow(r).height = 18;
+      sv(ws, r, 1, 'FOR     :', { font: { bold: true, size: 13 }, alignment: { horizontal: 'right' } });
+      sv(ws, r, 2, 'MR. LARRY I. SABELLINA', { font: { bold: true, size: 13 } });
+      sv(ws, r, 10, 'MR. DENNIS EDWARD A. DELA SERNA', { font: { bold: true, size: 13 } });
+      sv(ws, r, 20, 'MR. ARNOLD C. FRANCISCO', { font: { bold: true, size: 13 } });
+      r++;
+      
+      ws.getRow(r).height = 16;
+      sv(ws, r, 2, 'VP, Mindanao Generation', { font: { size: 11 } });
+      sv(ws, r, 10, 'President and CEO, PSALM', { font: { size: 11 } });
+      sv(ws, r, 20, 'VP - PAIMG, PSALM', { font: { size: 11 } });
+      r++;
+      
+      ws.getRow(r).height = 6; r++;
+      
+      // Report title
+      ws.getRow(r).height = 28;
+      safeMerge(ws, r, 1, r, 30);
+      sv(ws, r, 1, 'PLANT STATUS REPORT', {
+        font: { bold: true, size: 18, italic: true, color: { argb: WHITE } },
+        alignment: { horizontal: 'center', vertical: 'middle' },
+        fill: mkFill(DARK_TEAL)
+      });
+      r++;
+      
+      ws.getRow(r).height = 22;
+      safeMerge(ws, r, 1, r, 30);
+      sv(ws, r, 1, headerDate, {
+        font: { bold: true, size: 13, color: { argb: WHITE } },
+        alignment: { horizontal: 'center', vertical: 'middle' },
+        fill: mkFill(DARK_TEAL)
+      });
+      r++;
+      
+      ws.getRow(r).height = 5; r++;
+      
+      // Column headers
+      const hdrStart = r;
+      const headerRow = mainTable.querySelector('thead tr');
+      if (headerRow) {
+        const headers = Array.from(headerRow.querySelectorAll('th')).slice(0, 6);
+        headers.forEach((th, index) => {
+          const colNum = index + 1;
+          const labelText = th.textContent.trim();
+          safeMerge(ws, hdrStart, colNum, hdrStart + 3, colNum);
+          sv(ws, hdrStart, colNum, labelText, {
+            font: { bold: true, size: labelText.includes('\n') ? 11 : 13 },
+            alignment: { horizontal: 'center', vertical: 'middle', wrapText: true },
+            fill: mkFill(GREY_HDR),
+            border: thinBorder
+          });
+        });
+      }
+      
+      for (let hr = hdrStart; hr < hdrStart + 4; hr++) ws.getRow(hr).height = 16;
+      r += 4;
+      
+      // Main table data
+      const tbody = mainTable.querySelector('tbody');
+      if (tbody) {
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        rows.forEach(tableRow => {
+          const cells = Array.from(tableRow.querySelectorAll('td'));
+          ws.getRow(r).height = 18;
+          
+          cells.slice(0, 6).forEach((td, colIndex) => {
+            const colNum = colIndex + 1;
+            const cellValue = td.textContent.trim();
+            const isBold = td.style.fontWeight === 'bold' || td.querySelector('b') || td.querySelector('strong');
+            const hasRedText = td.style.color === 'red' || td.querySelector('[style*="color: red"]');
+            const textAlign = td.style.textAlign || 'left';
+            
+            const cellStyle = {
+              font: { 
+                size: 11,
+                bold: isBold,
+                color: hasRedText ? { argb: 'FFFF0000' } : undefined
+              },
+              alignment: { 
+                horizontal: textAlign === 'right' ? 'right' : textAlign === 'center' ? 'center' : 'left', 
+                vertical: 'middle',
+                wrapText: cellValue.length > 20
+              },
+              border: thinBorder
+            };
+            
+            let finalValue = cellValue;
+            let numFmt = null;
+            
+            if (/^\d+(\.\d+)?$/.test(cellValue.replace(/[^\d\.]/g, ''))) {
+              const numValue = parseFloat(cellValue.replace(/[^\d\.\-]/g, ''));
+              if (!isNaN(numValue)) {
+                finalValue = numValue;
+                if (cellValue.includes('.')) {
+                  numFmt = cellValue.split('.')[1]?.length === 1 ? '0.0' : '0.00';
+                } else {
+                  numFmt = '0';
+                }
+              }
+            }
+            
+            if (numFmt) cellStyle.numFmt = numFmt;
+            sv(ws, r, colNum, finalValue, cellStyle);
+          });
+          
+          r++;
+        });
+      }
+      
+      // Right side content
+      if (rightSideContent) {
+        ws.getRow(r).height = 15; r++;
+        
+        // Add right side tables and content
+        const rightElements = rightSideContent.children;
+        let rightCol = 8;
+        
+        Array.from(rightElements).forEach(element => {
+          if (element.classList.contains('data-table-container') || element.classList.contains('data-table')) {
+            const table = element.querySelector('table') || element;
+            const tableRows = Array.from(table.querySelectorAll('tr'));
+            
+            tableRows.forEach((tr, rowIndex) => {
+              const cells = Array.from(tr.querySelectorAll('td, th'));
+              const currentRow = r + rowIndex;
+              
+              if (!ws.getRow(currentRow).height) {
+                ws.getRow(currentRow).height = 16;
+              }
+              
+              cells.forEach((cell, colIndex) => {
+                const colNum = rightCol + colIndex;
+                const cellValue = cell.textContent.trim();
+                const isHeader = cell.tagName === 'TH';
+                const isBold = isHeader || cell.style.fontWeight === 'bold';
+                
+                sv(ws, currentRow, colNum, cellValue, {
+                  font: { size: isHeader ? 11 : 10, bold: isBold },
+                  alignment: { 
+                    horizontal: 'center', 
+                    vertical: 'middle',
+                    wrapText: cellValue.length > 15
+                  },
+                  border: thinBorder,
+                  fill: isHeader ? mkFill(GREY_HDR) : undefined
+                });
+              });
+            });
+            
+            rightCol += 10;
+            if (rightCol > 40) {
+              rightCol = 8;
+              r += Math.max(tableRows.length, 8);
+            }
+          }
+        });
+      }
+      
+      // Additional sections
+      if (this.reportPreview.forecasted_load) {
+        const fl = this.reportPreview.forecasted_load;
+        const forecastText = `Agus-Pulangi Forecasted Load @ 6pm, ${fl.date}: Agus = ${fl.agus_load} MW & Pulangui IV = ${fl.pulangi_load} MW, Total Load: ${fl.total_load} MW`;
+        ws.getRow(r).height = 18;
+        safeMerge(ws, r, 1, r, 30);
+        sv(ws, r, 1, forecastText, {
+          font: { bold: true, size: 11 },
+          alignment: { horizontal: 'left', vertical: 'middle' },
+          fill: mkFill(YELLOW)
+        });
+        r++;
+      }
+      
+      // Notes
+      ws.getRow(r).height = 16;
+      safeMerge(ws, r, 1, r, 30);
+      sv(ws, r, 1, 'Note:', { font: { bold: true, size: 11 }, alignment: { horizontal: 'left', vertical: 'middle' } });
+      r++;
+      (this.reportPreview.notes || []).forEach((note, idx) => {
+        ws.getRow(r).height = 18;
+        safeMerge(ws, r, 1, r, 30);
+        sv(ws, r, 1, `${idx + 1}. ${note}`, {
+          font: { size: 10 },
+          alignment: { horizontal: 'left', vertical: 'middle', wrapText: true }
+        });
+        r++;
+      });
+      
+      // Signatures
+      ws.getRow(r).height = 10; r++;
+      ws.getRow(r).height = 16;
+      safeMerge(ws, r, 1, r, 30);
+      sv(ws, r, 1, 'AUTHORIZATION', {
+        font: { bold: true, size: 13 }, alignment: { horizontal: 'center', vertical: 'middle' }
+      });
+      r++;
+      
+      const writeSignatureGroup = (sigs) => {
+        if (!sigs || !sigs.length) return;
+        const total = sigs.length;
+        ws.getRow(r).height = 14;
+        sigs.forEach((sig, i) => {
+          const c1 = i * Math.floor(30 / total) + 1;
+          const c2 = (i + 1) * Math.floor(30 / total);
+          if (c1 < c2) safeMerge(ws, r, c1, r, c2);
+          sv(ws, r, c1, sig.role, { font: { size: 10, italic: true }, alignment: { horizontal: 'center', vertical: 'middle' } });
+        });
+        r++;
+        for (let sr = 0; sr < 3; sr++) { ws.getRow(r).height = sr === 1 ? 24 : 12; r++; }
+        ws.getRow(r).height = 16;
+        sigs.forEach((sig, i) => {
+          const c1 = i * Math.floor(30 / total) + 1;
+          const c2 = (i + 1) * Math.floor(30 / total);
+          if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) {} }
+          sv(ws, r, c1, sig.name, { font: { bold: true, size: 11, underline: true }, alignment: { horizontal: 'center', vertical: 'middle' } });
+        });
+        r++;
+        ws.getRow(r).height = 14;
+        sigs.forEach((sig, i) => {
+          const c1 = i * Math.floor(30 / total) + 1;
+          const c2 = (i + 1) * Math.floor(30 / total);
+          if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) {} }
+          sv(ws, r, c1, sig.title, { font: { size: 10 }, alignment: { horizontal: 'center', vertical: 'middle' } });
+        });
+        r++;
+        ws.getRow(r).height = 8; r++;
+      };
+      
+      writeSignatureGroup(this.reportPreview.signatures?.first_row);
+      writeSignatureGroup(this.reportPreview.signatures?.second_row);
+      
+      // Additional notes
+      ws.getRow(r).height = 10; r++;
+      ws.getRow(r).height = 16;
+      safeMerge(ws, r, 1, r, 30);
+      sv(ws, r, 1, 'Note:', { font: { bold: true, size: 11 }, alignment: { horizontal: 'left', vertical: 'middle' } });
+      r++;
+      (this.reportPreview.additional_notes || []).forEach((note, idx) => {
+        ws.getRow(r).height = 22;
+        safeMerge(ws, r, 1, r, 30);
+        sv(ws, r, 1, `${idx + 1}. ${note}`, {
+          font: { size: 10 },
+          alignment: { horizontal: 'left', vertical: 'middle', wrapText: true }
+        });
+        r++;
+      });
+      
+      // Footer note
+      ws.getRow(r).height = 8; r++;
+      if (this.reportPreview.footer_note) {
+        ws.getRow(r).height = 40;
+        safeMerge(ws, r, 1, r, 30);
+        sv(ws, r, 1, this.reportPreview.footer_note, {
+          font: { italic: true, size: 10 },
+          alignment: { horizontal: 'left', vertical: 'middle', wrapText: true }
+        });
+        r++;
+      }
+      
+      return r;
     },
 
     handleFileUpload(e) {
