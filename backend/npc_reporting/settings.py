@@ -147,6 +147,9 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+# Frontend URL for email links
+SITE_URL = "http://localhost:8080"
+
 # Allow cache-busting headers
 CORS_ALLOW_HEADERS = [
     'accept',

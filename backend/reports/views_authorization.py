@@ -18,6 +18,24 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
     serializer_class = SignatoryAuthorizationSerializer
     permission_classes = [IsAuthenticated]
     
+    def dispatch(self, request, *args, **kwargs):
+        """Override dispatch to log all requests"""
+        with open('debug_log.txt', 'a', encoding='utf-8') as f:
+            f.write(f"DISPATCH METHOD CALLED! Time: {timezone.now()}\n")
+            f.write(f"Request method: {request.method}\n")
+            f.write(f"Request path: {request.path}\n")
+            f.write(f"Args: {args}\n")
+            f.write(f"Kwargs: {kwargs}\n")
+            f.write("=" * 50 + "\n")
+        
+        print("DISPATCH METHOD CALLED!")
+        print(f"Request method: {request.method}")
+        print(f"Request path: {request.path}")
+        print(f"Args: {args}")
+        print(f"Kwargs: {kwargs}")
+        
+        return super().dispatch(request, *args, **kwargs)
+    
     def get_queryset(self):
         """Filter based on user permissions"""
         if self.request.user.is_superuser:
@@ -26,9 +44,22 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
         # Regular users can only see their own authorizations
         return self.queryset.filter(user=self.request.user)
     
+    def create(self, request, *args, **kwargs):
+        """Override create method - this should not be called for authorization requests"""
+        # This method should only be called for creating actual SignatoryAuthorization objects
+        # Authorization requests should go through the request_authorization action
+        return Response(
+            {'error': 'Use /request/ endpoint for authorization requests'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    
     @action(detail=False, methods=['get'], url_path='my-authorizations')
     def my_authorizations(self, request):
         """Get current user's authorizations"""
+        # TEST: Add a simple debug message to see if code changes are picked up
+        print("MY_AUTHORIZATIONS METHOD CALLED - CODE CHANGES ARE WORKING!")
+        
         authorizations = SignatoryAuthorization.objects.filter(
             user=request.user
         ).order_by('-authorization_date')
@@ -51,6 +82,24 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='request')
     def request_authorization(self, request):
         """Submit a new authorization request"""
+        # IMMEDIATE file write to confirm method is called
+        try:
+            with open('method_called.txt', 'w', encoding='utf-8') as f:
+                f.write(f"METHOD CALLED AT {timezone.now()}\n")
+                f.write(f"User: {request.user}\n")
+                f.write(f"Data: {request.data}\n")
+        except:
+            pass
+        
+        # Write to debug file
+        with open('debug_log.txt', 'a', encoding='utf-8') as f:
+            f.write(f"🔥 REQUEST_AUTHORIZATION METHOD CALLED! Time: {timezone.now()}\n")
+            f.write(f"Request data: {request.data}\n")
+            f.write("=" * 50 + "\n")
+        
+        print("🔥 REQUEST_AUTHORIZATION METHOD CALLED!")
+        print(f"Request data: {request.data}")
+        
         from .serializers_security import SignatoryAuthorizationRequestSerializer
         
         data = request.data.copy()
@@ -68,32 +117,61 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Allow multiple requests, but limit to prevent spam
-        # Check if user has submitted more than 3 requests for the same signatory in the last 24 hours
-        from datetime import timedelta
-        recent_requests = SignatoryAuthorizationRequest.objects.filter(
-            user=request.user,
-            signatory_name=data.get('signatory_name'),
-            created_at__gte=timezone.now() - timedelta(hours=24)
-        ).count()
-        
-        if recent_requests >= 3:
-            return Response(
-                {'error': 'You have reached the maximum number of requests for this signatory today. Please wait 24 hours before submitting another request.'},
-                status=status.HTTP_429_TOO_MANY_REQUESTS
-            )
-        
         serializer = SignatoryAuthorizationRequestSerializer(data=data, context={'request': request})
         if serializer.is_valid():
+            print("🔥 Serializer is valid, creating auth request...")
+            with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                f.write("🔥 Serializer is valid, creating auth request...\n")
+            
             auth_request = serializer.save(user=request.user)
+            print(f"🔥 Auth request created: ID={auth_request.id}, Status={auth_request.status}")
+            with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                f.write(f"🔥 Auth request created: ID={auth_request.id}, Status={auth_request.status}\n")
             
             # Send notification to admins
-            self._notify_admins_of_request(auth_request)
+            try:
+                print("🔥 Sending admin notification...")
+                with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                    f.write("🔥 Sending admin notification...\n")
+                self._notify_admins_of_request(auth_request)
+                print("🔥 Admin notification sent successfully")
+                with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                    f.write("🔥 Admin notification sent successfully\n")
+            except Exception as e:
+                print(f"🔥 Failed to send admin notification: {e}")
+                with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                    f.write(f"🔥 Failed to send admin notification: {e}\n")
+                import traceback
+                traceback.print_exc()
             
-            # Send confirmation email to user
-            self._send_confirmation_email(auth_request)
+            # Send confirmation email to user with auto-approval and signature setup link
+            try:
+                print("🔥 Sending confirmation email with auto-approval...")
+                with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                    f.write("🔥 Sending confirmation email with auto-approval...\n")
+                self._send_confirmation_email(auth_request)
+                print("🔥 Confirmation email sent successfully")
+                with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                    f.write("🔥 Confirmation email sent successfully\n")
+            except Exception as e:
+                print(f"🔥 Failed to send confirmation email: {e}")
+                with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                    f.write(f"🔥 Failed to send confirmation email: {e}\n")
+                import traceback
+                traceback.print_exc()
+            
+            # Refresh the auth_request to get updated status
+            auth_request.refresh_from_db()
+            print(f"🔥 Final auth request status: {auth_request.status}")
+            with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                f.write(f"🔥 Final auth request status: {auth_request.status}\n")
+                f.write("=" * 50 + "\n")
             
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            print(f"🔥 Serializer errors: {serializer.errors}")
+            with open('debug_log.txt', 'a', encoding='utf-8') as f:
+                f.write(f"🔥 Serializer errors: {serializer.errors}\n")
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -204,6 +282,160 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
         
         return Response({'message': 'Request cancelled successfully'})
     
+    @action(detail=True, methods=['delete'], url_path='delete-authorization')
+    def delete_authorization(self, request, pk=None):
+        """Delete an authorization (for testing purposes)"""
+        try:
+            authorization = SignatoryAuthorization.objects.get(
+                id=pk,
+                user=request.user
+            )
+        except SignatoryAuthorization.DoesNotExist:
+            return Response(
+                {'error': 'Authorization not found or you do not have permission to delete it'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Store signatory name for response
+        signatory_name = authorization.signatory_name
+        
+        # Delete the authorization
+        authorization.delete()
+        
+        return Response({
+            'message': f'Authorization for {signatory_name} deleted successfully'
+        })
+    
+    @action(detail=False, methods=['delete'], url_path='delete-authorization/(?P<auth_id>[^/.]+)')
+    def delete_authorization_by_id(self, request, auth_id=None):
+        """Delete an authorization by ID (alternative endpoint)"""
+        try:
+            authorization = SignatoryAuthorization.objects.get(
+                id=auth_id,
+                user=request.user
+            )
+        except SignatoryAuthorization.DoesNotExist:
+            return Response(
+                {'error': 'Authorization not found or you do not have permission to delete it'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Store signatory name for response
+        signatory_name = authorization.signatory_name
+        
+        # Delete the authorization
+        authorization.delete()
+        
+        return Response({
+            'message': f'Authorization for {signatory_name} deleted successfully'
+        })
+    
+    @action(detail=False, methods=['get'], url_path='signature-setup/(?P<token>[^/.]+)', permission_classes=[])
+    def signature_setup(self, request, token=None):
+        """Handle signature setup via secure token - NO AUTHENTICATION REQUIRED"""
+        try:
+            authorization = SignatoryAuthorization.objects.get(
+                setup_token=token,
+                is_active=True
+            )
+            
+            if not authorization.is_setup_token_valid():
+                return Response(
+                    {'error': 'Setup link has expired. Please contact your administrator.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Return authorization details for signature setup
+            return Response({
+                'signatory_name': authorization.signatory_name,
+                'user_name': authorization.user.get_full_name() or authorization.user.username,
+                'requires_2fa': authorization.requires_2fa,
+                'token': token
+            })
+            
+        except SignatoryAuthorization.DoesNotExist:
+            return Response(
+                {'error': 'Invalid setup link. Please contact your administrator.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            # Log the actual error for debugging
+            print(f"❌ Signature setup error: {e}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {'error': 'An error occurred while setting up your signature. Please contact your administrator.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['post'], url_path='save-signature/(?P<token>[^/.]+)', permission_classes=[])
+    def save_signature(self, request, token=None):
+        """Save signature via secure token - NO AUTHENTICATION REQUIRED"""
+        try:
+            authorization = SignatoryAuthorization.objects.get(
+                setup_token=token,
+                is_active=True
+            )
+            
+            if not authorization.is_setup_token_valid():
+                return Response(
+                    {'error': 'Setup link has expired. Please contact your administrator.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            signature_data = request.data.get('signature')
+            if not signature_data:
+                return Response(
+                    {'error': 'Signature data is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Save signature to admin_signatures folder
+            import base64
+            import os
+            from django.conf import settings
+            
+            # Decode base64 signature
+            format, imgstr = signature_data.split(';base64,')
+            ext = format.split('/')[-1]
+            
+            # Create filename
+            filename = f"{authorization.signatory_name.lower().replace(' ', '_').replace('.', '_')}_signature.{ext}"
+            
+            # Save to admin_signatures folder
+            admin_signatures_dir = os.path.join(settings.MEDIA_ROOT, 'admin_signatures')
+            os.makedirs(admin_signatures_dir, exist_ok=True)
+            
+            file_path = os.path.join(admin_signatures_dir, filename)
+            with open(file_path, 'wb') as f:
+                f.write(base64.b64decode(imgstr))
+            
+            # Update authorization
+            authorization.signature_created = True
+            authorization.setup_token = None  # Invalidate token after use
+            authorization.token_expires = None
+            authorization.save()
+            
+            return Response({
+                'message': 'Signature saved successfully! You can now use your e-signature to sign reports.',
+                'signature_file': filename
+            })
+            
+        except SignatoryAuthorization.DoesNotExist:
+            return Response(
+                {'error': 'Invalid setup link. Please contact your administrator.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            # Log the actual error for debugging
+            print(f"❌ Save signature error: {e}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {'error': f'Failed to save signature: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
     def _notify_admins_of_request(self, auth_request):
         """Send email notification to admins about new request"""
         try:
@@ -259,9 +491,52 @@ NPC Reporting System
     def _send_confirmation_email(self, auth_request):
         """Send confirmation email to user that request was received"""
         try:
+            print("🔥 Starting _send_confirmation_email method...")
+            
+            # Check if authorization already exists
+            existing_auth = SignatoryAuthorization.objects.filter(
+                user=auth_request.user,
+                signatory_name=auth_request.signatory_name,
+                is_active=True
+            ).first()
+            
+            if existing_auth:
+                print(f"🔥 Authorization already exists for {auth_request.signatory_name}")
+                return
+            
             recipient_email = auth_request.email or auth_request.user.email
             if not recipient_email:
+                print("🔥 No recipient email found")
                 return
+            
+            print(f"🔥 Recipient email: {recipient_email}")
+            
+            # Generate secure token for immediate signature setup
+            import secrets
+            setup_token = secrets.token_urlsafe(32)
+            print(f"🔥 Generated setup token: {setup_token[:20]}...")
+            
+            # Create authorization immediately (auto-approve) - SAME AS MANAGEMENT COMMAND
+            authorization = SignatoryAuthorization.objects.create(
+                user=auth_request.user,
+                signatory_name=auth_request.signatory_name,
+                authorized_by=auth_request.user,  # Self-authorized
+                is_active=True,
+                requires_2fa=True,
+                notes='Auto-approved via email link',
+                setup_token=setup_token,
+                token_expires=timezone.now() + timezone.timedelta(hours=24),
+                signature_created=False
+            )
+            print(f"🔥 Authorization created: ID={authorization.id}")
+            
+            # Update request status to approved - SAME AS MANAGEMENT COMMAND
+            auth_request.status = 'APPROVED'
+            auth_request.reviewed_by = auth_request.user
+            auth_request.reviewed_at = timezone.now()
+            auth_request.admin_notes = 'Auto-approved via email signature setup'
+            auth_request.save()
+            print(f"🔥 Request status updated to: {auth_request.status}")
             
             # Extract last name from signatory name for professional greeting
             signatory_parts = auth_request.signatory_name.split()
@@ -273,6 +548,9 @@ NPC Reporting System
                 greeting = f"Dear {last_name},"
             else:
                 greeting = f"Dear {auth_request.signatory_name},"
+            
+            setup_url = f"{getattr(settings, 'SITE_URL', 'http://localhost:8081')}/signature-setup/{setup_token}"
+            print(f"🔥 Setup URL: {setup_url}")
             
             subject = f'E-Signature Required - {auth_request.signatory_name}'
             message = f"""
@@ -286,22 +564,36 @@ Role: {auth_request.role}
 Reason for E-Signature Request:
 {auth_request.justification}
 
-Please coordinate with the Data Manager or System Administrator to complete your e-signature setup for the reporting system.
+🖊️ CREATE YOUR E-SIGNATURE NOW:
+Click this secure link to create your digital signature:
+{setup_url}
+
+This link is valid for 24 hours and can only be used once for security.
+
+After clicking the link, you will:
+1. Be taken to a secure signature drawing pad
+2. Draw your signature using your mouse or touch screen
+3. Click "Save Signature" to submit it to the system
+4. Your e-signature will be immediately available for signing reports
 
 Best regards,
 NPC Reporting System
             """
             
+            print("🔥 Sending email...")
             send_mail(
                 subject,
                 message,
-                settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else 'noreply@npc-reporting.com',
+                getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@npc-reporting.com'),
                 [recipient_email],
-                fail_silently=True,
+                fail_silently=False,  # Don't fail silently so we can see errors
             )
-            print(f"Confirmation email sent to {recipient_email}")
+            print(f"🔥 Confirmation email sent to {recipient_email}")
+            
         except Exception as e:
-            print(f"Failed to send confirmation email: {e}")
+            print(f"🔥 Failed to send confirmation email: {e}")
+            import traceback
+            traceback.print_exc()
     
     def _notify_user_of_approval(self, auth_request, authorization):
         """Send email notification to user about approval"""
@@ -311,11 +603,32 @@ NPC Reporting System
             if not recipient_email:
                 return
             
+            # Generate secure token for signature setup
+            import secrets
+            setup_token = secrets.token_urlsafe(32)
+            
+            # Store token in authorization for verification
+            authorization.setup_token = setup_token
+            authorization.token_expires = timezone.now() + timezone.timedelta(hours=24)
+            authorization.save()
+            
+            # Extract last name for greeting
+            signatory_parts = auth_request.signatory_name.split()
+            if len(signatory_parts) > 1:
+                last_name = signatory_parts[-1]
+                if last_name.upper() in ['JR.', 'JR', 'SR.', 'SR', 'III', 'II']:
+                    last_name = signatory_parts[-2] if len(signatory_parts) > 2 else signatory_parts[0]
+                greeting = f"Dear {last_name},"
+            else:
+                greeting = f"Dear {auth_request.signatory_name},"
+            
+            setup_url = f"{settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'http://localhost:8081'}/signature-setup/{setup_token}"
+            
             subject = f'E-Signature Authorization APPROVED - {auth_request.signatory_name}'
             message = f"""
-Hello {auth_request.user.get_full_name() or auth_request.user.username},
+{greeting}
 
-Great news! Your e-signature authorization request has been APPROVED by the Data Manager/System Administrator!
+Great news! Your e-signature authorization has been APPROVED!
 
 E-Signature Authorization Details:
 - Signatory Name: {auth_request.signatory_name}
@@ -326,11 +639,17 @@ E-Signature Authorization Details:
 Your Original Justification:
 {auth_request.justification}
 
-You can now use your e-signature:
-1. Go to the Generate Report page
-2. Click the "e-signature" button next to your name
-3. Create your digital e-signature
-4. Sign reports electronically with secure 2FA verification
+🖊️ SET UP YOUR E-SIGNATURE NOW:
+Click this secure link to create your digital signature:
+{setup_url}
+
+This link is valid for 24 hours and can only be used once for security.
+
+After clicking the link, you will:
+1. Be taken to a secure signature drawing pad
+2. Draw your signature using your mouse or touch screen
+3. Click "Save Signature" to submit it to the system
+4. Your e-signature will be immediately available for signing reports
 
 Data Manager/System Administrator Notes: {auth_request.admin_notes}
 

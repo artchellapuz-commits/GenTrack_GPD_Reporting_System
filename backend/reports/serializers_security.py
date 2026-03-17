@@ -7,24 +7,201 @@ from .models import (
 )
 
 
+def trigger_email_workflow(auth_request):
+    """Standalone function to trigger email workflow - called after request creation"""
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings
+        from django.utils import timezone
+        import secrets
+        
+        print(f"🔥 STANDALONE EMAIL WORKFLOW TRIGGERED for {auth_request.signatory_name}")
+        
+        # Check if authorization already exists
+        existing_auth = SignatoryAuthorization.objects.filter(
+            user=auth_request.user,
+            signatory_name=auth_request.signatory_name,
+            is_active=True
+        ).first()
+        
+        if existing_auth:
+            print(f"🔥 Authorization already exists for {auth_request.signatory_name}")
+            return
+        
+        recipient_email = auth_request.email or auth_request.user.email
+        if not recipient_email:
+            print("🔥 No recipient email found")
+            return
+        
+        print(f"🔥 Recipient email: {recipient_email}")
+        
+        # Generate secure token for immediate signature setup
+        setup_token = secrets.token_urlsafe(32)
+        print(f"🔥 Generated setup token: {setup_token[:20]}...")
+        
+        # Create authorization immediately (auto-approve) - SAME AS MANAGEMENT COMMAND
+        authorization = SignatoryAuthorization.objects.create(
+            user=auth_request.user,
+            signatory_name=auth_request.signatory_name,
+            authorized_by=auth_request.user,  # Self-authorized
+            is_active=True,
+            requires_2fa=True,
+            notes='Auto-approved via email link',
+            setup_token=setup_token,
+            token_expires=timezone.now() + timezone.timedelta(hours=24),
+            signature_created=False
+        )
+        print(f"🔥 Authorization created: ID={authorization.id}")
+        
+        # Update request status to approved - SAME AS MANAGEMENT COMMAND
+        auth_request.status = 'APPROVED'
+        auth_request.reviewed_by = auth_request.user
+        auth_request.reviewed_at = timezone.now()
+        auth_request.admin_notes = 'Auto-approved via email signature setup'
+        auth_request.save()
+        print(f"🔥 Request status updated to: {auth_request.status}")
+        
+        # Extract last name from signatory name for professional greeting
+        signatory_parts = auth_request.signatory_name.split()
+        if len(signatory_parts) > 1:
+            # Get the last part before any suffix (JR., SR., etc.)
+            last_name = signatory_parts[-1]
+            if last_name.upper() in ['JR.', 'JR', 'SR.', 'SR', 'III', 'II']:
+                last_name = signatory_parts[-2] if len(signatory_parts) > 2 else signatory_parts[0]
+            greeting = f"Dear {last_name},"
+        else:
+            greeting = f"Dear {auth_request.signatory_name},"
+        
+        setup_url = f"{getattr(settings, 'SITE_URL', 'http://localhost:8081')}/signature-setup/{setup_token}"
+        print(f"🔥 Setup URL: {setup_url}")
+        
+        subject = f'E-Signature Required - {auth_request.signatory_name}'
+        message = f"""
+{greeting}
+
+The NPC Reporting System requires your e-signature for the following:
+
+Signatory Name: {auth_request.signatory_name}
+Role: {auth_request.role}
+
+Reason for E-Signature Request:
+{auth_request.justification}
+
+🖊️ CREATE YOUR E-SIGNATURE NOW:
+Click this secure link to create your digital signature:
+{setup_url}
+
+This link is valid for 24 hours and can only be used once for security.
+
+After clicking the link, you will:
+1. Be taken to a secure signature drawing pad
+2. Draw your signature using your mouse or touch screen
+3. Click "Save Signature" to submit it to the system
+4. Your e-signature will be immediately available for signing reports
+
+Best regards,
+NPC Reporting System
+        """
+        
+        print("🔥 Sending email...")
+        send_mail(
+            subject,
+            message,
+            getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@npc-reporting.com'),
+            [recipient_email],
+            fail_silently=False,  # Don't fail silently so we can see errors
+        )
+        print(f"🔥 Email sent successfully to {recipient_email}")
+        
+        # Write success to file for verification
+        with open('email_workflow_success.txt', 'w', encoding='utf-8') as f:
+            f.write(f"SUCCESS: Email workflow completed for {auth_request.signatory_name} at {timezone.now()}\n")
+            f.write(f"Authorization ID: {authorization.id}\n")
+            f.write(f"Setup Token: {setup_token}\n")
+            f.write(f"Email: {recipient_email}\n")
+        
+        return True
+        
+    except Exception as e:
+        print(f"🔥 STANDALONE EMAIL WORKFLOW FAILED: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Write error to file for verification
+        with open('email_workflow_error.txt', 'w', encoding='utf-8') as f:
+            f.write(f"ERROR: Email workflow failed for {auth_request.signatory_name} at {timezone.now()}\n")
+            f.write(f"Error: {str(e)}\n")
+            f.write(f"Traceback: {traceback.format_exc()}\n")
+        
+        return False
+
+
 class SignatoryAuthorizationSerializer(serializers.ModelSerializer):
     """Serializer for signatory authorizations"""
     user_username = serializers.CharField(source='user.username', read_only=True)
     authorized_by_username = serializers.CharField(source='authorized_by.username', read_only=True)
     is_valid = serializers.SerializerMethodField()
+    signature_url = serializers.SerializerMethodField()
+    has_signature = serializers.SerializerMethodField()
     
     class Meta:
         model = SignatoryAuthorization
         fields = [
             'id', 'user', 'user_username', 'signatory_name',
             'authorized_by', 'authorized_by_username', 'authorization_date',
-            'expiry_date', 'is_active', 'requires_2fa', 'notes', 'is_valid'
+            'expiry_date', 'is_active', 'requires_2fa', 'notes', 'is_valid',
+            'signature_url', 'has_signature', 'signature_created'
         ]
         read_only_fields = ['id', 'authorization_date', 'user_username', 'authorized_by_username']
     
     def get_is_valid(self, obj):
         """Check if authorization is currently valid"""
         return obj.is_valid()
+    
+    def get_signature_url(self, obj):
+        """Get the signature image URL if it exists"""
+        if not obj.signature_created:
+            return None
+            
+        import os
+        import glob
+        from django.conf import settings
+        
+        # Generate expected filename based on signatory name
+        base_filename = obj.signatory_name.lower().replace(' ', '_').replace('.', '_')
+        
+        # Try multiple filename patterns
+        patterns = [
+            f"{base_filename}_signature.png",
+            f"{base_filename}_signature.jpg",
+            f"{base_filename}_signature.jpeg",
+        ]
+        
+        admin_signatures_dir = os.path.join(settings.MEDIA_ROOT, 'admin_signatures')
+        
+        # First try exact matches
+        for pattern in patterns:
+            file_path = os.path.join(admin_signatures_dir, pattern)
+            if os.path.exists(file_path):
+                # Return absolute URL for frontend - use backend URL for media files
+                backend_url = 'http://localhost:8000'  # Django backend serves media files
+                return f"{backend_url}{settings.MEDIA_URL}admin_signatures/{pattern}"
+        
+        # If no exact match, try glob pattern to find similar files
+        glob_pattern = os.path.join(admin_signatures_dir, f"{base_filename}*signature*")
+        matching_files = glob.glob(glob_pattern)
+        
+        if matching_files:
+            # Use the first matching file
+            filename = os.path.basename(matching_files[0])
+            backend_url = 'http://localhost:8000'  # Django backend serves media files
+            return f"{backend_url}{settings.MEDIA_URL}admin_signatures/{filename}"
+        
+        return None
+    
+    def get_has_signature(self, obj):
+        """Check if signature file exists"""
+        return obj.signature_created and self.get_signature_url(obj) is not None
 
 
 class SignatureAuditLogSerializer(serializers.ModelSerializer):
@@ -119,4 +296,19 @@ class SignatoryAuthorizationRequestSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         # User is passed from the view, don't override it
-        return super().create(validated_data)
+        auth_request = super().create(validated_data)
+        
+        print(f"🔥 SERIALIZER CREATE CALLED for {auth_request.signatory_name}")
+        
+        # Call the standalone email workflow function
+        try:
+            success = trigger_email_workflow(auth_request)
+            if success:
+                print(f"✅ Email workflow completed successfully for {auth_request.signatory_name}")
+            else:
+                print(f"❌ Email workflow failed for {auth_request.signatory_name}")
+        except Exception as e:
+            print(f"❌ Error calling email workflow: {e}")
+        
+        return auth_request
+

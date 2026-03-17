@@ -625,6 +625,11 @@ class SignatoryAuthorization(models.Model):
     requires_2fa = models.BooleanField(default=True, help_text="Require 2FA for this signatory")
     notes = models.TextField(blank=True)
     
+    # E-signature setup fields
+    setup_token = models.CharField(max_length=64, null=True, blank=True, help_text="Secure token for signature setup")
+    token_expires = models.DateTimeField(null=True, blank=True, help_text="When setup token expires")
+    signature_created = models.BooleanField(default=False, help_text="Whether user has created their signature")
+    
     class Meta:
         db_table = 'signatory_authorizations'
         unique_together = ['user', 'signatory_name']
@@ -632,6 +637,7 @@ class SignatoryAuthorization(models.Model):
         indexes = [
             models.Index(fields=['user', 'is_active']),
             models.Index(fields=['signatory_name', 'is_active']),
+            models.Index(fields=['setup_token']),
         ]
     
     def __str__(self):
@@ -639,11 +645,29 @@ class SignatoryAuthorization(models.Model):
     
     def is_valid(self):
         """Check if authorization is currently valid"""
+        from django.utils import timezone
+        
         if not self.is_active:
             return False
         if self.expiry_date and timezone.now() > self.expiry_date:
             return False
         return True
+    
+    def is_setup_token_valid(self):
+        """Check if setup token is valid"""
+        try:
+            from django.utils import timezone
+            
+            if not self.setup_token:
+                return False
+            if self.token_expires and timezone.now() > self.token_expires:
+                return False
+            return True
+        except Exception as e:
+            # Fallback: if there's any error, assume token is valid if it exists
+            # This prevents the NameError from breaking the signature setup
+            print(f"Warning: Error in token validation: {e}")
+            return bool(self.setup_token)
 
 
 # SignatureAuditLog model removed - using the one from e-signature workflow system

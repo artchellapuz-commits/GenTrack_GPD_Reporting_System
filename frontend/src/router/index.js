@@ -169,6 +169,12 @@ const routes = [
     props: true
   },
   {
+    path: '/signature-setup/:token',
+    name: 'SignatureSetup',
+    component: () => import('../components/SignatureSetup.vue'),
+    props: true
+  },
+  {
     path: '/document-manager',
     name: 'DocumentManager',
     component: () => import('../components/DocumentManager.vue'),

@@ -220,6 +220,16 @@ export default {
     return apiClient.post(`/signatory-authorizations/cancel-request/${requestId}/`);
   },
 
+  // Delete authorization (for testing)
+  deleteAuthorization(authorizationId) {
+    return apiClient.delete(`/signatory-authorizations/delete-authorization/${authorizationId}/`);
+  },
+
+  // Delete authorization (for testing purposes)
+  deleteAuthorization(authorizationId) {
+    return apiClient.delete(`/signatory-authorizations/${authorizationId}/`);
+  },
+
   // 2FA Security Methods
   requestSignatory2FA(data) {
     return apiClient.post('/e-signatures/request-2fa/', data);

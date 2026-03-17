@@ -14,6 +14,7 @@ from .views_analytics import (
     performance_trends, plant_comparison, predictive_insights,
     anomaly_detection, efficiency_analysis, water_nomination_analysis
 )
+from .signature_views import signature_setup_no_auth, save_signature_no_auth
 
 router = DefaultRouter()
 router.register(r'plants', PlantViewSet, basename='plant')
@@ -51,4 +52,7 @@ urlpatterns = [
     path('analytics/anomalies/', anomaly_detection, name='analytics-anomalies'),
     path('analytics/efficiency/', efficiency_analysis, name='analytics-efficiency'),
     path('analytics/water-nomination/', water_nomination_analysis, name='analytics-water-nomination'),
+    # Signature setup endpoints (no authentication required)
+    path('signature-setup/<str:token>/', signature_setup_no_auth, name='signature-setup-no-auth'),
+    path('save-signature/<str:token>/', save_signature_no_auth, name='save-signature-no-auth'),
 ]

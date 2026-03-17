@@ -52,7 +52,7 @@
               <i class="pi pi-verified"></i>
               <h2>Your Active Authorizations</h2>
             </div>
-            <div class="section-badge success">{{ userAuthorizations.length }} Active</div>
+            <div class="section-badge success">{{ userAuthorizations.length }} Authorizations</div>
           </div>
           
           <div class="authorizations-grid">
@@ -66,14 +66,18 @@
               <div class="auth-card-header">
                 <div class="auth-avatar">
                   <i class="pi pi-user"></i>
+                  <!-- Signature Status Indicator -->
+                  <div class="signature-indicator" :class="getSignatureStatusClass(auth)">
+                    <i :class="getSignatureStatusIcon(auth)"></i>
+                  </div>
                 </div>
                 <div class="auth-info">
                   <h3 class="auth-name">{{ auth.signatory_name }}</h3>
                   <p class="auth-role">{{ getSignatoryTitle(auth.signatory_name) }}</p>
                 </div>
-                <div class="auth-status-badge" :class="auth.is_valid ? 'active' : 'expired'">
-                  <i :class="auth.is_valid ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-                  {{ auth.is_valid ? 'Active' : 'Expired' }}
+                <div class="auth-status-badge" :class="getSignatureStatusClass(auth)">
+                  <i :class="getSignatureStatusIcon(auth)"></i>
+                  {{ getSignatureStatusText(auth) }}
                 </div>
               </div>
               
@@ -96,7 +100,9 @@
                 <div class="auth-actions">
                   <button class="btn-action secondary" @click="viewAuthDetails(auth)">
                     <i class="pi pi-eye"></i>
-                    View Details
+                  </button>
+                  <button class="btn-action danger" @click="deleteAuthorization(auth)">
+                    <i class="pi pi-trash"></i>
                   </button>
                 </div>
               </div>
@@ -143,7 +149,12 @@
                     v-for="signatory in availableSignatories" 
                     :key="signatory.name"
                     class="signatory-card"
-                    :class="{ selected: selectedSignatory === signatory.name }"
+                    :class="{ 
+                      selected: selectedSignatory === signatory.name,
+                      disabled: isSignatoryDisabled(signatory.name),
+                      'has-authorization': hasActiveAuthorization(signatory.name),
+                      'has-pending': hasPendingRequest(signatory.name)
+                    }"
                     @click="selectSignatory(signatory.name)"
                   >
                     <div class="signatory-avatar">
@@ -152,6 +163,14 @@
                     <div class="signatory-info">
                       <h4>{{ signatory.name }}</h4>
                       <p>{{ signatory.title }}</p>
+                      <div v-if="hasActiveAuthorization(signatory.name)" class="signatory-status active">
+                        <i class="pi pi-check-circle"></i>
+                        <span>Already Authorized</span>
+                      </div>
+                      <div v-else-if="hasPendingRequest(signatory.name)" class="signatory-status pending">
+                        <i class="pi pi-clock"></i>
+                        <span>Request Pending</span>
+                      </div>
                     </div>
                     <div class="selection-indicator">
                       <i class="pi pi-check"></i>
@@ -354,11 +373,9 @@
                 <div class="request-actions">
                   <button class="btn-action secondary" @click="viewRequestDetails(request)">
                     <i class="pi pi-eye"></i>
-                    View Details
                   </button>
                   <button class="btn-action danger" @click="cancelRequest(request)">
                     <i class="pi pi-times"></i>
-                    Cancel Request
                   </button>
                 </div>
               </div>
@@ -461,6 +478,232 @@
         </div>
       </div>
     </div>
+
+    <!-- Authorization Details Modal -->
+    <div v-if="showAuthDetailsModal" class="modal-overlay" @click="closeAuthDetailsModal">
+      <div class="modal-dialog" @click.stop>
+        <div class="modal-header">
+          <h3>Authorization Details</h3>
+          <button class="modal-close" @click="closeAuthDetailsModal">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        <div class="modal-body" v-if="selectedAuthDetails">
+          <div class="detail-section">
+            <h4>Signatory Information</h4>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Name:</span>
+                <span class="detail-value">{{ selectedAuthDetails.signatory_name }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Title:</span>
+                <span class="detail-value">{{ getSignatoryTitle(selectedAuthDetails.signatory_name) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value" :class="selectedAuthDetails.is_valid ? 'status-active' : 'status-expired'">
+                  {{ selectedAuthDetails.is_valid ? 'Active' : 'Expired' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h4>Authorization Details</h4>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Authorized Date:</span>
+                <span class="detail-value">{{ formatDate(selectedAuthDetails.authorization_date) }}</span>
+              </div>
+              <div class="detail-item" v-if="selectedAuthDetails.expiry_date">
+                <span class="detail-label">Expiry Date:</span>
+                <span class="detail-value">{{ formatDate(selectedAuthDetails.expiry_date) }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">2FA Required:</span>
+                <span class="detail-value">{{ selectedAuthDetails.requires_2fa ? 'Yes' : 'No' }}</span>
+              </div>
+              <div class="detail-item" v-if="selectedAuthDetails.authorized_by">
+                <span class="detail-label">Authorized By:</span>
+                <span class="detail-value">{{ selectedAuthDetails.authorized_by }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section" v-if="selectedAuthDetails.has_signature">
+            <h4>Digital Signature</h4>
+            <div class="signature-display">
+              <div class="signature-container">
+                <img :src="selectedAuthDetails.signature_url" 
+                     alt="Digital Signature" 
+                     class="signature-image"
+                     @load="onSignatureLoad"
+                     @error="onSignatureError" />
+                <div class="signature-info">
+                  <div class="signature-meta">
+                    <i class="pi pi-check-circle signature-verified"></i>
+                    <span class="signature-status">Verified Digital Signature</span>
+                  </div>
+                  <div class="signature-details">
+                    <small>This signature is securely stored and encrypted</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section" v-if="!selectedAuthDetails.has_signature && selectedAuthDetails.signature_created">
+            <h4>Digital Signature</h4>
+            <div class="signature-display">
+              <div class="signature-container no-signature">
+                <div class="signature-placeholder">
+                  <i class="pi pi-exclamation-triangle"></i>
+                  <span>Signature file not found</span>
+                  <small>The signature may have been moved or deleted</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section" v-if="!selectedAuthDetails.signature_created">
+            <h4>Digital Signature</h4>
+            <div class="signature-display">
+              <div class="signature-container no-signature">
+                <div class="signature-placeholder">
+                  <i class="pi pi-info-circle"></i>
+                  <span>No signature created yet</span>
+                  <small>User has not completed signature setup</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section" v-if="selectedAuthDetails.notes">
+            <h4>Notes</h4>
+            <p class="detail-notes">{{ selectedAuthDetails.notes }}</p>
+          </div>
+
+          <div class="detail-section">
+            <h4>Security Information</h4>
+            <div class="security-info">
+              <div class="security-item">
+                <i class="pi pi-shield"></i>
+                <span>This authorization allows you to digitally sign reports as {{ selectedAuthDetails.signatory_name }}</span>
+              </div>
+              <div class="security-item">
+                <i class="pi pi-lock"></i>
+                <span>All signatures are logged and audited for security compliance</span>
+              </div>
+              <div class="security-item" v-if="selectedAuthDetails.requires_2fa">
+                <i class="pi pi-mobile"></i>
+                <span>Two-factor authentication is required for signing</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-modal-close" @click="closeAuthDetailsModal">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Request Details Modal -->
+    <div v-if="showRequestDetailsModal" class="modal-overlay" @click="closeRequestDetailsModal">
+      <div class="modal-dialog" @click.stop>
+        <div class="modal-header">
+          <h3>Request Details</h3>
+          <button class="modal-close" @click="closeRequestDetailsModal">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        <div class="modal-body" v-if="selectedRequestDetails">
+          <div class="detail-section">
+            <h4>Request Information</h4>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Signatory Name:</span>
+                <span class="detail-value">{{ selectedRequestDetails.signatory_name }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Role:</span>
+                <span class="detail-value">{{ selectedRequestDetails.role }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">{{ selectedRequestDetails.email }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value" :class="`status-${selectedRequestDetails.status.toLowerCase()}`">
+                  {{ selectedRequestDetails.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h4>Timeline</h4>
+            <div class="detail-grid">
+              <div class="detail-item">
+                <span class="detail-label">Submitted:</span>
+                <span class="detail-value">{{ formatDate(selectedRequestDetails.created_at) }}</span>
+              </div>
+              <div class="detail-item" v-if="selectedRequestDetails.reviewed_at">
+                <span class="detail-label">Reviewed:</span>
+                <span class="detail-value">{{ formatDate(selectedRequestDetails.reviewed_at) }}</span>
+              </div>
+              <div class="detail-item" v-if="selectedRequestDetails.reviewed_by">
+                <span class="detail-label">Reviewed By:</span>
+                <span class="detail-value">{{ selectedRequestDetails.reviewed_by }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h4>Justification</h4>
+            <div class="justification-detail">
+              <p>{{ selectedRequestDetails.justification }}</p>
+            </div>
+          </div>
+
+          <div class="detail-section" v-if="selectedRequestDetails.admin_notes">
+            <h4>Administrator Notes</h4>
+            <div class="admin-notes">
+              <p>{{ selectedRequestDetails.admin_notes }}</p>
+            </div>
+          </div>
+
+          <div class="detail-section" v-if="selectedRequestDetails.status === 'PENDING'">
+            <h4>Next Steps</h4>
+            <div class="next-steps">
+              <div class="step-item">
+                <i class="pi pi-clock"></i>
+                <span>Your request is being reviewed by system administrators</span>
+              </div>
+              <div class="step-item">
+                <i class="pi pi-envelope"></i>
+                <span>You will receive an email notification when a decision is made</span>
+              </div>
+              <div class="step-item">
+                <i class="pi pi-times-circle"></i>
+                <span>You can cancel this request at any time if needed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-modal-close" @click="closeRequestDetailsModal">Close</button>
+          <button 
+            v-if="selectedRequestDetails.status === 'PENDING'" 
+            class="btn-modal-danger" 
+            @click="cancelRequest(selectedRequestDetails); closeRequestDetailsModal()"
+          >
+            Cancel Request
+          </button>
+        </div>
+      </div>
+    </div>
   </AppLayout>
 </template>
 
@@ -527,7 +770,13 @@ export default {
         { id: 'overview', label: 'Overview', icon: 'pi pi-info-circle' },
         { id: 'process', label: 'Process', icon: 'pi pi-cog' },
         { id: 'faq', label: 'FAQ', icon: 'pi pi-question-circle' }
-      ]
+      ],
+      
+      // Modal states
+      showAuthDetailsModal: false,
+      selectedAuthDetails: null,
+      showRequestDetailsModal: false,
+      selectedRequestDetails: null
     };
   },
   computed: {
@@ -584,6 +833,26 @@ export default {
 
     // Selection methods
     selectSignatory(signatoryName) {
+      // Check if user already has active authorization for this signatory
+      const existingAuth = this.userAuthorizations.find(
+        auth => auth.signatory_name === signatoryName && auth.is_valid
+      );
+      
+      if (existingAuth) {
+        toast.warning(`⚠️ You already have active authorization for ${signatoryName}`);
+        return;
+      }
+      
+      // Check if user has pending request for this signatory
+      const pendingRequest = this.pendingRequests.find(
+        request => request.signatory_name === signatoryName && request.status === 'PENDING'
+      );
+      
+      if (pendingRequest) {
+        toast.warning(`⚠️ You already have a pending request for ${signatoryName}`);
+        return;
+      }
+      
       this.selectedSignatory = signatoryName;
     },
 
@@ -680,13 +949,54 @@ export default {
 
     // Action methods
     viewAuthDetails(auth) {
-      toast.info(`Authorization details for ${auth.signatory_name}`);
-      // Could open a modal with detailed information
+      console.log('🔍 Viewing auth details:', auth);
+      console.log('🖼️ Signature URL:', auth.signature_url);
+      console.log('✅ Has signature:', auth.has_signature);
+      console.log('📝 Signature created:', auth.signature_created);
+      
+      this.selectedAuthDetails = auth;
+      this.showAuthDetailsModal = true;
     },
 
     viewRequestDetails(request) {
-      toast.info(`Request details for ${request.signatory_name}`);
-      // Could open a modal with detailed information
+      this.selectedRequestDetails = request;
+      this.showRequestDetailsModal = true;
+    },
+
+    closeAuthDetailsModal() {
+      this.showAuthDetailsModal = false;
+      this.selectedAuthDetails = null;
+    },
+
+    onSignatureLoad() {
+      console.log('✅ Signature image loaded successfully');
+    },
+
+    onSignatureError(event) {
+      console.error('❌ Signature image failed to load:', event);
+      console.error('❌ Image src:', event.target.src);
+    },
+
+    closeRequestDetailsModal() {
+      this.showRequestDetailsModal = false;
+      this.selectedRequestDetails = null;
+    },
+
+    // Helper methods for signatory status
+    hasActiveAuthorization(signatoryName) {
+      return this.userAuthorizations.some(
+        auth => auth.signatory_name === signatoryName && auth.is_valid
+      );
+    },
+
+    hasPendingRequest(signatoryName) {
+      return this.pendingRequests.some(
+        request => request.signatory_name === signatoryName && request.status === 'PENDING'
+      );
+    },
+
+    isSignatoryDisabled(signatoryName) {
+      return this.hasActiveAuthorization(signatoryName) || this.hasPendingRequest(signatoryName);
     },
 
     async cancelRequest(request) {
@@ -708,6 +1018,61 @@ export default {
           
           toast.error(errorMessage);
         }
+      }
+    },
+
+    async deleteAuthorization(authorization) {
+      if (confirm(`Are you sure you want to delete the authorization for ${authorization.signatory_name}? This action cannot be undone.`)) {
+        try {
+          await api.deleteAuthorization(authorization.id);
+          toast.success('Authorization deleted successfully');
+          await this.loadUserAuthorizations();
+        } catch (error) {
+          console.error('Error deleting authorization:', error);
+          
+          // Extract error message
+          let errorMessage = 'Failed to delete authorization';
+          if (error.response?.data?.error) {
+            errorMessage = error.response.data.error;
+          } else if (error.response?.data?.detail) {
+            errorMessage = error.response.data.detail;
+          } else if (error.response?.data?.message) {
+            errorMessage = error.response.data.message;
+          }
+          
+          toast.error(errorMessage);
+        }
+      }
+    },
+
+    // Signature status methods
+    getSignatureStatusClass(auth) {
+      if (auth.has_signature) {
+        return 'signature-verified';
+      } else if (auth.signature_created) {
+        return 'signature-missing';
+      } else {
+        return 'signature-none';
+      }
+    },
+
+    getSignatureStatusIcon(auth) {
+      if (auth.has_signature) {
+        return 'pi pi-check-circle';
+      } else if (auth.signature_created) {
+        return 'pi pi-exclamation-triangle';
+      } else {
+        return 'pi pi-times-circle';
+      }
+    },
+
+    getSignatureStatusText(auth) {
+      if (auth.has_signature) {
+        return 'Signature Ready';
+      } else if (auth.signature_created) {
+        return 'Signature File Missing';
+      } else {
+        return 'No Signature Created';
       }
     }
   }
@@ -1167,6 +1532,84 @@ export default {
   overflow: hidden;
 }
 
+/* Signature Status Indicator on Avatar */
+.signature-indicator {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.signature-indicator.signature-verified {
+  background: #22c55e;
+  color: white;
+}
+
+.signature-indicator.signature-missing {
+  background: #f59e0b;
+  color: white;
+}
+
+.signature-indicator.signature-none {
+  background: #ef4444;
+  color: white;
+}
+
+.signature-indicator:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Signature Status Text */
+.signature-status-text {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  margin-top: 0.3rem;
+  transition: all 0.3s ease;
+}
+
+.signature-status-text.signature-verified {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.signature-status-text.signature-missing {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.signature-status-text.signature-none {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.signature-status-text i {
+  font-size: 0.8rem;
+  display: inline-block !important;
+}
+
+.authorization-card:hover .signature-status-text {
+  transform: translateX(3px);
+}
+
 .auth-avatar::after {
   content: '';
   position: absolute;
@@ -1217,13 +1660,13 @@ export default {
 }
 
 .auth-status-badge {
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: 600;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .auth-status-badge {
@@ -1248,13 +1691,19 @@ export default {
   transform: translateX(100%);
 }
 
-.auth-status-badge.active {
+.auth-status-badge.signature-verified {
   background: #dcfce7;
   color: #166534;
   box-shadow: 0 4px 12px rgba(22, 101, 52, 0.2);
 }
 
-.auth-status-badge.expired {
+.auth-status-badge.signature-missing {
+  background: #fef3c7;
+  color: #92400e;
+  box-shadow: 0 4px 12px rgba(146, 64, 14, 0.2);
+}
+
+.auth-status-badge.signature-none {
   background: #fee2e2;
   color: #dc2626;
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
@@ -1267,7 +1716,9 @@ export default {
 .auth-card-body {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-top: 0.5rem;
 }
 
 .auth-details {
@@ -1278,9 +1729,14 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   font-size: 0.9rem;
   color: #64748b;
+  line-height: 1.2;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
 }
 
 .detail-item i {
@@ -1290,7 +1746,7 @@ export default {
 }
 
 .btn-action {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem;
   border: none;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -1299,7 +1755,9 @@ export default {
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
 }
 
 .btn-action {
@@ -1352,6 +1810,14 @@ export default {
   color: white;
   transform: translateY(-3px) scale(1.05);
   box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+}
+
+.auth-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-self: flex-start;
+  margin-top: 0.25rem;
 }
 
 /* Progress Indicator */
@@ -1479,6 +1945,54 @@ export default {
   border-color: #4f46e5;
   background: linear-gradient(135deg, #ede9fe 0%, #f3f4f6 100%);
   box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
+}
+
+.signatory-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.signatory-card.disabled:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #cbd5e1;
+}
+
+.signatory-card.has-authorization {
+  border-color: #22c55e;
+  background: linear-gradient(135deg, #f0fdf4 0%, #f8fafc 100%);
+}
+
+.signatory-card.has-pending {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #f8fafc 100%);
+}
+
+.signatory-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+}
+
+.signatory-status.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.signatory-status.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.signatory-status i {
+  font-size: 0.9rem;
 }
 
 .signatory-avatar,
@@ -2157,6 +2671,359 @@ export default {
   }
   to {
     opacity: 1;
+  }
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-dialog {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: slideInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.modal-body {
+  padding: 2rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.detail-section {
+  margin-bottom: 2rem;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.detail-section h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border-left: 4px solid #4f46e5;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: #374151;
+}
+
+.detail-value {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.detail-value.status-active {
+  color: #059669;
+  font-weight: 600;
+}
+
+.detail-value.status-expired {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.detail-value.status-pending {
+  color: #d97706;
+  font-weight: 600;
+}
+
+.detail-value.status-approved {
+  color: #059669;
+  font-weight: 600;
+}
+
+.detail-value.status-rejected {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.detail-value.status-cancelled {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.detail-notes,
+.justification-detail p,
+.admin-notes p {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #4f46e5;
+  margin: 0;
+  line-height: 1.6;
+  color: #374151;
+}
+
+/* Signature Display Styles */
+.signature-display {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 2px solid #e2e8f0;
+}
+
+.signature-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.signature-container.no-signature {
+  padding: 2rem;
+  background: #fafafa;
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+}
+
+.signature-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+.signature-placeholder i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.signature-placeholder i.pi-exclamation-triangle {
+  color: #f59e0b;
+}
+
+.signature-placeholder i.pi-info-circle {
+  color: #3b82f6;
+}
+
+.signature-placeholder span {
+  font-weight: 600;
+  font-size: 1rem;
+  color: #374151;
+}
+
+.signature-placeholder small {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.signature-image {
+  max-width: 300px;
+  max-height: 120px;
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
+  background: white;
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.signature-info {
+  text-align: center;
+}
+
+.signature-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.signature-verified {
+  color: #059669;
+  font-size: 1.1rem;
+}
+
+.signature-status {
+  color: #059669;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.signature-details {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.security-info,
+.next-steps {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.security-item,
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f0f9ff;
+  border-radius: 8px;
+  border-left: 4px solid #0ea5e9;
+}
+
+.security-item i,
+.step-item i {
+  color: #0ea5e9;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.security-item span,
+.step-item span {
+  color: #374151;
+  line-height: 1.4;
+}
+
+.modal-footer {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: #f8fafc;
+}
+
+.btn-modal-close,
+.btn-modal-danger {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-modal-close {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.btn-modal-close:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.btn-modal-danger {
+  background: #dc2626;
+  color: white;
+}
+
+.btn-modal-danger:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive Modal */
+@media (max-width: 768px) {
+  .modal-dialog {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 1rem;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+  }
+  
+  .btn-modal-close,
+  .btn-modal-danger {
+    width: 100%;
   }
 }
 
