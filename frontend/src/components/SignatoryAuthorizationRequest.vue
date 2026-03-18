@@ -749,19 +749,19 @@ export default {
       
       availableRoles: [
         {
-          value: 'Prepared by',
+          value: 'Prepared by:',
           label: 'Prepared by',
           description: 'Responsible for creating and preparing reports',
           icon: 'pi pi-file-edit'
         },
         {
-          value: 'Checked and Reviewed by',
+          value: 'Checked and Reviewed by:',
           label: 'Checked and Reviewed by',
           description: 'Reviews and validates report content',
           icon: 'pi pi-search'
         },
         {
-          value: 'Approved by',
+          value: 'Approved by:',
           label: 'Approved by',
           description: 'Final approval and authorization of reports',
           icon: 'pi pi-check-circle'
@@ -812,22 +812,26 @@ export default {
           }
         }, 100);
         
-        // Step 1: Show signatory selection and auto-select (1 second)
+        // Step 1: Show signatory selection and auto-select (2 seconds)
         setTimeout(() => {
           this.currentStep = 1;
           this.selectedSignatory = this.$route.query.signatory;
         }, 500);
         
-        // Step 2: Transition to role selection and auto-select (1 second after step 1)
+        // Step 2: Transition to role selection (show cards first)
         setTimeout(() => {
           this.currentStep = 2;
-          this.selectedRole = this.$route.query.role;
-        }, 1500);
+        }, 2500);
         
-        // Step 3: Transition to justification (1.6 seconds after step 2)
+        // Then auto-select the role (show checkmark animation)
+        setTimeout(() => {
+          this.selectedRole = this.$route.query.role;
+        }, 3000);
+        
+        // Step 3: Transition to justification (3 seconds after step 2)
         setTimeout(() => {
           this.currentStep = 3;
-        }, 3100);
+        }, 5500);
       });
     } else if (this.$route.query.signatory) {
       // Only signatory provided
