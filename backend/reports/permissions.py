@@ -120,6 +120,27 @@ class CanManageSignatureAuthorizations(permissions.BasePermission):
             return False
 
 
+class CanManageUsers(permissions.BasePermission):
+    """Only admins can manage users"""
+    
+    message = "Only administrators can manage users."
+    
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+        
+        # Superusers always have permission
+        if request.user.is_superuser or request.user.is_staff:
+            return True
+        
+        # Check if user is admin
+        try:
+            profile = request.user.profile
+            return profile.role == 'ADMIN'
+        except UserProfile.DoesNotExist:
+            return False
+
+
 class RateLimitSignatures(permissions.BasePermission):
     """Rate limit signature operations"""
     

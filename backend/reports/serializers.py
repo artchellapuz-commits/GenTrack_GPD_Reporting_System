@@ -29,6 +29,18 @@ class UserSerializer(serializers.ModelSerializer):
         except:
             return {'role': 'VIEWER', 'phone': '', 'department': ''}
     
+    def validate_username(self, value):
+        """Validate and sanitize username"""
+        # Remove spaces and convert to lowercase for consistency
+        sanitized = value.strip()
+        
+        # Check if username already exists
+        if self.instance is None:  # Only check on creation
+            if User.objects.filter(username=sanitized).exists():
+                raise serializers.ValidationError('A user with this username already exists.')
+        
+        return sanitized
+    
     def create(self, validated_data):
         role = validated_data.pop('role', 'VIEWER')
         password = validated_data.pop('password', None)
@@ -38,11 +50,19 @@ class UserSerializer(serializers.ModelSerializer):
         
         user = User.objects.create_user(**validated_data, password=password)
         
-        # Create or update profile with role
+        # Generate full_name from first_name and last_name
+        full_name = f"{user.first_name} {user.last_name}".strip()
+        if not full_name:
+            full_name = user.username
+        
+        # Create or update profile with role and full_name
         from .models import UserProfile
         UserProfile.objects.update_or_create(
             user=user,
-            defaults={'role': role}
+            defaults={
+                'role': role,
+                'full_name': full_name
+            }
         )
         
         return user
@@ -513,21 +533,26 @@ class ReportSignatureSerializer(serializers.ModelSerializer):
     
     def _log_audit(self, request, action, report_signature, success, failure_reason=''):
         """Log report signature operation to audit log"""
-        from .models import SignatureAuditLog
+        from .models import AuditLog
         
-        if not request:
+        if not request or not request.user.is_authenticated:
             return
         
-        SignatureAuditLog.objects.create(
-            user=request.user if request.user.is_authenticated else None,
-            action=action,
-            report_signature=report_signature,
-            ip_address=self.get_client_ip(request),
-            user_agent=request.META.get('HTTP_USER_AGENT', ''),
-            device_fingerprint=request.data.get('device_fingerprint', ''),
-            success=success,
-            failure_reason=failure_reason
-        )
+        try:
+            AuditLog.objects.create(
+                user=request.user,
+                action='CREATE' if action == 'APPLY' else action,
+                model_name='ReportSignature',
+                object_id=report_signature.id if report_signature else None,
+                description=f"Report signature applied: {report_signature.signatory_name} for {report_signature.report_date}",
+                ip_address=self.get_client_ip(request),
+                location=''
+            )
+        except Exception as e:
+            # Don't fail the signature operation if audit logging fails
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to create audit log: {str(e)}")
     
     def get_client_ip(self, request):
         """Get client IP address from request"""

@@ -1094,6 +1094,78 @@ class ESignatureViewSet(viewsets.ModelViewSet):
             queryset_filtered = queryset_filtered.filter(signatory_name__icontains=signatory_name)
         
         return queryset_filtered.order_by('-created_at')
+    
+    @action(detail=False, methods=['post'], url_path='create-from-data')
+    def create_from_data(self, request):
+        """Create e-signature from base64 data"""
+        import base64
+        from django.core.files.base import ContentFile
+        
+        try:
+            signatory_name = request.data.get('signatory_name')
+            signatory_title = request.data.get('signatory_title', '')
+            signatory_role = request.data.get('signatory_role', '')
+            signature_type = request.data.get('signature_type', 'DRAW')
+            signature_data = request.data.get('signature_data')
+            is_default = request.data.get('is_default', True)
+            
+            if not signatory_name or not signature_data:
+                return Response(
+                    {'error': 'signatory_name and signature_data are required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Remove data URL prefix if present
+            if signature_data.startswith('data:image'):
+                signature_data = signature_data.split(',')[1]
+            
+            # Decode base64 data
+            try:
+                image_data = base64.b64decode(signature_data)
+            except Exception as e:
+                return Response(
+                    {'error': f'Invalid base64 data: {str(e)}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Create filename
+            filename = f"{signatory_name.replace(' ', '_').replace('.', '').lower()}_signature.png"
+            
+            # Create signature instance
+            signature = ESignature.objects.create(
+                signatory_name=signatory_name,
+                signatory_title=signatory_title,
+                signatory_role=signatory_role,
+                signature_type=signature_type,
+                signature_image=ContentFile(image_data, filename),
+                signature_data=signature_data,
+                is_default=is_default,
+                created_by=request.user
+            )
+            
+            serializer = self.get_serializer(signature)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to create signature: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['get'], url_path='by-signatory')
+    def by_signatory(self, request):
+        """Get signatures for a specific signatory"""
+        signatory_name = request.query_params.get('name')
+        
+        if not signatory_name:
+            return Response(
+                {'error': 'name parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        signatures = self.get_queryset().filter(signatory_name=signatory_name)
+        serializer = self.get_serializer(signatures, many=True)
+        return Response(serializer.data)
 
 
 class ReportSignatureViewSet(viewsets.ModelViewSet):

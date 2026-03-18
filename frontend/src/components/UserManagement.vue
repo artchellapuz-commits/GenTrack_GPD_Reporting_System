@@ -207,8 +207,27 @@
                 type="text" 
                 v-model="formData.username" 
                 :disabled="editMode"
-                placeholder="Enter username"
+                placeholder="Enter username (letters, numbers, @.+-_ only)"
                 required
+              >
+              <small class="field-hint">Username can only contain letters, numbers, and @.+-_ characters (no spaces)</small>
+            </div>
+
+            <div class="form-group">
+              <label>First Name</label>
+              <input 
+                type="text" 
+                v-model="formData.first_name" 
+                placeholder="Enter first name"
+              >
+            </div>
+
+            <div class="form-group">
+              <label>Last Name</label>
+              <input 
+                type="text" 
+                v-model="formData.last_name" 
+                placeholder="Enter last name"
               >
             </div>
 
@@ -299,6 +318,8 @@ export default {
       sortOrder: 1, // -1 for descending, 1 for ascending
       formData: {
         username: '',
+        first_name: '',
+        last_name: '',
         email: '',
         password: '',
         confirmPassword: '',
@@ -414,6 +435,13 @@ export default {
           return;
         }
 
+        // Validate username format
+        const usernameRegex = /^[a-zA-Z0-9@.+_-]+$/;
+        if (!usernameRegex.test(this.formData.username)) {
+          alert('Username can only contain letters, numbers, and @.+-_ characters (no spaces)');
+          return;
+        }
+
         if (!this.editMode) {
           if (!this.formData.password) {
             alert('Password is required');
@@ -427,6 +455,8 @@ export default {
 
         const userData = {
           username: this.formData.username,
+          first_name: this.formData.first_name,
+          last_name: this.formData.last_name,
           email: this.formData.email,
           is_active: this.formData.is_active,
           role: this.formData.role
@@ -457,6 +487,8 @@ export default {
       this.formData = {
         id: user.id,
         username: user.username,
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
         email: user.email || '',
         role: user.profile?.role || 'VIEWER',
         is_active: user.is_active,
@@ -497,6 +529,8 @@ export default {
       this.editMode = false;
       this.formData = {
         username: '',
+        first_name: '',
+        last_name: '',
         email: '',
         password: '',
         confirmPassword: '',
@@ -958,6 +992,14 @@ export default {
 .form-group select:focus {
   outline: none;
   border-color: #667eea;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
 }
 
 .checkbox-label {

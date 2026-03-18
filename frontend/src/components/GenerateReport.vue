@@ -638,7 +638,9 @@
                     <div class="signature-name-container">
                       <span class="name-text">{{ sig.name }}</span>
                       <div class="signature-buttons-group">
+                        <!-- Show e-signature button only if authorized -->
                         <button 
+                          v-if="canSignAs(sig.name)"
                           @click="openESignatureModal(sig)" 
                           class="btn-e-signature"
                           :class="{ 'has-signature': signatures[sig.name] }"
@@ -647,13 +649,15 @@
                           <i :class="signatures[sig.name] ? 'pi pi-pencil' : 'pi pi-plus'"></i>
                           <span>{{ signatures[sig.name] ? 'edit' : 'e-signature' }}</span>
                         </button>
+                        <!-- Show request button if not authorized -->
                         <button 
+                          v-if="!canSignAs(sig.name)"
                           @click="goToRequestSignatureAccess(sig)" 
                           class="btn-request-access-mini"
                           title="Request signature access"
                         >
                           <i class="pi pi-key"></i>
-                          <span>request</span>
+                          <span>request access</span>
                         </button>
                       </div>
                     </div>
@@ -697,7 +701,9 @@
                     <div class="signature-name-container">
                       <span class="name-text">{{ sig.name }}</span>
                       <div class="signature-buttons-group">
+                        <!-- Show e-signature button only if authorized -->
                         <button 
+                          v-if="canSignAs(sig.name)"
                           @click="openESignatureModal(sig)" 
                           class="btn-e-signature"
                           :class="{ 'has-signature': signatures[sig.name] }"
@@ -706,13 +712,15 @@
                           <i :class="signatures[sig.name] ? 'pi pi-pencil' : 'pi pi-plus'"></i>
                           <span>{{ signatures[sig.name] ? 'edit' : 'e-signature' }}</span>
                         </button>
+                        <!-- Show request button if not authorized -->
                         <button 
-                          @click="goToRequestSignatureAccess" 
+                          v-if="!canSignAs(sig.name)"
+                          @click="goToRequestSignatureAccess(sig)" 
                           class="btn-request-access-mini"
                           title="Request signature access"
                         >
                           <i class="pi pi-key"></i>
-                          <span>request</span>
+                          <span>request access</span>
                         </button>
                       </div>
                     </div>
@@ -1699,6 +1707,10 @@ export default {
       selectedFont: 'cursive',
       signatures: {}, // Store signatures by signatory name
       
+      // Security: User authorizations and current user
+      userAuthorizations: [],
+      currentUser: null,
+      
       // Preview enhancements
       zoomLevel: 1,
       isFullscreen: false,
@@ -2076,6 +2088,8 @@ export default {
   mounted() {
     this.loadPlants();
     this.loadGenerationHistory();
+    this.loadCurrentUser();
+    this.loadUserAuthorizations();
     this.loadSavedSignatures(); // Load user's saved signatures
     
     // Load signatures if we already have a report date
@@ -2397,6 +2411,55 @@ export default {
         console.error('Error loading generation history:', error);
         this.generationHistory = [];
       }
+    },
+    
+    // Security methods
+    loadCurrentUser() {
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          this.currentUser = JSON.parse(userStr);
+        }
+      } catch (error) {
+        console.error('Error loading current user:', error);
+      }
+    },
+    
+    async loadUserAuthorizations() {
+      try {
+        const response = await api.getUserSignatoryAuthorizations();
+        this.userAuthorizations = Array.isArray(response.data) ? response.data : (response.data.results || []);
+        console.log('Loaded user authorizations:', this.userAuthorizations);
+      } catch (error) {
+        console.error('Error loading authorizations:', error);
+        this.userAuthorizations = [];
+        // Don't show error toast - fail silently and allow all signatures (fail-open)
+      }
+    },
+    
+    canSignAs(signatoryName) {
+      // Return true by default if data isn't loaded yet (fail-open for better UX)
+      if (!this.currentUser && this.userAuthorizations.length === 0) {
+        return true; // Allow access until we verify authorization
+      }
+      
+      // Solution 2: Check if user can sign as themselves
+      if (this.currentUser && this.currentUser.username) {
+        const username = this.currentUser.username.toUpperCase().replace(/[._]/g, ' ');
+        const normalizedSignatory = signatoryName.toUpperCase().replace(/[._]/g, ' ');
+        
+        // Allow if username matches signatory name
+        if (username === normalizedSignatory) {
+          return true;
+        }
+      }
+      
+      // Solution 1: Check if user has authorization for this signatory
+      const hasAuth = this.userAuthorizations.some(
+        auth => auth.signatory_name === signatoryName && auth.is_valid
+      );
+      
+      return hasAuth;
     },
     
     saveToHistory(reportData) {

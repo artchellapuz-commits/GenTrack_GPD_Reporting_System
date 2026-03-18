@@ -3009,3 +3009,69 @@ Request path: /api/signatory-authorizations/my-requests/
 Args: ()
 Kwargs: {}
 ==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 03:12:54.430948+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 03:13:03.333741+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 03:13:03.334260+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 05:14:10.237835+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 05:16:28.431727+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 05:18:02.037701+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 05:21:01.615015+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 05:22:18.993471+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/signature-setup/S0XBlXhdRcmUCXPwV0ddVP4T0T3BWtqPiCMVSYpSZ78/
+Args: ()
+Kwargs: {'token': 'S0XBlXhdRcmUCXPwV0ddVP4T0T3BWtqPiCMVSYpSZ78'}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 05:22:28.475894+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/signature-setup/BKqkF7IMIlt5wHUobLjbdxAjzAwmR3baZzzD8J5yyuo/
+Args: ()
+Kwargs: {'token': 'BKqkF7IMIlt5wHUobLjbdxAjzAwmR3baZzzD8J5yyuo'}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 05:24:20.698123+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-18 05:24:58.274327+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
