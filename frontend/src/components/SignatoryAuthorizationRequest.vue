@@ -83,7 +83,7 @@
               
               <div class="auth-card-body">
                 <div class="auth-details">
-                  <div class="detail-item">
+                  <div class="detail-item ">
                     <i class="pi pi-calendar"></i>
                     <span>Authorized: {{ formatDate(auth.authorization_date) }}</span>
                   </div>
@@ -294,13 +294,17 @@
                         <span class="summary-label">Signatory:</span>
                         <span class="summary-value">{{ selectedSignatory }}</span>
                       </div>
+                      <div class="summary-item" v-if="selectedSignatory">
+                        <span class="summary-label">Title:</span>
+                        <span class="summary-value">{{ getSignatoryTitle(selectedSignatory) }}</span>
+                      </div>
                       <div class="summary-item">
                         <span class="summary-label">Role:</span>
                         <span class="summary-value">{{ selectedRole }}</span>
                       </div>
                       <div class="summary-item">
                         <span class="summary-label">Email:</span>
-                        <span class="summary-value">{{ email }}</span>
+                        <span class="summary-value">{{ email || '(not provided yet)' }}</span>
                       </div>
                       <div class="summary-item">
                         <span class="summary-label">Request Date:</span>
@@ -792,6 +796,47 @@ export default {
   mounted() {
     this.loadUserAuthorizations();
     this.loadPendingRequests();
+    
+    // Check for query parameters to pre-fill form with animation
+    if (this.$route.query.signatory && this.$route.query.role) {
+      // Animate through the steps automatically
+      this.$nextTick(() => {
+        // Scroll to request section first
+        setTimeout(() => {
+          const requestSection = document.querySelector('.request-section');
+          if (requestSection) {
+            requestSection.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start' 
+            });
+          }
+        }, 100);
+        
+        // Step 1: Show signatory selection and auto-select (1 second)
+        setTimeout(() => {
+          this.currentStep = 1;
+          this.selectedSignatory = this.$route.query.signatory;
+        }, 500);
+        
+        // Step 2: Transition to role selection and auto-select (1 second after step 1)
+        setTimeout(() => {
+          this.currentStep = 2;
+          this.selectedRole = this.$route.query.role;
+        }, 1500);
+        
+        // Step 3: Transition to justification (1.6 seconds after step 2)
+        setTimeout(() => {
+          this.currentStep = 3;
+        }, 3100);
+      });
+    } else if (this.$route.query.signatory) {
+      // Only signatory provided
+      this.selectedSignatory = this.$route.query.signatory;
+      this.currentStep = 2;
+    } else if (this.$route.query.role) {
+      // Only role provided
+      this.selectedRole = this.$route.query.role;
+    }
   },
   methods: {
     // Data loading methods

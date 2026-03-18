@@ -637,15 +637,25 @@
                   <td v-for="sig in reportPreview.signatures.first_row" :key="`name-${sig.name}`" class="signature-name">
                     <div class="signature-name-container">
                       <span class="name-text">{{ sig.name }}</span>
-                      <button 
-                        @click="openESignatureModal(sig)" 
-                        class="btn-e-signature"
-                        :class="{ 'has-signature': signatures[sig.name] }"
-                        :title="signatures[sig.name] ? 'Edit E-Signature' : 'Add E-Signature'"
-                      >
-                        <i :class="signatures[sig.name] ? 'pi pi-pencil' : 'pi pi-plus'"></i>
-                        <span>{{ signatures[sig.name] ? 'edit' : 'e-signature' }}</span>
-                      </button>
+                      <div class="signature-buttons-group">
+                        <button 
+                          @click="openESignatureModal(sig)" 
+                          class="btn-e-signature"
+                          :class="{ 'has-signature': signatures[sig.name] }"
+                          :title="signatures[sig.name] ? 'Edit E-Signature' : 'Add E-Signature'"
+                        >
+                          <i :class="signatures[sig.name] ? 'pi pi-pencil' : 'pi pi-plus'"></i>
+                          <span>{{ signatures[sig.name] ? 'edit' : 'e-signature' }}</span>
+                        </button>
+                        <button 
+                          @click="goToRequestSignatureAccess(sig)" 
+                          class="btn-request-access-mini"
+                          title="Request signature access"
+                        >
+                          <i class="pi pi-key"></i>
+                          <span>request</span>
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -686,15 +696,25 @@
                   <td v-for="sig in reportPreview.signatures.second_row" :key="`name-${sig.name}`" class="signature-name">
                     <div class="signature-name-container">
                       <span class="name-text">{{ sig.name }}</span>
-                      <button 
-                        @click="openESignatureModal(sig)" 
-                        class="btn-e-signature"
-                        :class="{ 'has-signature': signatures[sig.name] }"
-                        :title="signatures[sig.name] ? 'Edit E-Signature' : 'Add E-Signature'"
-                      >
-                        <i :class="signatures[sig.name] ? 'pi pi-pencil' : 'pi pi-plus'"></i>
-                        <span>{{ signatures[sig.name] ? 'edit' : 'e-signature' }}</span>
-                      </button>
+                      <div class="signature-buttons-group">
+                        <button 
+                          @click="openESignatureModal(sig)" 
+                          class="btn-e-signature"
+                          :class="{ 'has-signature': signatures[sig.name] }"
+                          :title="signatures[sig.name] ? 'Edit E-Signature' : 'Add E-Signature'"
+                        >
+                          <i :class="signatures[sig.name] ? 'pi pi-pencil' : 'pi pi-plus'"></i>
+                          <span>{{ signatures[sig.name] ? 'edit' : 'e-signature' }}</span>
+                        </button>
+                        <button 
+                          @click="goToRequestSignatureAccess" 
+                          class="btn-request-access-mini"
+                          title="Request signature access"
+                        >
+                          <i class="pi pi-key"></i>
+                          <span>request</span>
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -2183,7 +2203,7 @@ export default {
 
     initStickyScrollbar() {
       this.$nextTick(() => {
-        if (!this.$refs.stickyScrollTrack || !this.$refs.previewContainer || !this.$refs.stickyScrollContainer) {
+        if (!this.$refs.stickyScrollTrack || !this.$refs.previewContainer || !this.$refs.stickyScrollContainer || !this.$refs.stickyScrollThumb) {
           console.log('User-friendly scrollbar refs not available');
           return;
         }
@@ -2255,8 +2275,12 @@ export default {
           startX = e.clientX;
           startScrollLeft = container.scrollLeft;
           e.preventDefault();
-          document.body.style.userSelect = 'none';
-          thumb.style.transform = 'scaleY(1.1)';
+          if (document.body) {
+            document.body.style.userSelect = 'none';
+          }
+          if (thumb) {
+            thumb.style.transform = 'scaleY(1.1)';
+          }
         });
 
         document.addEventListener('mousemove', (e) => {
@@ -2276,8 +2300,12 @@ export default {
           if (isDragging) {
             console.log('Thumb mouseup');
             isDragging = false;
-            document.body.style.userSelect = '';
-            thumb.style.transform = '';
+            if (document.body) {
+              document.body.style.userSelect = '';
+            }
+            if (thumb) {
+              thumb.style.transform = '';
+            }
           }
         });
 
@@ -2317,8 +2345,10 @@ export default {
         console.log('Thumb should now be at 50% position');
         
         setTimeout(() => {
-          this.$refs.stickyScrollThumb.style.left = '0%';
-          console.log('Thumb reset to 0%');
+          if (this.$refs.stickyScrollThumb) {
+            this.$refs.stickyScrollThumb.style.left = '0%';
+            console.log('Thumb reset to 0%');
+          }
         }, 2000);
       } else {
         console.log('Thumb ref not available');
@@ -2889,6 +2919,21 @@ export default {
       this.selectedSavedSignature = null;
       this.typedSignature = '';
       this.hasDrawnOnCanvas = false; // Reset drawing flag
+    },
+
+    goToRequestSignatureAccess(signatory) {
+      // Navigate to the Request Signature Access page with pre-filled data
+      if (signatory) {
+        this.$router.push({
+          path: '/signatory-authorization',
+          query: {
+            signatory: signatory.name,
+            role: signatory.role
+          }
+        });
+      } else {
+        this.$router.push('/signatory-authorization');
+      }
     },
 
     initializeCanvas() {
@@ -5928,6 +5973,12 @@ export default {
   gap: 0.5rem;
 }
 
+.signature-buttons-group {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
 .name-text {
   font-size: 13px;
   font-weight: bold;
@@ -5963,6 +6014,71 @@ export default {
 
 .btn-e-signature i {
   font-size: 10px;
+}
+
+.btn-request-access-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.5rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 9px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-request-access-mini:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.btn-request-access-mini i {
+  font-size: 9px;
+}
+
+/* Request Signature Access Button - Inline Position */
+.request-access-button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem 0;
+  margin: 0.5rem 0;
+}
+
+.btn-request-signature-access-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+}
+
+.btn-request-signature-access-inline:hover {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+}
+
+.btn-request-signature-access-inline:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+}
+
+.btn-request-signature-access-inline i {
+  font-size: 1.125rem;
 }
 
 /* Signature Display Styles */
