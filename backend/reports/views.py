@@ -27,6 +27,10 @@ from .services.historical_data_importer import HistoricalDataImporter
 from .services.template_generator import TemplateGenerator
 from .services.daily_status_exporter import generate_daily_status_report
 from .utils import get_location_from_ip, get_client_ip
+from .audit_utils import (
+    AuditLogger, audit_action, AuditContext, audit_file_upload, 
+    audit_report_generation, audit_signature_creation, audit_data_export
+)
 
 
 class PlantViewSet(viewsets.ReadOnlyModelViewSet):
@@ -96,6 +100,7 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
         try:
             # Get the file without the is_archived filter
             uploaded_file = UploadedFile.objects.get(pk=pk)
+            filename = uploaded_file.original_filename
             
             # Delete associated generation reports first
             deleted_reports = GenerationReport.objects.filter(uploaded_file=uploaded_file).delete()
@@ -113,14 +118,46 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
                 except Exception as e:
                     print(f"Warning: Could not delete physical file: {e}")
             
+            # Log file deletion
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='FILE_DELETE',
+                description=f'Deleted uploaded file: {filename} and {deleted_reports[0] if deleted_reports else 0} associated reports',
+                model_name='UploadedFile',
+                object_id=pk,
+                category='file_management',
+                severity='HIGH',
+                request=request
+            )
+            
             return Response({
                 'message': 'File and associated records deleted successfully',
                 'reports_deleted': deleted_reports[0] if deleted_reports else 0
             }, status=status.HTTP_200_OK)
             
         except UploadedFile.DoesNotExist:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='FILE_DELETE',
+                description=f'Failed to delete file: File not found (ID: {pk})',
+                category='file_management',
+                severity='LOW',
+                success=False,
+                error_message='File not found',
+                request=request
+            )
             return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='FILE_DELETE',
+                description=f'Failed to delete file (ID: {pk}): {str(e)}',
+                category='file_management',
+                severity='MEDIUM',
+                success=False,
+                error_message=str(e),
+                request=request
+            )
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)    
     @action(detail=True, methods=['post'])
     def archive(self, request, pk=None):
@@ -212,9 +249,20 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
 
     
     @action(detail=False, methods=['post'])
+    @audit_action('FILE_UPLOAD', 'File upload and processing', category='file_management', severity='MEDIUM')
     def upload(self, request):
         serializer = ExcelUploadSerializer(data=request.data)
         if not serializer.is_valid():
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='FILE_UPLOAD',
+                description='File upload failed: Invalid data',
+                category='file_management',
+                severity='LOW',
+                success=False,
+                error_message=str(serializer.errors),
+                request=request
+            )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         file = serializer.validated_data['file']
@@ -223,6 +271,16 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
         try:
             plant = Plant.objects.get(code=plant_code)
         except Plant.DoesNotExist:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='FILE_UPLOAD',
+                description=f'File upload failed: Plant {plant_code} not found',
+                category='file_management',
+                severity='LOW',
+                success=False,
+                error_message='Plant not found',
+                request=request
+            )
             return Response({'error': 'Plant not found'}, status=status.HTTP_404_NOT_FOUND)
         
         # Calculate checksum
@@ -232,6 +290,16 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
         
         # Check for duplicate
         if UploadedFile.objects.filter(checksum=checksum, plant=plant).exists():
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='FILE_UPLOAD',
+                description=f'File upload rejected: Duplicate file for plant {plant_code}',
+                category='file_management',
+                severity='LOW',
+                success=False,
+                error_message='Duplicate file',
+                request=request
+            )
             return Response({'error': 'This file has already been uploaded'}, 
                           status=status.HTTP_400_BAD_REQUEST)
         
@@ -246,14 +314,34 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
             status='PROCESSING'
         )
         
+        # Log successful file upload
+        audit_file_upload(
+            user=request.user,
+            filename=file.name,
+            file_size=file.size,
+            request=request
+        )
+        
         # Process the file
         try:
-            importer = ExcelImporter(uploaded_file)
-            records_imported = importer.process()
-            
-            uploaded_file.status = 'COMPLETED'
-            uploaded_file.records_imported = records_imported
-            uploaded_file.save()
+            with AuditContext(request.user, 'FILE_PROCESSING', f'Processing uploaded file: {file.name}'):
+                importer = ExcelImporter(uploaded_file)
+                records_imported = importer.process()
+                
+                uploaded_file.status = 'COMPLETED'
+                uploaded_file.records_imported = records_imported
+                uploaded_file.save()
+                
+                # Log successful processing
+                AuditLogger.log_user_action(
+                    user=request.user,
+                    action='DATA_CREATE',
+                    description=f'File processed successfully: {records_imported} records imported from {file.name}',
+                    model_name='GenerationReport',
+                    category='data_processing',
+                    severity='MEDIUM',
+                    request=request
+                )
             
             return Response({
                 'message': 'File uploaded and processed successfully',
@@ -265,6 +353,18 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
             uploaded_file.status = 'FAILED'
             uploaded_file.error_message = str(e)
             uploaded_file.save()
+            
+            # Log processing failure
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='FILE_UPLOAD',
+                description=f'File processing failed for {file.name}: {str(e)}',
+                category='file_management',
+                severity='HIGH',
+                success=False,
+                error_message=str(e),
+                request=request
+            )
             
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -325,10 +425,21 @@ class GenerationReportViewSet(mixins.ListModelMixin,
         return Response(summary)
     
     @action(detail=False, methods=['post'], url_path='generate-report')
+    @audit_action('REPORT_GENERATE', 'Excel report generation', category='reporting', severity='MEDIUM')
     def generate_report(self, request):
         """Generate Excel report based on filters"""
         serializer = ReportGenerationSerializer(data=request.data)
         if not serializer.is_valid():
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='REPORT_GENERATE',
+                description='Report generation failed: Invalid parameters',
+                category='reporting',
+                severity='LOW',
+                success=False,
+                error_message=str(serializer.errors),
+                request=request
+            )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         data = serializer.validated_data
@@ -342,42 +453,63 @@ class GenerationReportViewSet(mixins.ListModelMixin,
         ).select_related('plant', 'unit').order_by('report_date', 'plant', 'unit')
         
         if not reports.exists():
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='REPORT_GENERATE',
+                description=f'Report generation failed: No data found for criteria - Plants: {data["plant_codes"]}, Date range: {data["start_date"]} to {data["end_date"]}',
+                category='reporting',
+                severity='LOW',
+                success=False,
+                error_message='No data found',
+                request=request
+            )
             return Response({'error': 'No data found for the specified criteria'}, 
                           status=status.HTTP_404_NOT_FOUND)
         
         # Generate Excel file
         try:
             report_date = data['start_date']
+            plant_names = ', '.join([code for code in data['plant_codes']])
             
-            # Both daily_status and PSR now use the same PSR template
-            # Pass report_type to customize header styling
-            exporter = PSRExporter(reports, report_date, report_type=report_type)
-            file_path = exporter.generate()
-            
-            if report_type == 'daily_status':
-                filename = f"DAILY_PLANT_STATUS_{report_date.strftime('%Y%m%d')}.xlsx"
-                report_name = "Daily Plant Status Report"
-            else:
-                filename = f"PSR_REPORT_{report_date.strftime('%Y%m%d')}.xlsx"
-                report_name = "PSR Report"
-            
-            # Create audit log for report generation
-            try:
-                plant_names = ', '.join([code for code in data['plant_codes']])
-                ip_address = get_client_ip(request)
-                location = get_location_from_ip(ip_address)
+            with AuditContext(request.user, 'REPORT_GENERATION', f'Generating {report_type} report for {plant_names}'):
+                # Both daily_status and PSR now use the same PSR template
+                # Pass report_type to customize header styling
+                exporter = PSRExporter(reports, report_date, report_type=report_type)
+                file_path = exporter.generate()
                 
-                AuditLog.objects.create(
+                if report_type == 'daily_status':
+                    filename = f"DAILY_PLANT_STATUS_{report_date.strftime('%Y%m%d')}.xlsx"
+                    report_name = "Daily Plant Status Report"
+                else:
+                    filename = f"PSR_REPORT_{report_date.strftime('%Y%m%d')}.xlsx"
+                    report_name = "PSR Report"
+                
+                # Comprehensive audit logging for report generation
+                audit_report_generation(
                     user=request.user,
-                    action='EXPORT',
-                    model_name='GenerationReport',
-                    description=f'Generated {report_name} for plants: {plant_names}, Date: {report_date.strftime("%Y-%m-%d")}',
-                    ip_address=ip_address,
-                    location=location
+                    report_date=report_date.strftime('%Y-%m-%d'),
+                    report_type=report_type,
+                    request=request
                 )
-            except Exception as audit_error:
-                # Log the error but don't fail the report generation
-                print(f"Audit log error: {audit_error}")
+                
+                # Additional detailed logging
+                AuditLogger.log_user_action(
+                    user=request.user,
+                    action='REPORT_GENERATE',
+                    description=f'Successfully generated {report_name} - Plants: {plant_names}, Date: {report_date.strftime("%Y-%m-%d")}, Records: {reports.count()}',
+                    model_name='GenerationReport',
+                    category='reporting',
+                    severity='MEDIUM',
+                    request=request
+                )
+                
+                # Log data export
+                audit_data_export(
+                    user=request.user,
+                    data_type=report_name,
+                    record_count=reports.count(),
+                    request=request
+                )
             
             response = FileResponse(
                 open(file_path, 'rb'),
@@ -388,6 +520,18 @@ class GenerationReportViewSet(mixins.ListModelMixin,
             return response
             
         except Exception as e:
+            # Log generation failure
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='REPORT_GENERATE',
+                description=f'Report generation failed for {report_type}: {str(e)}',
+                category='reporting',
+                severity='HIGH',
+                success=False,
+                error_message=str(e),
+                request=request
+            )
+            
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['post'], url_path='preview-report')
@@ -679,65 +823,119 @@ class HistoricalDataViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
     
     @action(detail=False, methods=['post'], url_path='import')
+    @audit_action('DATA_IMPORT', 'Historical data import', category='data_processing', severity='MEDIUM')
     def import_historical(self, request):
         """Import historical data from Excel files"""
         serializer = HistoricalDataUploadSerializer(data=request.data)
         if not serializer.is_valid():
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='DATA_IMPORT',
+                description='Historical data import failed: Invalid data',
+                category='data_processing',
+                severity='LOW',
+                success=False,
+                error_message=str(serializer.errors),
+                request=request
+            )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         capacity_file = serializer.validated_data.get('capacity_file')
         historical_file = serializer.validated_data.get('historical_file')
         
         try:
-            importer = HistoricalDataImporter()
-            results = {}
-            
-            # Save files temporarily
-            temp_files = []
-            
-            if capacity_file:
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
-                    for chunk in capacity_file.chunks():
-                        tmp.write(chunk)
-                    capacity_path = tmp.name
-                    temp_files.append(capacity_path)
+            with AuditContext(request.user, 'HISTORICAL_DATA_IMPORT', 'Processing historical data files'):
+                importer = HistoricalDataImporter()
+                results = {}
                 
-                results['capacity'] = importer.import_plant_capacity(capacity_path)
-            
-            if historical_file:
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
-                    for chunk in historical_file.chunks():
-                        tmp.write(chunk)
-                    historical_path = tmp.name
-                    temp_files.append(historical_path)
+                # Save files temporarily
+                temp_files = []
                 
-                results['historical'] = importer.import_historical_data(historical_path)
-            
-            # Clean up temp files
-            for temp_file in temp_files:
-                try:
-                    os.unlink(temp_file)
-                except:
-                    pass
-            
-            # Calculate totals
-            total_imported = sum(r.get('imported', 0) for r in results.values())
-            all_errors = []
-            all_warnings = []
-            
-            for key, result in results.items():
-                all_errors.extend(result.get('errors', []))
-                all_warnings.extend(result.get('warnings', []))
-            
-            return Response({
-                'success': all(r.get('success', False) for r in results.values()),
-                'total_imported': total_imported,
-                'errors': all_errors,
-                'warnings': all_warnings,
-                'details': results
-            }, status=status.HTTP_201_CREATED if total_imported > 0 else status.HTTP_400_BAD_REQUEST)
+                if capacity_file:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+                        for chunk in capacity_file.chunks():
+                            tmp.write(chunk)
+                        capacity_path = tmp.name
+                        temp_files.append(capacity_path)
+                    
+                    results['capacity'] = importer.import_plant_capacity(capacity_path)
+                    
+                    # Log capacity import
+                    AuditLogger.log_user_action(
+                        user=request.user,
+                        action='DATA_IMPORT',
+                        description=f'Plant capacity data imported: {results["capacity"].get("imported", 0)} records',
+                        model_name='PlantCapacity',
+                        category='data_processing',
+                        severity='MEDIUM',
+                        request=request
+                    )
+                
+                if historical_file:
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+                        for chunk in historical_file.chunks():
+                            tmp.write(chunk)
+                        historical_path = tmp.name
+                        temp_files.append(historical_path)
+                    
+                    results['historical'] = importer.import_historical_data(historical_path)
+                    
+                    # Log historical import
+                    AuditLogger.log_user_action(
+                        user=request.user,
+                        action='DATA_IMPORT',
+                        description=f'Historical data imported: {results["historical"].get("imported", 0)} records',
+                        model_name='HistoricalData',
+                        category='data_processing',
+                        severity='MEDIUM',
+                        request=request
+                    )
+                
+                # Clean up temp files
+                for temp_file in temp_files:
+                    try:
+                        os.unlink(temp_file)
+                    except:
+                        pass
+                
+                # Calculate totals
+                total_imported = sum(r.get('imported', 0) for r in results.values())
+                all_errors = []
+                all_warnings = []
+                
+                for key, result in results.items():
+                    all_errors.extend(result.get('errors', []))
+                    all_warnings.extend(result.get('warnings', []))
+                
+                # Log overall import result
+                AuditLogger.log_user_action(
+                    user=request.user,
+                    action='DATA_IMPORT',
+                    description=f'Historical data import completed: {total_imported} total records imported',
+                    category='data_processing',
+                    severity='MEDIUM',
+                    request=request
+                )
+                
+                return Response({
+                    'success': all(r.get('success', False) for r in results.values()),
+                    'total_imported': total_imported,
+                    'errors': all_errors,
+                    'warnings': all_warnings,
+                    'details': results
+                }, status=status.HTTP_201_CREATED if total_imported > 0 else status.HTTP_400_BAD_REQUEST)
             
         except Exception as e:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='DATA_IMPORT',
+                description=f'Historical data import failed: {str(e)}',
+                category='data_processing',
+                severity='HIGH',
+                success=False,
+                error_message=str(e),
+                request=request
+            )
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -798,7 +996,19 @@ class WaterNominationViewSet(viewsets.ModelViewSet):
         return queryset
     
     def perform_create(self, serializer):
-        serializer.save(submitted_by=self.request.user if self.request.user.is_authenticated else None)
+        nomination = serializer.save(submitted_by=self.request.user if self.request.user.is_authenticated else None)
+        
+        # Log water nomination creation
+        AuditLogger.log_user_action(
+            user=self.request.user,
+            action='DATA_CREATE',
+            description=f'Created water nomination for {nomination.plant.name} on {nomination.nomination_date}',
+            model_name='WaterNomination',
+            object_id=nomination.id,
+            category='data_management',
+            severity='MEDIUM',
+            request=self.request
+        )
     
     @action(detail=True, methods=['post'])
     def submit(self, request, pk=None):
@@ -813,6 +1023,18 @@ class WaterNominationViewSet(viewsets.ModelViewSet):
         nomination.submitted_at = datetime.now()
         nomination.submitted_by = request.user if request.user.is_authenticated else None
         nomination.save()
+        
+        # Log nomination submission
+        AuditLogger.log_user_action(
+            user=request.user,
+            action='DATA_UPDATE',
+            description=f'Submitted water nomination for {nomination.plant.name} on {nomination.nomination_date}',
+            model_name='WaterNomination',
+            object_id=nomination.id,
+            category='workflow',
+            severity='MEDIUM',
+            request=request
+        )
         
         return Response({'message': 'Nomination submitted successfully'}, status=status.HTTP_200_OK)
     
@@ -830,6 +1052,18 @@ class WaterNominationViewSet(viewsets.ModelViewSet):
         nomination.approved_by = request.user if request.user.is_authenticated else None
         nomination.save()
         
+        # Log nomination approval
+        AuditLogger.log_user_action(
+            user=request.user,
+            action='DATA_UPDATE',
+            description=f'Approved water nomination for {nomination.plant.name} on {nomination.nomination_date}',
+            model_name='WaterNomination',
+            object_id=nomination.id,
+            category='workflow',
+            severity='MEDIUM',
+            request=request
+        )
+        
         return Response({'message': 'Nomination approved successfully'}, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'])
@@ -845,6 +1079,18 @@ class WaterNominationViewSet(viewsets.ModelViewSet):
         nomination.status = 'REJECTED'
         nomination.remarks = remarks
         nomination.save()
+        
+        # Log nomination rejection
+        AuditLogger.log_user_action(
+            user=request.user,
+            action='DATA_UPDATE',
+            description=f'Rejected water nomination for {nomination.plant.name} on {nomination.nomination_date}. Reason: {remarks}',
+            model_name='WaterNomination',
+            object_id=nomination.id,
+            category='workflow',
+            severity='MEDIUM',
+            request=request
+        )
         
         return Response({'message': 'Nomination rejected'}, status=status.HTTP_200_OK)
 
@@ -964,9 +1210,21 @@ class TestimonialViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         # New testimonials default to inactive (pending admin approval)
-        serializer.save(
+        testimonial = serializer.save(
             submitted_by=self.request.user if self.request.user.is_authenticated else None,
             is_active=False
+        )
+        
+        # Log testimonial submission
+        AuditLogger.log_user_action(
+            user=self.request.user,
+            action='DATA_CREATE',
+            description=f'Submitted testimonial: "{testimonial.content[:100]}..." (pending approval)',
+            model_name='Testimonial',
+            object_id=testimonial.id,
+            category='content_management',
+            severity='LOW',
+            request=self.request
         )
 
 
@@ -1096,6 +1354,7 @@ class ESignatureViewSet(viewsets.ModelViewSet):
         return queryset_filtered.order_by('-created_at')
     
     @action(detail=False, methods=['post'], url_path='create-from-data')
+    @audit_action('SIGNATURE_CREATE', 'E-signature creation from data', category='e_signature', severity='MEDIUM')
     def create_from_data(self, request):
         """Create e-signature from base64 data"""
         import base64
@@ -1110,6 +1369,16 @@ class ESignatureViewSet(viewsets.ModelViewSet):
             is_default = request.data.get('is_default', True)
             
             if not signatory_name or not signature_data:
+                AuditLogger.log_user_action(
+                    user=request.user,
+                    action='SIGNATURE_CREATE',
+                    description='E-signature creation failed: Missing required data',
+                    category='e_signature',
+                    severity='LOW',
+                    success=False,
+                    error_message='signatory_name and signature_data are required',
+                    request=request
+                )
                 return Response(
                     {'error': 'signatory_name and signature_data are required'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -1123,6 +1392,16 @@ class ESignatureViewSet(viewsets.ModelViewSet):
             try:
                 image_data = base64.b64decode(signature_data)
             except Exception as e:
+                AuditLogger.log_user_action(
+                    user=request.user,
+                    action='SIGNATURE_CREATE',
+                    description=f'E-signature creation failed for {signatory_name}: Invalid base64 data',
+                    category='e_signature',
+                    severity='LOW',
+                    success=False,
+                    error_message=str(e),
+                    request=request
+                )
                 return Response(
                     {'error': f'Invalid base64 data: {str(e)}'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -1143,10 +1422,38 @@ class ESignatureViewSet(viewsets.ModelViewSet):
                 created_by=request.user
             )
             
+            # Log successful signature creation
+            audit_signature_creation(
+                user=request.user,
+                signatory_name=signatory_name,
+                request=request
+            )
+            
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='SIGNATURE_CREATE',
+                description=f'Created e-signature for {signatory_name} (type: {signature_type})',
+                model_name='ESignature',
+                object_id=signature.id,
+                category='e_signature',
+                severity='MEDIUM',
+                request=request
+            )
+            
             serializer = self.get_serializer(signature)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
             
         except Exception as e:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='SIGNATURE_CREATE',
+                description=f'E-signature creation failed for {signatory_name}: {str(e)}',
+                category='e_signature',
+                severity='HIGH',
+                success=False,
+                error_message=str(e),
+                request=request
+            )
             return Response(
                 {'error': f'Failed to create signature: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -1187,17 +1494,21 @@ class ReportSignatureViewSet(viewsets.ModelViewSet):
         return queryset.order_by('-signed_at')
     
     @action(detail=False, methods=['post'], url_path='sign-report')
+    @audit_action('REPORT_SIGN', 'Report signing with e-signature', category='e_signature', severity='HIGH')
     def sign_report(self, request):
         """Sign a report with an e-signature"""
         data = request.data.copy()
+        signatory_name = data.get('signatory_name')
+        report_date = data.get('report_date')
+        report_type = data.get('report_type', 'PSR')
         
         # Generate verification hash
         import hashlib
         import json
         hash_data = {
-            'report_date': data.get('report_date'),
-            'report_type': data.get('report_type'),
-            'signatory_name': data.get('signatory_name'),
+            'report_date': report_date,
+            'report_type': report_type,
+            'signatory_name': signatory_name,
             'signatory_role': data.get('signatory_role'),
             'timestamp': datetime.now().isoformat()
         }
@@ -1207,7 +1518,33 @@ class ReportSignatureViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=data, context={'request': request})
         if serializer.is_valid():
             signature = serializer.save()
+            
+            # Log report signing
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='REPORT_SIGN',
+                description=f'Signed {report_type} report for {report_date} as {signatory_name}',
+                model_name='ReportSignature',
+                object_id=signature.id,
+                category='e_signature',
+                severity='HIGH',
+                request=request
+            )
+            
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            # Log signing failure
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='REPORT_SIGN',
+                description=f'Failed to sign {report_type} report for {report_date} as {signatory_name}: {str(serializer.errors)}',
+                category='e_signature',
+                severity='MEDIUM',
+                success=False,
+                error_message=str(serializer.errors),
+                request=request
+            )
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=['get'], url_path='for-report')

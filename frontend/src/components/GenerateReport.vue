@@ -5996,11 +5996,12 @@ export default {
 
 .signature-name {
   border: 1px solid #000;
-  padding: 6px 10px;
-  font-size: 15px;
+  padding: 10px 12px; /* Increased padding */
+  font-size: 16px; /* Increased font size */
   font-weight: bold;
   color: #000;
   text-align: left;
+  min-height: 85px; /* Added minimum height for better spacing */
 }
 
 .signature-title {
@@ -6033,33 +6034,38 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.7rem; /* Increased gap for better spacing */
+  padding: 4px 0; /* Added padding */
 }
 
 .signature-buttons-group {
   display: flex;
-  gap: 0.3rem;
+  gap: 0.5rem; /* Increased gap between buttons */
   align-items: center;
+  justify-content: center; /* Center the buttons */
 }
 
 .name-text {
-  font-size: 13px;
+  font-size: 16px; /* Increased from 13px */
   font-weight: bold;
   color: #000;
+  margin-bottom: 8px; /* Added margin for better spacing */
 }
 
 .btn-e-signature {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.3rem 0.6rem;
+  gap: 0.4rem; /* Increased gap */
+  padding: 0.5rem 0.8rem; /* Increased padding */
   background: #3b82f6;
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 10px;
+  border-radius: 6px; /* Slightly larger border radius */
+  font-size: 12px; /* Increased font size */
+  font-weight: 500; /* Added font weight */
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: 32px; /* Added minimum height */
 }
 
 .btn-e-signature:hover {
@@ -6076,22 +6082,24 @@ export default {
 }
 
 .btn-e-signature i {
-  font-size: 10px;
+  font-size: 12px; /* Increased from 10px */
 }
 
 .btn-request-access-mini {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.3rem 0.5rem;
+  gap: 0.4rem; /* Increased gap */
+  padding: 0.5rem 0.7rem; /* Increased padding */
   background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
   color: white;
   border: none;
-  border-radius: 4px;
-  font-size: 9px;
+  border-radius: 6px; /* Increased border radius */
+  font-size: 11px; /* Increased font size */
+  font-weight: 500; /* Added font weight */
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  min-height: 32px; /* Added minimum height to match e-signature button */
 }
 
 .btn-request-access-mini:hover {
@@ -6101,7 +6109,7 @@ export default {
 }
 
 .btn-request-access-mini i {
-  font-size: 9px;
+  font-size: 11px; /* Increased from 9px */
 }
 
 /* Request Signature Access Button - Inline Position */

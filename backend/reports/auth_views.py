@@ -19,34 +19,67 @@ from .serializers import (
     PasswordResetRequestSerializer
 )
 from .utils import get_location_from_ip, get_client_ip
+from .audit_utils import (
+    audit_login, audit_logout, AuditLogger, audit_action, AuditContext
+)
+from .models import AuditLog
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """Custom login view with user details and profile"""
     
     def post(self, request, *args, **kwargs):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        ip_address = get_client_ip(request)
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        # Attempt authentication first
+        user = authenticate(username=username, password=password)
+        
         response = super().post(request, *args, **kwargs)
         
-        if response.status_code == 200:
-            user = User.objects.get(username=request.data.get('username'))
-            # Use UserProfileSerializer to include role and permissions
+        if response.status_code == 200 and user:
+            # Successful login
             from .serializers import UserProfileSerializer
             response.data['user'] = UserProfileSerializer(user).data
             
-            # Create audit log for successful login
-            from .models import AuditLog
-            ip_address = get_client_ip(request)
-            location = get_location_from_ip(ip_address)
-            
-            AuditLog.objects.create(
+            # Comprehensive audit logging for successful login
+            audit_login(
                 user=user,
-                action='LOGIN',
-                model_name='User',
-                description=f'User {user.username} logged in successfully',
+                success=True,
                 ip_address=ip_address,
-                location=location
+                user_agent=user_agent
             )
             
+            # Additional detailed logging
+            AuditLogger.log_user_action(
+                user=user,
+                action='LOGIN',
+                description=f'Successful login from {ip_address}',
+                category='authentication',
+                severity='LOW',
+                request=request
+            )
+            
+        else:
+            # Failed login attempt
+            audit_login(
+                user=None,
+                success=False,
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
+            
+            # Log failed attempt with more details
+            AuditLogger.log_security_event(
+                user=None,
+                action='LOGIN_FAILED',
+                description=f'Failed login attempt for username: {username} from {ip_address}',
+                severity='MEDIUM',
+                request=request
+            )
+        
         return response
 
 
@@ -61,6 +94,18 @@ class AuthViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             user = serializer.save()
             
+            # Log user registration
+            AuditLogger.log_user_action(
+                user=user,
+                action='USER_REGISTER',
+                description=f'New user registered: {user.username}',
+                model_name='User',
+                object_id=user.id,
+                category='user_management',
+                severity='MEDIUM',
+                request=request
+            )
+            
             # Generate tokens
             refresh = RefreshToken.for_user(user)
             
@@ -71,6 +116,18 @@ class AuthViewSet(viewsets.ViewSet):
                     'access': str(refresh.access_token),
                 }
             }, status=status.HTTP_201_CREATED)
+        else:
+            # Log failed registration
+            AuditLogger.log_user_action(
+                user=None,
+                action='USER_REGISTER',
+                description=f'Failed user registration attempt',
+                category='user_management',
+                severity='LOW',
+                success=False,
+                error_message=str(serializer.errors),
+                request=request
+            )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -78,18 +135,22 @@ class AuthViewSet(viewsets.ViewSet):
     def logout(self, request):
         """Logout user by blacklisting refresh token"""
         try:
-            # Create audit log for logout
-            from .models import AuditLog
             ip_address = get_client_ip(request)
-            location = get_location_from_ip(ip_address)
             
-            AuditLog.objects.create(
+            # Comprehensive audit logging for logout
+            audit_logout(
+                user=request.user,
+                ip_address=ip_address
+            )
+            
+            # Additional detailed logging
+            AuditLogger.log_user_action(
                 user=request.user,
                 action='LOGOUT',
-                model_name='User',
-                description=f'User {request.user.username} logged out',
-                ip_address=ip_address,
-                location=location
+                description=f'User logged out from {ip_address}',
+                category='authentication',
+                severity='LOW',
+                request=request
             )
             
             refresh_token = request.data.get('refresh_token')
@@ -100,6 +161,18 @@ class AuthViewSet(viewsets.ViewSet):
                 'message': 'Successfully logged out'
             }, status=status.HTTP_200_OK)
         except Exception as e:
+            # Log failed logout attempt
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='LOGOUT',
+                description=f'Failed logout attempt: {str(e)}',
+                category='authentication',
+                severity='MEDIUM',
+                success=False,
+                error_message=str(e),
+                request=request
+            )
+            
             return Response({
                 'error': 'Invalid token'
             }, status=status.HTTP_400_BAD_REQUEST)
@@ -120,8 +193,33 @@ class AuthViewSet(viewsets.ViewSet):
         )
         
         if serializer.is_valid():
-            serializer.save()
+            user = serializer.save()
+            
+            # Log profile update
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='USER_UPDATE',
+                description=f'Updated user profile for {user.username}',
+                model_name='User',
+                object_id=user.id,
+                category='user_management',
+                severity='LOW',
+                request=request
+            )
+            
             return Response(serializer.data)
+        else:
+            # Log failed profile update
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='USER_UPDATE',
+                description=f'Failed to update profile: {str(serializer.errors)}',
+                category='user_management',
+                severity='LOW',
+                success=False,
+                error_message=str(serializer.errors),
+                request=request
+            )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -135,6 +233,13 @@ class AuthViewSet(viewsets.ViewSet):
             
             # Check old password
             if not user.check_password(serializer.data.get('old_password')):
+                AuditLogger.log_security_event(
+                    user=user,
+                    action='PASSWORD_CHANGE_FAILED',
+                    description=f'Password change failed: Incorrect old password for {user.username}',
+                    severity='MEDIUM',
+                    request=request
+                )
                 return Response({
                     'old_password': ['Wrong password']
                 }, status=status.HTTP_400_BAD_REQUEST)
@@ -143,9 +248,30 @@ class AuthViewSet(viewsets.ViewSet):
             user.set_password(serializer.data.get('new_password'))
             user.save()
             
+            # Log successful password change
+            AuditLogger.log_security_event(
+                user=user,
+                action='PASSWORD_CHANGE',
+                description=f'Password changed successfully for {user.username}',
+                severity='HIGH',
+                request=request
+            )
+            
             return Response({
                 'message': 'Password updated successfully'
             }, status=status.HTTP_200_OK)
+        else:
+            # Log validation failure
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='PASSWORD_CHANGE_FAILED',
+                description=f'Password change failed: Validation errors',
+                category='authentication',
+                severity='LOW',
+                success=False,
+                error_message=str(serializer.errors),
+                request=request
+            )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -156,10 +282,18 @@ class AuthViewSet(viewsets.ViewSet):
         
         if serializer.is_valid():
             username = serializer.validated_data.get('username')
+            reason = serializer.validated_data.get('reason', '')
             
             # Verify username exists
             from django.contrib.auth.models import User
             if not User.objects.filter(username=username).exists():
+                AuditLogger.log_security_event(
+                    user=None,
+                    action='PASSWORD_RESET_REQUEST',
+                    description=f'Password reset request failed: Username {username} not found',
+                    severity='MEDIUM',
+                    request=request
+                )
                 return Response({
                     'error': 'Username not found'
                 }, status=status.HTTP_404_NOT_FOUND)
@@ -171,8 +305,17 @@ class AuthViewSet(viewsets.ViewSet):
             from .models import PasswordResetRequest
             reset_request = PasswordResetRequest.objects.create(
                 username=username,
-                reason=serializer.validated_data.get('reason', ''),
+                reason=reason,
                 ip_address=ip_address
+            )
+            
+            # Log password reset request
+            AuditLogger.log_security_event(
+                user=None,
+                action='PASSWORD_RESET_REQUEST',
+                description=f'Password reset request submitted for {username}. Reason: {reason}',
+                severity='MEDIUM',
+                request=request
             )
             
             # Send email notification to admins
@@ -189,6 +332,18 @@ class AuthViewSet(viewsets.ViewSet):
                 'message': 'Password reset request submitted successfully. An administrator will contact you shortly.',
                 'request_id': reset_request.id
             }, status=status.HTTP_201_CREATED)
+        else:
+            # Log validation failure
+            AuditLogger.log_user_action(
+                user=None,
+                action='PASSWORD_RESET_REQUEST',
+                description=f'Password reset request failed: Validation errors',
+                category='authentication',
+                severity='LOW',
+                success=False,
+                error_message=str(serializer.errors),
+                request=request
+            )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     

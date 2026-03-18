@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Plant(models.Model):
@@ -461,9 +464,97 @@ class UserProfile(models.Model):
 
 
 class AuditLog(models.Model):
-    """Audit trail for all important actions"""
+    """Comprehensive audit trail for all system actions"""
     
     ACTION_CHOICES = [
+        # Authentication & User Management
+        ('LOGIN', 'User Login'),
+        ('LOGOUT', 'User Logout'),
+        ('LOGIN_FAILED', 'Failed Login Attempt'),
+        ('PASSWORD_CHANGE', 'Password Changed'),
+        ('PASSWORD_RESET_REQUEST', 'Password Reset Requested'),
+        ('PASSWORD_RESET_COMPLETE', 'Password Reset Completed'),
+        ('USER_CREATE', 'User Created'),
+        ('USER_UPDATE', 'User Updated'),
+        ('USER_DELETE', 'User Deleted'),
+        ('USER_ACTIVATE', 'User Activated'),
+        ('USER_DEACTIVATE', 'User Deactivated'),
+        
+        # File Operations
+        ('FILE_UPLOAD', 'File Uploaded'),
+        ('FILE_DOWNLOAD', 'File Downloaded'),
+        ('FILE_DELETE', 'File Deleted'),
+        ('FILE_ARCHIVE', 'File Archived'),
+        ('FILE_RESTORE', 'File Restored'),
+        ('FILE_VIEW', 'File Viewed'),
+        ('FILE_EXPORT', 'File Exported'),
+        
+        # Report Operations
+        ('REPORT_GENERATE', 'Report Generated'),
+        ('REPORT_PREVIEW', 'Report Previewed'),
+        ('REPORT_VIEW', 'Report Viewed'),
+        ('REPORT_EXPORT', 'Report Exported'),
+        ('REPORT_DELETE', 'Report Deleted'),
+        ('REPORT_SIGN', 'Report Signed'),
+        
+        # E-Signature Operations
+        ('SIGNATURE_CREATE', 'E-Signature Created'),
+        ('SIGNATURE_UPDATE', 'E-Signature Updated'),
+        ('SIGNATURE_DELETE', 'E-Signature Deleted'),
+        ('SIGNATURE_VIEW', 'E-Signature Viewed'),
+        ('SIGNATURE_SETUP_ACCESS', 'Signature Setup Page Accessed'),
+        ('SIGNATURE_SETUP_COMPLETE', 'Signature Setup Completed'),
+        
+        # Authorization Operations
+        ('AUTH_REQUEST_CREATE', 'Authorization Request Created'),
+        ('AUTH_REQUEST_APPROVE', 'Authorization Request Approved'),
+        ('AUTH_REQUEST_REJECT', 'Authorization Request Rejected'),
+        ('AUTH_REQUEST_CANCEL', 'Authorization Request Cancelled'),
+        ('AUTH_REQUEST_VIEW', 'Authorization Request Viewed'),
+        ('AUTH_GRANT', 'Authorization Granted'),
+        ('AUTH_REVOKE', 'Authorization Revoked'),
+        ('AUTH_APPROVE_EXISTING', 'Authorization Approved with Existing Signature'),
+        
+        # Data Operations
+        ('DATA_CREATE', 'Data Created'),
+        ('DATA_UPDATE', 'Data Updated'),
+        ('DATA_DELETE', 'Data Deleted'),
+        ('DATA_VIEW', 'Data Viewed'),
+        ('DATA_SEARCH', 'Data Searched'),
+        ('DATA_FILTER', 'Data Filtered'),
+        ('DATA_SORT', 'Data Sorted'),
+        
+        # System Operations
+        ('SYSTEM_BACKUP', 'System Backup'),
+        ('SYSTEM_RESTORE', 'System Restore'),
+        ('SYSTEM_MAINTENANCE', 'System Maintenance'),
+        ('SYSTEM_CONFIG_CHANGE', 'System Configuration Changed'),
+        ('SYSTEM_ERROR', 'System Error'),
+        
+        # Navigation & Page Access
+        ('PAGE_ACCESS', 'Page Accessed'),
+        ('DASHBOARD_VIEW', 'Dashboard Viewed'),
+        ('MENU_NAVIGATE', 'Menu Navigation'),
+        ('COMPONENT_LOAD', 'Component Loaded'),
+        
+        # Email Operations
+        ('EMAIL_SENT', 'Email Sent'),
+        ('EMAIL_FAILED', 'Email Failed'),
+        ('EMAIL_LINK_CLICKED', 'Email Link Clicked'),
+        
+        # Security Events
+        ('SECURITY_VIOLATION', 'Security Violation'),
+        ('UNAUTHORIZED_ACCESS', 'Unauthorized Access Attempt'),
+        ('PERMISSION_DENIED', 'Permission Denied'),
+        ('TOKEN_EXPIRED', 'Token Expired'),
+        ('TOKEN_INVALID', 'Invalid Token Used'),
+        
+        # API Operations
+        ('API_CALL', 'API Call Made'),
+        ('API_ERROR', 'API Error'),
+        ('API_RATE_LIMIT', 'API Rate Limit Hit'),
+        
+        # Generic Operations (for backward compatibility)
         ('CREATE', 'Create'),
         ('UPDATE', 'Update'),
         ('DELETE', 'Delete'),
@@ -471,19 +562,45 @@ class AuditLog(models.Model):
         ('EXPORT', 'Export'),
         ('APPROVE', 'Approve'),
         ('REJECT', 'Reject'),
-        ('LOGIN', 'Login'),
-        ('LOGOUT', 'Logout'),
+        ('VIEW', 'View'),
+        ('ACCESS', 'Access'),
     ]
     
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_logs')
-    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
-    model_name = models.CharField(max_length=100)
+    # Core audit fields
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='audit_logs')
+    action = models.CharField(max_length=30, choices=ACTION_CHOICES)
+    model_name = models.CharField(max_length=100, blank=True)
     object_id = models.IntegerField(null=True, blank=True)
     description = models.TextField()
+    
+    # Request context
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    location = models.CharField(max_length=200, blank=True, help_text="Approximate location based on IP")
     user_agent = models.TextField(blank=True)
+    location = models.CharField(max_length=200, blank=True, help_text="Approximate location based on IP")
+    session_key = models.CharField(max_length=40, blank=True, help_text="Session identifier")
+    
+    # Additional context
+    url_path = models.CharField(max_length=500, blank=True, help_text="URL path accessed")
+    http_method = models.CharField(max_length=10, blank=True, help_text="HTTP method used")
+    request_data = models.JSONField(default=dict, blank=True, help_text="Request parameters/data")
+    response_status = models.IntegerField(null=True, blank=True, help_text="HTTP response status")
+    
+    # Timing and performance
     timestamp = models.DateTimeField(auto_now_add=True)
+    duration_ms = models.IntegerField(null=True, blank=True, help_text="Operation duration in milliseconds")
+    
+    # Categorization
+    category = models.CharField(max_length=50, blank=True, help_text="Category for grouping similar actions")
+    severity = models.CharField(max_length=20, choices=[
+        ('LOW', 'Low'),
+        ('MEDIUM', 'Medium'),
+        ('HIGH', 'High'),
+        ('CRITICAL', 'Critical'),
+    ], default='LOW')
+    
+    # Success/failure tracking
+    success = models.BooleanField(default=True, help_text="Whether the action was successful")
+    error_message = models.TextField(blank=True, help_text="Error message if action failed")
     
     class Meta:
         db_table = 'audit_logs'
@@ -492,10 +609,122 @@ class AuditLog(models.Model):
             models.Index(fields=['user', 'timestamp']),
             models.Index(fields=['action', 'timestamp']),
             models.Index(fields=['model_name', 'object_id']),
+            models.Index(fields=['ip_address', 'timestamp']),
+            models.Index(fields=['category', 'timestamp']),
+            models.Index(fields=['severity', 'timestamp']),
+            models.Index(fields=['success', 'timestamp']),
+            models.Index(fields=['url_path']),
         ]
     
     def __str__(self):
-        return f"{self.user.username if self.user else 'System'} - {self.action} - {self.timestamp}"
+        user_str = self.user.username if self.user else 'Anonymous'
+        return f"{user_str} - {self.get_action_display()} - {self.timestamp}"
+    
+    @classmethod
+    def log_action(cls, user=None, action=None, description='', model_name='', object_id=None, 
+                   request=None, category='', severity='LOW', success=True, error_message='',
+                   duration_ms=None, **kwargs):
+        """
+        Convenient method to log actions with automatic context extraction
+        """
+        try:
+            audit_data = {
+                'user': user,
+                'action': action,
+                'description': description,
+                'model_name': model_name,
+                'object_id': object_id,
+                'category': category,
+                'severity': severity,
+                'success': success,
+                'error_message': error_message,
+                'duration_ms': duration_ms,
+            }
+            
+            # Extract request context if available
+            if request:
+                try:
+                    audit_data.update({
+                        'ip_address': cls._get_client_ip(request),
+                        'user_agent': request.META.get('HTTP_USER_AGENT', '') if hasattr(request, 'META') else '',
+                        'session_key': cls._get_session_key_safely(request),
+                        'url_path': request.path if hasattr(request, 'path') else '',
+                        'http_method': request.method if hasattr(request, 'method') else '',
+                        'request_data': cls._sanitize_request_data(request),
+                    })
+                except Exception as e:
+                    # If request context extraction fails, continue without it
+                    logger.error(f"Failed to extract request context: {e}")
+            
+            # Add any additional kwargs that match model fields
+            model_fields = [f.name for f in cls._meta.fields]
+            for key, value in kwargs.items():
+                if key in model_fields:
+                    audit_data[key] = value
+            
+            return cls.objects.create(**audit_data)
+        except Exception as e:
+            logger.error(f"Failed to create audit log: {e}")
+            return None
+    
+    @staticmethod
+    def _get_client_ip(request):
+        """Extract client IP from request"""
+        try:
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip = x_forwarded_for.split(',')[0]
+            else:
+                ip = request.META.get('REMOTE_ADDR')
+            return ip
+        except Exception:
+            return None
+    
+    @staticmethod
+    def _get_session_key_safely(request):
+        """Safely get session key from request"""
+        try:
+            if hasattr(request, 'session') and request.session:
+                return getattr(request.session, 'session_key', '')
+        except Exception:
+            pass
+        return ''
+    
+    @staticmethod
+    def _sanitize_request_data(request):
+        """Sanitize request data to remove sensitive information"""
+        try:
+            if not hasattr(request, 'META'):
+                return {}
+            
+            sensitive_fields = ['password', 'token', 'secret', 'key', 'signature_data']
+            data = {}
+            
+            # Get data from different sources
+            if hasattr(request, 'data') and request.data:
+                data.update(dict(request.data))
+            if hasattr(request, 'GET') and request.GET:
+                data.update(dict(request.GET))
+            if hasattr(request, 'POST') and request.POST:
+                data.update(dict(request.POST))
+            
+            # Remove sensitive fields
+            for field in sensitive_fields:
+                if field in data:
+                    data[field] = '[REDACTED]'
+            
+            # Limit data size
+            import json
+            try:
+                json_str = json.dumps(data, default=str)
+                if len(json_str) > 5000:  # Limit to 5KB
+                    data = {'_truncated': True, '_size': len(json_str)}
+            except Exception:
+                data = {'_error': 'Could not serialize request data'}
+            
+            return data
+        except Exception:
+            return {}
 
 
 class ESignature(models.Model):

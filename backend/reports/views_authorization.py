@@ -7,9 +7,10 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.conf import settings
 
-from .models import SignatoryAuthorization, SignatoryAuthorizationRequest
+from .models import SignatoryAuthorization, SignatoryAuthorizationRequest, AuditLog
 from .serializers_security import SignatoryAuthorizationSerializer
 from .permissions import CanManageSignatureAuthorizations
+from .audit_utils import audit_action
 
 
 class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
@@ -80,6 +81,7 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=False, methods=['post'], url_path='request')
+    @audit_action('AUTH_REQUEST_CREATE', 'Authorization request submission', category='authorization', severity='MEDIUM')
     def request_authorization(self, request):
         """Submit a new authorization request"""
         # IMMEDIATE file write to confirm method is called
@@ -103,15 +105,27 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
         from .serializers_security import SignatoryAuthorizationRequestSerializer
         
         data = request.data.copy()
+        signatory_name = data.get('signatory_name')
+        role = data.get('role')
         
         # Check if user already has this authorization
         existing_auth = SignatoryAuthorization.objects.filter(
             user=request.user,
-            signatory_name=data.get('signatory_name'),
+            signatory_name=signatory_name,
             is_active=True
         ).first()
         
         if existing_auth and existing_auth.is_valid():
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='AUTH_REQUEST_CREATE',
+                description=f'Authorization request rejected: User already has active authorization for {signatory_name}',
+                category='authorization',
+                severity='LOW',
+                success=False,
+                error_message='Already authorized',
+                request=request
+            )
             return Response(
                 {'error': 'You already have active authorization for this signatory'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -127,6 +141,25 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
             print(f"🔥 Auth request created: ID={auth_request.id}, Status={auth_request.status}")
             with open('debug_log.txt', 'a', encoding='utf-8') as f:
                 f.write(f"🔥 Auth request created: ID={auth_request.id}, Status={auth_request.status}\n")
+            
+            # Log authorization request creation
+            audit_authorization_request(
+                user=request.user,
+                signatory_name=signatory_name,
+                role=role,
+                request=request
+            )
+            
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='AUTH_REQUEST_CREATE',
+                description=f'Created authorization request for {signatory_name} as {role}',
+                model_name='SignatoryAuthorizationRequest',
+                object_id=auth_request.id,
+                category='authorization',
+                severity='MEDIUM',
+                request=request
+            )
             
             # Send notification to admins
             try:
@@ -172,6 +205,18 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
             print(f"🔥 Serializer errors: {serializer.errors}")
             with open('debug_log.txt', 'a', encoding='utf-8') as f:
                 f.write(f"🔥 Serializer errors: {serializer.errors}\n")
+            
+            # Log validation failure
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='AUTH_REQUEST_CREATE',
+                description=f'Authorization request failed for {signatory_name}: Validation errors',
+                category='authorization',
+                severity='LOW',
+                success=False,
+                error_message=str(serializer.errors),
+                request=request
+            )
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -198,6 +243,16 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
                 status='PENDING'
             )
         except SignatoryAuthorizationRequest.DoesNotExist:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='AUTH_REQUEST_APPROVE',
+                description=f'Failed to approve authorization request: Request {request_id} not found or already processed',
+                category='authorization',
+                severity='LOW',
+                success=False,
+                error_message='Request not found',
+                request=request
+            )
             return Response(
                 {'error': 'Request not found or already processed'},
                 status=status.HTTP_404_NOT_FOUND
@@ -216,6 +271,18 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
         
         # Approve the request
         authorization = auth_request.approve(request.user, admin_notes)
+        
+        # Log authorization approval
+        AuditLogger.log_user_action(
+            user=request.user,
+            action='AUTH_REQUEST_APPROVE',
+            description=f'Approved authorization request for {auth_request.signatory_name} by {auth_request.user.username}',
+            model_name='SignatoryAuthorizationRequest',
+            object_id=auth_request.id,
+            category='authorization',
+            severity='HIGH',
+            request=request
+        )
         
         # Send notification to user
         self._notify_user_of_approval(auth_request, authorization)
@@ -237,6 +304,16 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
                 status='PENDING'
             )
         except SignatoryAuthorizationRequest.DoesNotExist:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='AUTH_REQUEST_REJECT',
+                description=f'Failed to reject authorization request: Request {request_id} not found or already processed',
+                category='authorization',
+                severity='LOW',
+                success=False,
+                error_message='Request not found',
+                request=request
+            )
             return Response(
                 {'error': 'Request not found or already processed'},
                 status=status.HTTP_404_NOT_FOUND
@@ -246,6 +323,18 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
         
         # Reject the request
         auth_request.reject(request.user, admin_notes)
+        
+        # Log authorization rejection
+        AuditLogger.log_user_action(
+            user=request.user,
+            action='AUTH_REQUEST_REJECT',
+            description=f'Rejected authorization request for {auth_request.signatory_name} by {auth_request.user.username}. Reason: {admin_notes}',
+            model_name='SignatoryAuthorizationRequest',
+            object_id=auth_request.id,
+            category='authorization',
+            severity='MEDIUM',
+            request=request
+        )
         
         # Send notification to user
         self._notify_user_of_rejection(auth_request)
@@ -261,6 +350,16 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
                 status='PENDING'
             )
         except SignatoryAuthorizationRequest.DoesNotExist:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='AUTH_REQUEST_CANCEL',
+                description=f'Failed to cancel authorization request: Request {request_id} not found or already processed',
+                category='authorization',
+                severity='LOW',
+                success=False,
+                error_message='Request not found',
+                request=request
+            )
             return Response(
                 {'error': 'Request not found or already processed'},
                 status=status.HTTP_404_NOT_FOUND
@@ -268,6 +367,16 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
         
         # Check if user can cancel this request
         if auth_request.user != request.user and not request.user.is_staff:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='AUTH_REQUEST_CANCEL',
+                description=f'Unauthorized attempt to cancel authorization request {request_id} for {auth_request.signatory_name}',
+                category='authorization',
+                severity='MEDIUM',
+                success=False,
+                error_message='Permission denied',
+                request=request
+            )
             return Response(
                 {'error': 'You can only cancel your own requests'},
                 status=status.HTTP_403_FORBIDDEN
@@ -280,6 +389,18 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
         auth_request.admin_notes = 'Request cancelled by user'
         auth_request.save()
         
+        # Log authorization cancellation
+        AuditLogger.log_user_action(
+            user=request.user,
+            action='AUTH_REQUEST_CANCEL',
+            description=f'Cancelled authorization request for {auth_request.signatory_name}',
+            model_name='SignatoryAuthorizationRequest',
+            object_id=auth_request.id,
+            category='authorization',
+            severity='LOW',
+            request=request
+        )
+        
         return Response({'message': 'Request cancelled successfully'})
     
     @action(detail=True, methods=['delete'], url_path='delete-authorization')
@@ -291,16 +412,38 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
                 user=request.user
             )
         except SignatoryAuthorization.DoesNotExist:
+            AuditLogger.log_user_action(
+                user=request.user,
+                action='AUTH_DELETE',
+                description=f'Failed to delete authorization: Authorization {pk} not found or permission denied',
+                category='authorization',
+                severity='LOW',
+                success=False,
+                error_message='Authorization not found',
+                request=request
+            )
             return Response(
                 {'error': 'Authorization not found or you do not have permission to delete it'},
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        # Store signatory name for response
+        # Store signatory name for response and logging
         signatory_name = authorization.signatory_name
         
         # Delete the authorization
         authorization.delete()
+        
+        # Log authorization deletion
+        AuditLogger.log_user_action(
+            user=request.user,
+            action='AUTH_DELETE',
+            description=f'Deleted authorization for {signatory_name}',
+            model_name='SignatoryAuthorization',
+            object_id=pk,
+            category='authorization',
+            severity='HIGH',
+            request=request
+        )
         
         return Response({
             'message': f'Authorization for {signatory_name} deleted successfully'
@@ -378,6 +521,13 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
             )
             
             if not authorization.is_setup_token_valid():
+                AuditLogger.log_security_event(
+                    user=None,
+                    action='SIGNATURE_SETUP_FAILED',
+                    description=f'Signature setup failed: Expired token for {authorization.signatory_name}',
+                    severity='MEDIUM',
+                    request=request
+                )
                 return Response(
                     {'error': 'Setup link has expired. Please contact your administrator.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -385,6 +535,13 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
             
             signature_data = request.data.get('signature')
             if not signature_data:
+                AuditLogger.log_security_event(
+                    user=authorization.user,
+                    action='SIGNATURE_SETUP_FAILED',
+                    description=f'Signature setup failed: No signature data provided for {authorization.signatory_name}',
+                    severity='LOW',
+                    request=request
+                )
                 return Response(
                     {'error': 'Signature data is required'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -416,12 +573,31 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
             authorization.token_expires = None
             authorization.save()
             
+            # Log successful signature setup
+            AuditLogger.log_user_action(
+                user=authorization.user,
+                action='SIGNATURE_SETUP_COMPLETE',
+                description=f'Successfully set up e-signature for {authorization.signatory_name}',
+                model_name='SignatoryAuthorization',
+                object_id=authorization.id,
+                category='e_signature',
+                severity='HIGH',
+                request=request
+            )
+            
             return Response({
                 'message': 'Signature saved successfully! You can now use your e-signature to sign reports.',
                 'signature_file': filename
             })
             
         except SignatoryAuthorization.DoesNotExist:
+            AuditLogger.log_security_event(
+                user=None,
+                action='SIGNATURE_SETUP_FAILED',
+                description=f'Signature setup failed: Invalid token {token[:8]}...',
+                severity='HIGH',
+                request=request
+            )
             return Response(
                 {'error': 'Invalid setup link. Please contact your administrator.'},
                 status=status.HTTP_404_NOT_FOUND
@@ -431,6 +607,18 @@ class SignatoryAuthorizationViewSet(viewsets.ModelViewSet):
             print(f"❌ Save signature error: {e}")
             import traceback
             traceback.print_exc()
+            
+            AuditLogger.log_user_action(
+                user=authorization.user if 'authorization' in locals() else None,
+                action='SIGNATURE_SETUP_FAILED',
+                description=f'Signature setup failed: {str(e)}',
+                category='e_signature',
+                severity='HIGH',
+                success=False,
+                error_message=str(e),
+                request=request
+            )
+            
             return Response(
                 {'error': f'Failed to save signature: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

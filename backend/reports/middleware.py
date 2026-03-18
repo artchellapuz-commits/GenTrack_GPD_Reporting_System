@@ -1,74 +1,535 @@
 """
-Custom Middleware for Audit Logging and Request Tracking
+Comprehensive audit logging middleware for the NPC Reporting System
 """
 
-from .models import AuditLog
+import time
+import json
 import logging
+from django.utils.deprecation import MiddlewareMixin
+from django.contrib.auth.models import AnonymousUser
+from django.urls import resolve, Resolver404
+from django.http import JsonResponse
+from django.core.exceptions import ImproperlyConfigured
 
 logger = logging.getLogger(__name__)
 
-
-class AuditLogMiddleware:
+class AuditLoggingMiddleware(MiddlewareMixin):
     """
-    Middleware to log user actions for audit trail
+    Middleware to automatically log all requests and responses for audit purposes
+    """
+    
+    # URLs to exclude from audit logging (to avoid noise)
+    EXCLUDED_PATHS = [
+        '/static/',
+        '/media/',
+        '/favicon.ico',
+        '/admin/jsi18n/',
+        '/api/health/',
+        '/api/ping/',
+    ]
+    
+    # Actions that should be logged with higher severity
+    HIGH_SEVERITY_ACTIONS = [
+        'DELETE', 'REJECT', 'REVOKE', 'DEACTIVATE'
+    ]
+    
+    CRITICAL_SEVERITY_ACTIONS = [
+        'USER_DELETE', 'SYSTEM_CONFIG_CHANGE', 'SECURITY_VIOLATION'
+    ]
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+        super().__init__(get_response)
+    
+    def process_request(self, request):
+        """Process incoming request"""
+        try:
+            request._audit_start_time = time.time()
+            
+            # Skip excluded paths
+            if any(request.path.startswith(path) for path in self.EXCLUDED_PATHS):
+                return None
+            
+            # Log page access for GET requests (only for non-API endpoints)
+            if request.method == 'GET' and not request.path.startswith('/api/'):
+                self._log_page_access(request)
+        except Exception as e:
+            logger.error(f"Error in process_request: {e}")
+        
+        return None
+        
+    def process_response(self, request, response):
+        """Process outgoing response"""
+        try:
+            # Skip excluded paths
+            if any(request.path.startswith(path) for path in self.EXCLUDED_PATHS):
+                return response
+            
+            # Calculate duration
+            duration_ms = None
+            if hasattr(request, '_audit_start_time'):
+                duration_ms = int((time.time() - request._audit_start_time) * 1000)
+            
+            # Log API calls
+            if request.path.startswith('/api/'):
+                self._log_api_call(request, response, duration_ms)
+        except Exception as e:
+            logger.error(f"Error in process_response: {e}")
+        
+        return response
+    
+    def process_exception(self, request, exception):
+        """Process exceptions"""
+        try:
+            # Log system errors
+            duration_ms = None
+            if hasattr(request, '_audit_start_time'):
+                duration_ms = int((time.time() - request._audit_start_time) * 1000)
+            
+            # Import AuditLog here to avoid circular imports
+            from .models import AuditLog
+            
+            AuditLog.log_action(
+                user=self._get_user_safely(request),
+                action='SYSTEM_ERROR',
+                description=f'Exception occurred: {str(exception)}',
+                request=request,
+                category='system',
+                severity='HIGH',
+                success=False,
+                error_message=str(exception),
+                duration_ms=duration_ms,
+                response_status=500
+            )
+        except Exception as e:
+            logger.error(f"Failed to log exception audit: {e}")
+        
+        return None
+    
+    def _get_user_safely(self, request):
+        """Safely get user from request"""
+        try:
+            if hasattr(request, 'user') and request.user and not isinstance(request.user, AnonymousUser):
+                return request.user
+        except Exception:
+            pass
+        return None
+    
+    def _log_page_access(self, request):
+        """Log page access events"""
+        try:
+            # Import AuditLog here to avoid circular imports
+            from .models import AuditLog
+            
+            # Determine page category
+            category = self._get_page_category(request.path)
+            
+            # Get page name from URL resolver
+            try:
+                resolved = resolve(request.path)
+                page_name = getattr(resolved, 'url_name', None) or getattr(resolved, 'view_name', None) or 'Unknown'
+            except (Resolver404, AttributeError):
+                page_name = request.path
+            
+            AuditLog.log_action(
+                user=self._get_user_safely(request),
+                action='PAGE_ACCESS',
+                description=f'Accessed page: {page_name} ({request.path})',
+                request=request,
+                category=category,
+                severity='LOW',
+                success=True
+            )
+        except Exception as e:
+            logger.error(f"Failed to log page access: {e}")
+    
+    def _log_api_call(self, request, response, duration_ms):
+        """Log API call events"""
+        try:
+            # Import AuditLog here to avoid circular imports
+            from .models import AuditLog
+            
+            # Determine action based on HTTP method and URL
+            action = self._determine_api_action(request)
+            
+            # Determine category
+            category = self._get_api_category(request.path)
+            
+            # Determine severity
+            severity = self._get_action_severity(action)
+            
+            # Check if successful
+            success = 200 <= response.status_code < 400
+            
+            # Get error message if failed
+            error_message = ''
+            if not success:
+                try:
+                    if hasattr(response, 'content') and response.content:
+                        content = json.loads(response.content.decode('utf-8'))
+                        error_message = content.get('error', content.get('detail', ''))
+                except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+                    error_message = f'HTTP {response.status_code}'
+            
+            AuditLog.log_action(
+                user=self._get_user_safely(request),
+                action=action,
+                description=self._get_api_description(request, action),
+                request=request,
+                category=category,
+                severity=severity,
+                success=success,
+                error_message=error_message,
+                duration_ms=duration_ms,
+                response_status=response.status_code
+            )
+        except Exception as e:
+            logger.error(f"Failed to log API call: {e}")
+    
+    def _determine_api_action(self, request):
+        """Determine the action based on the API endpoint and method"""
+        path = request.path.lower()
+        method = request.method.upper()
+        
+        # Authentication endpoints
+        if '/auth/login' in path:
+            return 'LOGIN'
+        elif '/auth/logout' in path:
+            return 'LOGOUT'
+        elif '/auth/register' in path:
+            return 'USER_CREATE'
+        elif '/auth/password' in path:
+            if 'reset' in path:
+                return 'PASSWORD_RESET_REQUEST'
+            else:
+                return 'PASSWORD_CHANGE'
+        
+        # File operations
+        elif '/uploaded-files/' in path:
+            if method == 'POST':
+                return 'FILE_UPLOAD'
+            elif method == 'DELETE':
+                return 'FILE_DELETE'
+            elif 'archive' in path:
+                return 'FILE_ARCHIVE'
+            elif 'restore' in path:
+                return 'FILE_RESTORE'
+            elif method == 'GET':
+                return 'FILE_VIEW'
+        
+        # Report operations
+        elif '/generation-reports/' in path:
+            if 'generate-report' in path:
+                return 'REPORT_GENERATE'
+            elif 'preview-report' in path:
+                return 'REPORT_PREVIEW'
+            elif method == 'GET':
+                return 'REPORT_VIEW'
+            elif method == 'DELETE':
+                return 'REPORT_DELETE'
+        
+        # E-signature operations
+        elif '/e-signatures/' in path:
+            if method == 'POST':
+                return 'SIGNATURE_CREATE'
+            elif method == 'PUT' or method == 'PATCH':
+                return 'SIGNATURE_UPDATE'
+            elif method == 'DELETE':
+                return 'SIGNATURE_DELETE'
+            elif method == 'GET':
+                return 'SIGNATURE_VIEW'
+        
+        # Report signatures
+        elif '/report-signatures/' in path:
+            if 'sign-report' in path:
+                return 'REPORT_SIGN'
+            elif method == 'GET':
+                return 'SIGNATURE_VIEW'
+        
+        # Authorization operations
+        elif '/signatory-authorizations/' in path:
+            if 'request' in path and method == 'POST':
+                return 'AUTH_REQUEST_CREATE'
+            elif 'approve-request' in path:
+                return 'AUTH_REQUEST_APPROVE'
+            elif 'reject-request' in path:
+                return 'AUTH_REQUEST_REJECT'
+            elif 'cancel-request' in path:
+                return 'AUTH_REQUEST_CANCEL'
+            elif 'approve-with-existing' in path:
+                return 'AUTH_APPROVE_EXISTING'
+            elif 'signature-setup' in path:
+                return 'SIGNATURE_SETUP_ACCESS'
+            elif 'save-signature' in path:
+                return 'SIGNATURE_SETUP_COMPLETE'
+            elif method == 'DELETE':
+                return 'AUTH_REVOKE'
+            elif method == 'GET':
+                return 'AUTH_REQUEST_VIEW'
+        
+        # User management
+        elif '/users/' in path:
+            if method == 'POST':
+                return 'USER_CREATE'
+            elif method == 'PUT' or method == 'PATCH':
+                return 'USER_UPDATE'
+            elif method == 'DELETE':
+                return 'USER_DELETE'
+            elif method == 'GET':
+                return 'DATA_VIEW'
+        
+        # Generic CRUD operations
+        else:
+            if method == 'POST':
+                return 'DATA_CREATE'
+            elif method == 'PUT' or method == 'PATCH':
+                return 'DATA_UPDATE'
+            elif method == 'DELETE':
+                return 'DATA_DELETE'
+            elif method == 'GET':
+                return 'DATA_VIEW'
+        
+        return 'API_CALL'
+    
+    def _get_api_description(self, request, action):
+        """Generate description for API action"""
+        path = request.path
+        method = request.method
+        
+        # Try to extract meaningful identifiers
+        path_parts = [part for part in path.split('/') if part and not part.isdigit()]
+        resource = path_parts[-1] if path_parts else 'resource'
+        
+        descriptions = {
+            'LOGIN': 'User login attempt',
+            'LOGOUT': 'User logout',
+            'USER_CREATE': 'New user registration',
+            'PASSWORD_RESET_REQUEST': 'Password reset requested',
+            'PASSWORD_CHANGE': 'Password changed',
+            'FILE_UPLOAD': 'File uploaded to system',
+            'FILE_DELETE': 'File deleted from system',
+            'FILE_ARCHIVE': 'File archived',
+            'FILE_RESTORE': 'File restored from archive',
+            'FILE_VIEW': 'File accessed/viewed',
+            'REPORT_GENERATE': 'Report generated',
+            'REPORT_PREVIEW': 'Report previewed',
+            'REPORT_VIEW': 'Report viewed',
+            'REPORT_DELETE': 'Report deleted',
+            'SIGNATURE_CREATE': 'E-signature created',
+            'SIGNATURE_UPDATE': 'E-signature updated',
+            'SIGNATURE_DELETE': 'E-signature deleted',
+            'SIGNATURE_VIEW': 'E-signature viewed',
+            'REPORT_SIGN': 'Report signed with e-signature',
+            'AUTH_REQUEST_CREATE': 'Authorization request submitted',
+            'AUTH_REQUEST_APPROVE': 'Authorization request approved',
+            'AUTH_REQUEST_REJECT': 'Authorization request rejected',
+            'AUTH_REQUEST_CANCEL': 'Authorization request cancelled',
+            'AUTH_APPROVE_EXISTING': 'Authorization approved with existing signature',
+            'SIGNATURE_SETUP_ACCESS': 'Signature setup page accessed',
+            'SIGNATURE_SETUP_COMPLETE': 'Signature setup completed',
+            'AUTH_REVOKE': 'Authorization revoked',
+            'AUTH_REQUEST_VIEW': 'Authorization request viewed',
+            'USER_UPDATE': 'User information updated',
+            'USER_DELETE': 'User deleted',
+            'DATA_CREATE': f'{method} request to create {resource}',
+            'DATA_UPDATE': f'{method} request to update {resource}',
+            'DATA_DELETE': f'{method} request to delete {resource}',
+            'DATA_VIEW': f'{method} request to view {resource}',
+        }
+        
+        return descriptions.get(action, f'{method} request to {path}')
+    
+    def _get_page_category(self, path):
+        """Determine page category"""
+        if path == '/' or 'landing' in path:
+            return 'landing'
+        elif 'dashboard' in path:
+            return 'dashboard'
+        elif 'upload' in path:
+            return 'file_management'
+        elif 'generate' in path or 'report' in path:
+            return 'reporting'
+        elif 'signature' in path or 'authorization' in path:
+            return 'e_signature'
+        elif 'user' in path or 'admin' in path:
+            return 'administration'
+        elif 'archive' in path:
+            return 'archive'
+        else:
+            return 'general'
+    
+    def _get_api_category(self, path):
+        """Determine API category"""
+        if '/auth/' in path:
+            return 'authentication'
+        elif '/uploaded-files/' in path:
+            return 'file_management'
+        elif '/generation-reports/' in path or '/report-signatures/' in path:
+            return 'reporting'
+        elif '/e-signatures/' in path or '/signatory-authorizations/' in path:
+            return 'e_signature'
+        elif '/users/' in path:
+            return 'user_management'
+        else:
+            return 'api'
+    
+    def _get_action_severity(self, action):
+        """Determine severity level for action"""
+        if action in self.CRITICAL_SEVERITY_ACTIONS:
+            return 'CRITICAL'
+        elif action in self.HIGH_SEVERITY_ACTIONS:
+            return 'HIGH'
+        elif action in ['LOGIN_FAILED', 'UNAUTHORIZED_ACCESS', 'PERMISSION_DENIED']:
+            return 'MEDIUM'
+        else:
+            return 'LOW'
+
+
+class SecurityAuditMiddleware(MiddlewareMixin):
+    """
+    Middleware specifically for security-related audit logging
     """
     
     def __init__(self, get_response):
         self.get_response = get_response
+        super().__init__(get_response)
     
-    def __call__(self, request):
-        response = self.get_response(request)
-        
-        # Log important actions
-        if request.user.is_authenticated and request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
-            self.log_action(request, response)
-        
-        return response
-    
-    def log_action(self, request, response):
-        """Log user action to audit trail"""
+    def process_request(self, request):
+        """Check for security violations"""
         try:
-            # Only log successful actions
-            if response.status_code < 400:
-                action = self.get_action_type(request.method)
-                model_name = self.extract_model_name(request.path)
-                
-                if action and model_name:
-                    AuditLog.objects.create(
-                        user=request.user,
-                        action=action,
-                        model_name=model_name,
-                        description=f"{action} {model_name} via {request.method} {request.path}",
-                        ip_address=self.get_client_ip(request),
-                        user_agent=request.META.get('HTTP_USER_AGENT', '')[:500]
-                    )
+            # Log suspicious patterns
+            self._check_suspicious_patterns(request)
         except Exception as e:
-            logger.error(f"Failed to create audit log: {str(e)}")
+            logger.error(f"Error in SecurityAuditMiddleware: {e}")
+        return None
     
-    def get_action_type(self, method):
-        """Map HTTP method to action type"""
-        mapping = {
-            'POST': 'CREATE',
-            'PUT': 'UPDATE',
-            'PATCH': 'UPDATE',
-            'DELETE': 'DELETE',
-        }
-        return mapping.get(method)
+    def _get_user_safely(self, request):
+        """Safely get user from request"""
+        try:
+            if hasattr(request, 'user') and request.user and not isinstance(request.user, AnonymousUser):
+                return request.user
+        except Exception:
+            pass
+        return None
     
-    def extract_model_name(self, path):
-        """Extract model name from request path"""
-        # Simple extraction from path like /api/plants/ -> Plant
-        parts = path.strip('/').split('/')
-        if len(parts) >= 2:
-            model = parts[1].rstrip('s').capitalize()
-            return model
-        return 'Unknown'
+    def _check_suspicious_patterns(self, request):
+        """Check for suspicious request patterns"""
+        try:
+            # Import AuditLog here to avoid circular imports
+            from .models import AuditLog
+            
+            # Check for SQL injection attempts
+            if self._contains_sql_injection(request):
+                AuditLog.log_action(
+                    user=self._get_user_safely(request),
+                    action='SECURITY_VIOLATION',
+                    description='Potential SQL injection attempt detected',
+                    request=request,
+                    category='security',
+                    severity='CRITICAL',
+                    success=False
+                )
+            
+            # Check for XSS attempts
+            if self._contains_xss(request):
+                AuditLog.log_action(
+                    user=self._get_user_safely(request),
+                    action='SECURITY_VIOLATION',
+                    description='Potential XSS attempt detected',
+                    request=request,
+                    category='security',
+                    severity='HIGH',
+                    success=False
+                )
+            
+            # Check for unusual request patterns
+            if self._is_unusual_request(request):
+                AuditLog.log_action(
+                    user=self._get_user_safely(request),
+                    action='SECURITY_VIOLATION',
+                    description='Unusual request pattern detected',
+                    request=request,
+                    category='security',
+                    severity='MEDIUM',
+                    success=False
+                )
+        except Exception as e:
+            logger.error(f"Failed to check security patterns: {e}")
     
-    def get_client_ip(self, request):
-        """Get client IP address"""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
+    def _contains_sql_injection(self, request):
+        """Check for SQL injection patterns"""
+        try:
+            sql_patterns = [
+                'union select', 'drop table', 'delete from', 'insert into',
+                'update set', 'exec(', 'execute(', '--', '/*', '*/',
+                'xp_cmdshell', 'sp_executesql'
+            ]
+            
+            # Check URL parameters and POST data
+            all_data = []
+            if hasattr(request, 'GET') and request.GET:
+                all_data.extend(request.GET.values())
+            if hasattr(request, 'POST') and request.POST:
+                all_data.extend(request.POST.values())
+            
+            for value in all_data:
+                if isinstance(value, str):
+                    for pattern in sql_patterns:
+                        if pattern in value.lower():
+                            return True
+        except Exception as e:
+            logger.error(f"Error checking SQL injection: {e}")
+        return False
+    
+    def _contains_xss(self, request):
+        """Check for XSS patterns"""
+        try:
+            xss_patterns = [
+                '<script', 'javascript:', 'onload=', 'onerror=', 'onclick=',
+                'onmouseover=', 'onfocus=', 'onblur=', 'eval(', 'alert('
+            ]
+            
+            # Check URL parameters and POST data
+            all_data = []
+            if hasattr(request, 'GET') and request.GET:
+                all_data.extend(request.GET.values())
+            if hasattr(request, 'POST') and request.POST:
+                all_data.extend(request.POST.values())
+            
+            for value in all_data:
+                if isinstance(value, str):
+                    for pattern in xss_patterns:
+                        if pattern in value.lower():
+                            return True
+        except Exception as e:
+            logger.error(f"Error checking XSS: {e}")
+        return False
+    
+    def _is_unusual_request(self, request):
+        """Check for unusual request patterns"""
+        try:
+            # Check for unusually long URLs
+            if hasattr(request, 'path') and len(request.path) > 1000:
+                return True
+            
+            # Check for too many parameters
+            total_params = 0
+            if hasattr(request, 'GET') and request.GET:
+                total_params += len(request.GET)
+            if hasattr(request, 'POST') and request.POST:
+                total_params += len(request.POST)
+            
+            if total_params > 50:
+                return True
+            
+            # Check for binary data in text fields
+            if hasattr(request, 'POST') and request.POST:
+                for value in request.POST.values():
+                    if isinstance(value, str) and len(value) > 1000:
+                        # Check for binary patterns
+                        if sum(1 for c in value if ord(c) < 32 or ord(c) > 126) > len(value) * 0.3:
+                            return True
+        except Exception as e:
+            logger.error(f"Error checking unusual request: {e}")
+        
+        return False
