@@ -14,14 +14,14 @@
           </p>
         </div>
         <div class="header-actions">
-          <button @click="exportDashboardToPDF" class="btn-export-pdf glass-button">
+          <!-- <button @click="exportDashboardToPDF" class="btn-export-pdf glass-button">
             <i class="pi pi-file-pdf"></i>
             Export PDF
           </button>
           <button @click="exportAllDashboardData" class="btn-export-csv glass-button">
             <i class="pi pi-file-excel"></i>
             Export CSV
-          </button>
+          </button> -->
           <button @click="refreshData" class="btn-refresh glass-button" :disabled="loading">
             <i class="pi" :class="loading ? 'pi-spin pi-spinner' : 'pi-refresh'"></i>
             Refresh

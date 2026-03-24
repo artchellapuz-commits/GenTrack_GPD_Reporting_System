@@ -394,11 +394,18 @@ export function getUserPlant() {
 export function getRoleDisplayName(role) {
   const roleNames = {
     'VIEWER': 'Viewer',
-    'OPERATOR': 'Operator',
-    'MANAGER': 'Manager',
-    'ADMIN': 'Administrator'
+    'OPERATOR': 'Data Encoder',
+    'MANAGER': 'Data Manager',
+    'ADMIN': 'System Admin'
   };
-  return roleNames[role] || role;
+  
+  // Also check if role is passed in lowercase or mixed case
+  if (role && typeof role === 'string') {
+    const upperRole = role.toUpperCase();
+    return roleNames[upperRole] || role;
+  }
+  
+  return roleNames[role] || 'Unknown';
 }
 
 /**
