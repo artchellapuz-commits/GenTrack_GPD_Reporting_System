@@ -220,12 +220,7 @@ export default {
     return apiClient.post(`/signatory-authorizations/cancel-request/${requestId}/`);
   },
 
-  // Delete authorization (for testing)
-  deleteAuthorization(authorizationId) {
-    return apiClient.delete(`/signatory-authorizations/delete-authorization/${authorizationId}/`);
-  },
-
-  // Delete authorization (for testing purposes)
+  // Delete authorization
   deleteAuthorization(authorizationId) {
     return apiClient.delete(`/signatory-authorizations/${authorizationId}/`);
   },
@@ -266,6 +261,18 @@ export default {
 
   async signDocument(token, signatureData) {
     return apiClient.post(`/signing/sign/${token}/`, signatureData);
+  },
+
+  async updateDocument(id, documentData) {
+    return apiClient.put(`/documents/${id}/`, documentData);
+  },
+
+  async deleteDocument(id) {
+    return apiClient.delete(`/documents/${id}/`);
+  },
+
+  async archiveDocument(id) {
+    return apiClient.post(`/documents/${id}/archive/`);
   },
 
   async getDigitalSignatures() {

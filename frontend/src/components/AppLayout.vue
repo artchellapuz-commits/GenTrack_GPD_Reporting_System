@@ -49,11 +49,11 @@
             </router-link>
           </li>
           
-          <!-- Document Manager - E-signature workflow -->
+          <!-- Report Storage - Generated reports archive -->
           <li class="menu-item">
-            <router-link to="/document-manager" class="menu-link">
-              <i class="pi pi-file-edit"></i>
-              <span>Document Manager</span>
+            <router-link to="/report-storage" class="menu-link">
+              <i class="pi pi-database"></i>
+              <span>Report Storage</span>
             </router-link>
           </li>
           <!-- Request Signature Access -->
@@ -70,10 +70,10 @@
               <span>Archive</span>
             </router-link>
           </li>
-          <li class="menu-divider"></li>
+          <!-- <li class="menu-divider"></li> -->
           
           <!-- Water Nomination with Dropdown - Only for Operator, Manager, Admin -->
-          <li class="menu-item menu-item-dropdown disabled" v-if="canUpload">
+          <!-- <li class="menu-item menu-item-dropdown disabled" v-if="canUpload">
             <a href="#" @click.prevent="toggleWaterNominationDropdown" class="menu-link">
               <i class="pi pi-calendar"></i>
               <span>Water Nomination</span>
@@ -93,7 +93,7 @@
                 </router-link>
               </li>
             </ul>
-          </li>
+          </li> -->
           
           <!-- Analytics & Reports Section -->
           <li class="menu-divider"></li>
@@ -334,7 +334,7 @@ export default {
         '/upload': 'Upload Excel',
         '/view': 'View Reports',
         '/generate': 'Generate Report',
-        '/document-manager': 'Document Manager',
+        '/report-storage': 'Report Storage',
         '/signatory-authorization': 'Request Signature Access',
         '/water-nomination': 'Manage Nominations',
         '/approval-queue': 'Approval Queue',

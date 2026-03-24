@@ -67,6 +67,7 @@ export function clearAuth() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
+  sessionStorage.removeItem('generateReportState');
   delete axios.defaults.headers.common['Authorization'];
 }
 

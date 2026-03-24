@@ -1080,8 +1080,11 @@ class SignatureRequest(models.Model):
             self.expires_at > timezone.now()
         )
     
-    def generate_signing_url(self, base_url='http://localhost:8080'):
+    def generate_signing_url(self, base_url=None):
         """Generate the signing URL for this request"""
+        if base_url is None:
+            from django.conf import settings
+            base_url = getattr(settings, 'SITE_URL', 'http://localhost:3000')
         return f"{base_url}/sign/{self.token}"
 
 

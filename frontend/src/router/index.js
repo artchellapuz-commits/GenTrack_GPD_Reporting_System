@@ -175,11 +175,17 @@ const routes = [
     props: true
   },
   {
-    path: '/document-manager',
-    name: 'DocumentManager',
-    component: () => import('../components/DocumentManager.vue'),
+    path: '/report-storage',
+    name: 'ReportStorage',
+    component: () => import('../components/ReportStorage.vue'),
     meta: { requiresAuth: true }
   },
+  // Catch-all route for 404s - must be last
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: () => import('../components/NotFound.vue')
+  }
 ];
 
 const router = createRouter({

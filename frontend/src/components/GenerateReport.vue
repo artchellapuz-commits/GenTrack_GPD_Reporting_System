@@ -73,10 +73,26 @@
             >
               <div class="btn-content">
                 <div class="btn-icon">
-                  <i v-if="!generating" class="pi pi-eye"></i>
+                  <i v-if="!generating" class="pi pi-file-excel"></i>
                   <i v-else class="pi pi-spin pi-spinner"></i>
                 </div>
-                <span class="btn-text">{{ generating ? 'Loading Preview...' : 'Preview Report' }}</span>
+                <span class="btn-text">{{ generating ? 'Generating Report...' : 'Generate Report' }}</span>
+              </div>
+              <div class="btn-ripple"></div>
+            </button>
+            
+            <!-- Preview Button (shown after successful generation) -->
+            <button 
+              v-if="reportGenerated && !showPreview"
+              @click="previewReport"
+              class="btn-preview btn-preview-prominent"
+              type="button"
+            >
+              <div class="btn-content">
+                <div class="btn-icon">
+                  <i class="pi pi-eye"></i>
+                </div>
+                <span class="btn-text">Preview Report</span>
               </div>
               <div class="btn-ripple"></div>
             </button>
@@ -88,6 +104,48 @@
             </div>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Generating Loading Overlay -->
+    <div v-if="generating" class="loading-modal-overlay">
+      <div class="loading-modal-content">
+        <div class="gears-animation">
+          <i class="pi pi-cog gear-icon gear-1"></i>
+          <i class="pi pi-cog gear-icon gear-2"></i>
+        </div>
+        <h3 class="loading-title">Generating Report</h3>
+        <p class="loading-text">Please wait while we gather and process the data...</p>
+        <div class="progress-bar-container">
+          <div class="progress-bar-animated"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div v-if="showSuccessModal" class="success-modal-overlay" @click="closeSuccessModal">
+      <div class="success-modal" @click.stop>
+        <div class="success-modal-header">
+          <div class="success-icon">
+            <i class="pi pi-check-circle"></i>
+          </div>
+          <h3 class="success-title">Report Generated Successfully!</h3>
+        </div>
+        <div class="success-modal-body">
+          <p class="success-message">
+            Your Plant Status Report for <strong>{{ reportPreview?.header?.date_text }}</strong> has been generated successfully.
+          </p>
+          <div class="success-actions">
+            <button @click="previewReport" class="btn-success-preview">
+              <i class="pi pi-eye"></i>
+              <span>Preview Report</span>
+            </button>
+            <button @click="closeSuccessModal" class="btn-success-close">
+              <i class="pi pi-times"></i>
+              <span>Close</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -122,6 +180,16 @@
             <button @click="downloadExcel" class="btn-action primary" title="Download Excel">
               <i class="pi pi-download"></i>
               <span>Download Excel</span>
+            </button>
+            <button 
+              @click="saveToReportStorage" 
+              class="btn-action success" 
+              title="Save to Report Storage"
+              :disabled="saving"
+            >
+              <i v-if="!saving" class="pi pi-save"></i>
+              <i v-else class="pi pi-spin pi-spinner"></i>
+              <span>{{ saving ? 'Saving...' : 'Save to Storage' }}</span>
             </button>
             <button @click="closePreview" class="btn-action close" title="Close Preview">
               <i class="pi pi-times"></i>
@@ -1690,6 +1758,9 @@ export default {
       reportDate: '',
       reportType: 'psr',
       generating: false,
+      saving: false,
+      reportGenerated: false,
+      showSuccessModal: false,
       generationHistory: [],
       showMenu: false,
       reportPreview: null,
@@ -2037,13 +2108,33 @@ export default {
         if (newDate) {
           this.loadReportSignatures();
         }
+        this.saveStateToSession();
       },
       immediate: false
+    },
+    
+    selectedPlants: {
+      handler() {
+        this.saveStateToSession();
+      },
+      deep: true
+    },
+    
+    reportGenerated() {
+      this.saveStateToSession();
+    },
+    
+    reportPreview: {
+      handler() {
+        this.saveStateToSession();
+      },
+      deep: true
     },
     
     // Watch for preview visibility to initialize sticky scrollbar
     showPreview: {
       handler(newVal) {
+        this.saveStateToSession();
         if (newVal) {
           // Wait for DOM to be fully rendered
           this.$nextTick(() => {
@@ -2086,6 +2177,7 @@ export default {
     }
   },
   mounted() {
+    this.restoreStateFromSession();
     this.loadPlants();
     this.loadGenerationHistory();
     this.loadCurrentUser();
@@ -2139,6 +2231,33 @@ export default {
     },
 
     // Sticky horizontal scrollbar methods
+    saveStateToSession() {
+      const state = {
+        reportDate: this.reportDate,
+        selectedPlants: this.selectedPlants,
+        reportGenerated: this.reportGenerated,
+        showPreview: this.showPreview,
+        reportPreview: this.reportPreview,
+      };
+      sessionStorage.setItem('generateReportState', JSON.stringify(state));
+    },
+    
+    restoreStateFromSession() {
+      const savedState = sessionStorage.getItem('generateReportState');
+      if (savedState) {
+        try {
+          const state = JSON.parse(savedState);
+          if (state.reportDate) this.reportDate = state.reportDate;
+          if (state.selectedPlants && state.selectedPlants.length) this.selectedPlants = state.selectedPlants;
+          this.reportGenerated = state.reportGenerated || false;
+          this.showPreview = state.showPreview || false;
+          this.reportPreview = state.reportPreview || null;
+        } catch (e) {
+          console.error('Error restoring state from session storage', e);
+        }
+      }
+    },
+
     handleHorizontalScroll(event) {
       const container = event.target;
       const scrollLeft = container.scrollLeft;
@@ -2661,7 +2780,7 @@ export default {
         return;
       }
 
-      console.log('Generating report preview with data:', {
+      console.log('Generating report with data:', {
         plant_codes: this.selectedPlants,
         start_date: this.reportDate,
         end_date: this.reportDate,
@@ -2669,6 +2788,8 @@ export default {
       });
 
       this.generating = true;
+      this.reportGenerated = false;
+      this.showSuccessModal = false;
 
       try {
         const response = await api.previewReport({
@@ -2679,26 +2800,21 @@ export default {
         });
 
         this.reportPreview = response.data;
-        this.showPreview = true;
+        this.reportGenerated = true;
         
         // Load signatures for this report date
         await this.loadReportSignatures();
         
-        // Scroll to preview section
-        this.$nextTick(() => {
-          const previewElement = document.querySelector('.preview-card');
-          if (previewElement) {
-            previewElement.scrollIntoView({ behavior: 'smooth' });
-          }
-        });
+        // Show success modal instead of automatically showing preview
+        this.showSuccessModal = true;
 
-        toast.success('Report preview loaded successfully!');
+        toast.success('Report generated successfully!');
       } catch (error) {
-        console.error('Generate report preview error:', error);
+        console.error('Generate report error:', error);
         console.error('Error response:', error.response);
         console.error('Error response data:', error.response?.data);
         
-        let errorMsg = 'Failed to generate report preview';
+        let errorMsg = 'Failed to generate report';
         
         // Handle validation errors
         if (error.response?.data) {
@@ -2731,6 +2847,28 @@ export default {
       } finally {
         this.generating = false;
       }
+    },
+
+    previewReport() {
+      if (!this.reportPreview) {
+        toast.error('No report to preview. Please generate a report first.');
+        return;
+      }
+
+      this.showPreview = true;
+      this.showSuccessModal = false;
+      
+      // Scroll to preview section
+      this.$nextTick(() => {
+        const previewElement = document.querySelector('.preview-card');
+        if (previewElement) {
+          previewElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    },
+
+    closeSuccessModal() {
+      this.showSuccessModal = false;
     },
 
     async downloadExcel() {
@@ -2946,6 +3084,92 @@ export default {
     closePreview() {
       this.showPreview = false;
       this.reportPreview = null;
+    },
+
+    async saveToReportStorage() {
+      if (!this.reportPreview) {
+        toast.error('No report to save. Please generate a report first.');
+        return;
+      }
+
+      this.saving = true;
+      toast.info('Saving report to storage...');
+
+      try {
+        // First, generate the Excel file as a blob
+        const ExcelJSModule = await import('exceljs');
+        const ExcelJS = ExcelJSModule.default || ExcelJSModule;
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'NPC Reporting System';
+        const ws = wb.addWorksheet('PSR PSALM Edit (2)');
+
+        // Generate the Excel content (simplified version for saving)
+        // You can reuse the same logic from downloadExcel method here
+        // For now, let's create a basic version
+
+        // Add header information
+        ws.getCell('A1').value = 'PLANT STATUS REPORT';
+        ws.getCell('A2').value = this.reportPreview.header.date_text;
+        
+        // Add basic table structure
+        const headers = ['PLANT NAME', 'Rated Capacity (MW)', 'Available Capacity (MW)', 'Lake Lanao Projected Ave. Outflow', 'Load at 0800H', 'REMARKS'];
+        headers.forEach((header, index) => {
+          ws.getCell(4, index + 1).value = header;
+        });
+
+        // Generate Excel buffer
+        const buffer = await wb.xlsx.writeBuffer();
+        const blob = new Blob([buffer], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+
+        // Create FormData to send to backend
+        const formData = new FormData();
+        const dateStr = this.reportDate.replace(/-/g, '');
+        const filename = `PSR_${dateStr}.xlsx`;
+        
+        formData.append('title', `PSR Report - ${this.reportPreview.header.date_text}`);
+        formData.append('document_type', 'PSR');
+        formData.append('description', `Plant Status Report generated for ${this.reportPreview.header.date_text}`);
+        formData.append('file', blob, filename);
+        formData.append('status', 'DRAFT');
+
+        // Save to backend as a document
+        const response = await api.createDocument(formData);
+        
+        if (response.status === 201) {
+          toast.success('Report saved to Report Storage successfully!');
+          
+          // Show success message with option to navigate
+          const shouldNavigate = confirm('Report saved successfully! Would you like to view it in Report Storage?');
+          if (shouldNavigate) {
+            this.$router.push('/report-storage');
+          }
+        }
+
+      } catch (error) {
+        console.error('Error saving report to storage:', error);
+        let errorMsg = 'Failed to save report to storage';
+        
+        if (error.response?.data) {
+          const data = error.response.data;
+          if (data.title) {
+            errorMsg = `Title error: ${Array.isArray(data.title) ? data.title.join(', ') : data.title}`;
+          } else if (data.file) {
+            errorMsg = `File error: ${Array.isArray(data.file) ? data.file.join(', ') : data.file}`;
+          } else if (data.detail) {
+            errorMsg = `API error: ${data.detail}`;
+          } else if (data.error) {
+            errorMsg = data.error;
+          }
+        } else if (error.message) {
+          errorMsg = error.message;
+        }
+        
+        toast.error(errorMsg, 8000);
+      } finally {
+        this.saving = false;
+      }
     },
 
     formatNumber(value) {
@@ -3946,6 +4170,11 @@ export default {
 .btn-action.primary {
   background: #10b981;
   border-color: #10b981;
+}
+
+.btn-action.success {
+  background: #22c55e;
+  border-color: #22c55e;
 }
 
 .btn-action.secondary {
@@ -6729,5 +6958,324 @@ export default {
 .btn-save:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Loading Animation Styles */
+.loading-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.loading-modal-content {
+  background: white;
+  padding: 2.5rem;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.gears-animation {
+  position: relative;
+  height: 80px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.gear-icon {
+  font-size: 3rem;
+  color: var(--primary-color);
+  position: absolute;
+}
+
+.gear-1 {
+  animation: spinRight 2s linear infinite;
+  transform-origin: center;
+  margin-right: 35px;
+  margin-bottom: 20px;
+}
+
+.gear-2 {
+  font-size: 2rem;
+  color: var(--secondary-color, #475569);
+  animation: spinLeft 2s linear infinite;
+  transform-origin: center;
+  margin-left: 35px;
+  margin-top: 15px;
+}
+
+.loading-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.loading-text {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-animated {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 50%;
+  background: linear-gradient(90deg, var(--primary-color) 0%, #3b82f6 50%, var(--primary-color) 100%);
+  background-size: 200% 100%;
+  border-radius: 999px;
+  animation: loadingBar 1.5s ease-in-out infinite, gradientMove 2s linear infinite;
+}
+
+@keyframes spinRight {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes spinLeft {
+  100% { transform: rotate(-360deg); }
+}
+
+@keyframes loadingBar {
+  0% { left: -50%; }
+  100% { left: 100%; }
+}
+
+@keyframes gradientMove {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Preview Button Styles */
+.btn-preview {
+  margin-top: 1rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  min-height: 56px;
+  width: 100%;
+}
+
+.btn-preview:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+}
+
+.btn-preview:active {
+  transform: translateY(0);
+}
+
+.btn-preview .btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  position: relative;
+  z-index: 2;
+}
+
+.btn-preview .btn-icon {
+  font-size: 1.25rem;
+}
+
+.btn-preview .btn-ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.btn-preview:hover .btn-ripple {
+  opacity: 1;
+}
+
+/* Success Modal Styles */
+.success-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.success-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+.success-modal-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.success-icon {
+  font-size: 4rem;
+  color: #10b981;
+  margin-bottom: 1rem;
+}
+
+.success-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.success-modal-body {
+  text-align: center;
+}
+
+.success-message {
+  font-size: 1rem;
+  color: #6b7280;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.success-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.btn-success-preview {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.btn-success-preview:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-success-close {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.btn-success-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced Generate Button Animation */
+.btn-generate.generating {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+  cursor: not-allowed;
+}
+
+.btn-generate.generating .btn-content {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Loading Animation for Generate Button */
+.btn-generate.generating .btn-icon i.pi-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

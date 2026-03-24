@@ -99,8 +99,8 @@ class DocumentViewSet(viewsets.ModelViewSet):
     def _send_signature_request_email(self, signature_request, request):
         """Send signature request email"""
         try:
-            base_url = f"{request.scheme}://{request.get_host()}"
-            signing_url = signature_request.generate_signing_url(base_url)
+            # Use configured SITE_URL for consistency
+            signing_url = signature_request.generate_signing_url()
             
             subject = f'Signature Request: {signature_request.document.title}'
             

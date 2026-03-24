@@ -49,10 +49,8 @@ class SignatureRequestSerializer(serializers.ModelSerializer):
         return obj.is_valid()
     
     def get_signing_url(self, obj):
-        request = self.context.get('request')
-        if request:
-            base_url = f"{request.scheme}://{request.get_host()}"
-            return obj.generate_signing_url(base_url)
+        """Get the signing URL for this signature request"""
+        # Always use the configured SITE_URL for consistency
         return obj.generate_signing_url()
     
     def get_has_signature(self, obj):

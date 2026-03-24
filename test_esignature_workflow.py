@@ -93,10 +93,10 @@ def test_esignature_workflow():
         else:
             print(f"⚠️  Frontend returned status: {response.status_code}")
             
-        # Test document manager route
-        response = requests.get(f"{frontend_url}/document-manager", timeout=5)
+        # Test report storage route
+        response = requests.get(f"{frontend_url}/report-storage", timeout=5)
         if response.status_code == 200:
-            print("✅ Document Manager route accessible")
+            print("✅ Report Storage route accessible")
         else:
             print(f"⚠️  Document Manager route returned status: {response.status_code}")
             
@@ -124,8 +124,8 @@ def test_esignature_workflow():
     print("\n" + "=" * 50)
     print("🎉 E-Signature Workflow Test Complete!")
     print("\nNext Steps:")
-    print("1. Access Document Manager at: http://localhost:8081/document-manager")
-    print("2. Create a document and request signatures")
+    print("1. Access Report Storage at: http://localhost:8081/report-storage")
+    print("2. Create a report and request signatures")
     print("3. Check email for signature request links")
     print("4. Use signature links to sign documents")
     
