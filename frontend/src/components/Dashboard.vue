@@ -1,8 +1,8 @@
 <template>
   <AppLayout>
     <div class="dashboard-page glass-background">
-    <!-- Page Header -->
-    <div class="page-header">
+      <!-- Page Header -->
+      <div class="page-header">
       <div class="header-content">
         <div>
           <h2 class="page-title">
@@ -44,10 +44,10 @@
     </div>
 
     <!-- Dashboard Content -->
-    <div v-else>
-      <!-- Summary Cards -->
-      <div class="stats-grid">
-        <div class="stat-card glass-stat-card glass-float">
+    <div v-else class="z-dashboard-layout">
+      <!-- Top Row: Summary Cards (KPIs) -->
+      <div class="stats-grid z-top-row">
+        <div class="stat-card glass-stat-card glass-float interactive-card" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
           <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
             <i class="pi pi-bolt"></i>
           </div>
@@ -58,7 +58,7 @@
           </div>
         </div>
 
-        <div class="stat-card glass-stat-card glass-float">
+        <div class="stat-card glass-stat-card glass-float interactive-card" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
           <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
             <i class="pi pi-percentage"></i>
           </div>
@@ -69,7 +69,7 @@
           </div>
         </div>
 
-        <div class="stat-card glass-stat-card glass-float">
+        <div class="stat-card glass-stat-card glass-float interactive-card" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
           <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
             <i class="pi pi-check-circle"></i>
           </div>
@@ -80,7 +80,7 @@
           </div>
         </div>
 
-        <div class="stat-card glass-stat-card glass-float">
+        <div class="stat-card glass-stat-card glass-float interactive-card" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
           <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
             <i class="pi pi-clock"></i>
           </div>
@@ -92,239 +92,224 @@
         </div>
       </div>
 
-      <!-- Plants Overview -->
-      <div class="card glass-card">
-        <div class="card-header">
-          <div class="card-header-content">
-            <h3 class="card-title">
-              <i class="pi pi-building"></i>
-              Plants Overview
-            </h3>
-            <div class="filter-controls">
-              <select v-model="sortBy" @change="sortPlants" class="sort-select glass-select">
-                <option value="name">Sort by Name</option>
-                <option value="generation">Sort by Generation</option>
-                <option value="capacityFactor">Sort by Capacity Factor</option>
-                <option value="availability">Sort by Availability</option>
-              </select>
-              <button @click="toggleSortOrder" class="btn-sort-order glass-button">
-                <i class="pi" :class="sortOrder === 'asc' ? 'pi-sort-amount-up' : 'pi-sort-amount-down'"></i>
-              </button>
-              <button 
-                @click="toggleComparisonMode" 
-                class="btn-compare-mode glass-button"
-                :class="{ active: comparisonMode }"
-              >
-                <i class="pi pi-chart-bar"></i>
-                {{ comparisonMode ? 'Cancel Compare' : 'Compare Plants' }}
-              </button>
-              <div class="view-toggle">
-                <button 
-                  @click="viewMode = 'grid'" 
-                  class="btn-view" 
-                  :class="{ active: viewMode === 'grid' }"
-                >
-                  <i class="pi pi-th-large"></i>
+      <div class="z-main-content">
+        <!-- Left Column: Charts -->
+        <div class="z-charts-column">
+          <!-- Middle Row: Line Chart + Pie Chart -->
+          <div class="z-middle-row">
+            <div class="card glass-card z-line-chart">
+              <div class="card-header">
+                <h3 class="card-title"><i class="pi pi-chart-line"></i> Generation Trend</h3>
+              </div>
+              <div class="card-body chart-container">
+                <LineChart v-if="plantsData.length" :data="generationTrendData" :options="lineChartOptions" />
+                <div v-else class="empty-chart">No data available</div>
+              </div>
+            </div>
+            
+            <div class="card glass-card z-pie-chart">
+              <div class="card-header">
+                <h3 class="card-title"><i class="pi pi-chart-pie"></i> Plant Capacity</h3>
+              </div>
+              <div class="card-body chart-container">
+                <PieChart v-if="plantsData.length" :data="plantCapacityData" :options="pieChartOptions" />
+                <div v-else class="empty-chart">No data available</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Row: Line Chart + Pie Chart -->
+          <div class="z-bottom-row">
+            <div class="card glass-card z-line-chart">
+              <div class="card-header">
+                <h3 class="card-title"><i class="pi pi-chart-bar"></i> Availability Factor Trend</h3>
+              </div>
+              <div class="card-body chart-container">
+                <LineChart v-if="plantsData.length" :data="availabilityTrendData" :options="lineChartOptions" />
+                <div v-else class="empty-chart">No data available</div>
+              </div>
+            </div>
+            
+            <div class="card glass-card z-pie-chart">
+              <div class="card-header">
+                <h3 class="card-title"><i class="pi pi-chart-pie"></i> Generation Distribution</h3>
+              </div>
+              <div class="card-body chart-container">
+                <PieChart v-if="plantsData.length" :data="generationDistributionData" :options="pieChartOptions" />
+                <div v-else class="empty-chart">No data available</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Plant Performance Summary Table -->
+          <div class="z-table-row mt-4">
+            <!-- Comparison Bar -->
+            <div v-if="comparisonMode" class="comparison-bar mb-4 glass-card">
+              <div class="comparison-info">
+                <i class="pi pi-info-circle"></i>
+                <span>{{ selectedForComparison.length }} plants selected for comparison (Select up to 4)</span>
+              </div>
+              <div class="comparison-actions">
+                <button @click="openComparison" class="btn-view-comparison" :disabled="selectedForComparison.length < 2">
+                  <i class="pi pi-chart-bar"></i> Compare Now
                 </button>
-                <button 
-                  @click="viewMode = 'list'" 
-                  class="btn-view" 
-                  :class="{ active: viewMode === 'list' }"
-                >
-                  <i class="pi pi-list"></i>
+                <button @click="cancelComparison" class="btn-cancel-comparison">
+                  Cancel
                 </button>
+              </div>
+            </div>
+
+            <div class="card glass-card full-width">
+              <div class="card-header flex justify-between items-center">
+                <h3 class="card-title"><i class="pi pi-table"></i> Plant Performance Summary</h3>
+                <button @click="toggleComparisonMode" class="btn-compare-mode glass-button" :class="{ active: comparisonMode }">
+                  <i class="pi pi-clone"></i> {{ comparisonMode ? 'Exit Compare' : 'Compare Plants' }}
+                </button>
+              </div>
+              <div class="card-body table-responsive">
+                <table v-if="filteredPlants.length" class="summary-table">
+                  <thead>
+                    <tr>
+                      <th @click="setSort('name')" class="cursor-pointer hover-header">
+                        Plant <i class="pi" :class="getSortIcon('name')"></i>
+                      </th>
+                      <th @click="setSort('generation')" class="cursor-pointer hover-header">
+                        Generation (kWh) <i class="pi" :class="getSortIcon('generation')"></i>
+                      </th>
+                      <th @click="setSort('capacityFactor')" class="cursor-pointer hover-header">
+                        Capacity Factor (%) <i class="pi" :class="getSortIcon('capacityFactor')"></i>
+                      </th>
+                      <th @click="setSort('availability')" class="cursor-pointer hover-header">
+                        Availability (%) <i class="pi" :class="getSortIcon('availability')"></i>
+                      </th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="plant in filteredPlants" :key="plant.code" :class="{ 'selected-row': isSelectedForComparison(plant) }">
+                      <td class="font-medium">
+                        <div class="flex items-center gap-2">
+                          <i v-if="isFavorite(plant.code)" class="pi pi-star-fill text-yellow-400 text-sm"></i>
+                          {{ plant.name }} ({{ plant.code }})
+                        </div>
+                      </td>
+                      <td>{{ formatNumber(plant.generation) }}</td>
+                      <td>
+                        <div class="metric-with-bar">
+                          <span>{{ formatNumber(plant.capacityFactor) }}</span>
+                          <div class="mini-progress">
+                            <div class="mini-progress-fill" :style="{ width: plant.capacityFactor + '%', background: getProgressColor(plant.capacityFactor) }"></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="metric-with-bar">
+                          <span>{{ formatNumber(plant.availability) }}</span>
+                          <div class="mini-progress">
+                            <div class="mini-progress-fill" :style="{ width: plant.availability + '%', background: getProgressColor(plant.availability) }"></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="action-buttons flex gap-2">
+                          <button @click="toggleFavorite(plant)" class="btn-icon" :title="isFavorite(plant.code) ? 'Remove from Favorites' : 'Add to Favorites'">
+                            <i class="pi" :class="isFavorite(plant.code) ? 'pi-star-fill text-yellow-400' : 'pi-star text-gray-400 hover:text-yellow-400'"></i>
+                          </button>
+                          <button v-if="comparisonMode" @click="comparePlant(plant)" class="btn-icon" :title="isSelectedForComparison(plant) ? 'Remove from Comparison' : 'Add to Comparison'">
+                            <i class="pi" :class="isSelectedForComparison(plant) ? 'pi-check-square text-blue-500' : 'pi-stop text-gray-400 hover:text-blue-500'"></i>
+                          </button>
+                          <button @click="openPlantDetails(plant)" class="btn-details ml-2">
+                            <i class="pi pi-external-link"></i> Details
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div v-else class="empty-chart">No data available</div>
               </div>
             </div>
           </div>
         </div>
-        <div class="card-body">
-          <div class="comparison-bar" v-if="comparisonMode">
-            <div class="comparison-info">
-              <i class="pi pi-info-circle"></i>
-              <span>Select 2-4 plants to compare. {{ selectedForComparison.length }} selected.</span>
-            </div>
-            <div class="comparison-actions">
-              <button 
-                @click="openComparison" 
-                class="btn-view-comparison glass-button"
-                :disabled="selectedForComparison.length < 2"
-              >
-                <i class="pi pi-eye"></i>
-                View Comparison
-              </button>
-              <button @click="cancelComparison" class="btn-cancel-comparison glass-button">
-                <i class="pi pi-times"></i>
-                Cancel
-              </button>
-            </div>
+
+        <!-- Right Column: Filters and Slicers -->
+        <div class="z-filters-column card glass-card">
+          <div class="card-header">
+            <h3 class="card-title"><i class="pi pi-filter"></i> Filters & Slicers</h3>
           </div>
-          <div class="filter-chips" v-if="activeFilters.length > 0">
-            <span class="filter-chip" v-for="filter in activeFilters" :key="filter">
-              {{ filter }}
-              <i class="pi pi-times" @click="removeFilter(filter)"></i>
-            </span>
-          </div>
-          <div class="plants-grid" :class="{ 'list-view': viewMode === 'list' }">
-            <transition-group name="plant-fade">
-              <div 
-                v-for="plant in filteredPlants" 
-                :key="plant.code" 
-                class="plant-card" 
-                :class="{ 
-                  'no-data': !plant.hasData, 
-                  'clickable': plant.hasData && !comparisonMode,
-                  'comparison-mode': comparisonMode,
-                  'selected-for-comparison': isSelectedForComparison(plant)
-                }"
-                @click="comparisonMode && plant.hasData ? comparePlant(plant) : (plant.hasData && openPlantDetails(plant))"
-              >
-              <div class="plant-header">
-                <h4>{{ plant.name }}</h4>
-                <div class="plant-badges">
-                  <div class="badge-row">
-                    <button 
-                      v-if="plant.hasData && !comparisonMode"
-                      @click.stop="toggleFavorite(plant)" 
-                      class="btn-favorite"
-                      :class="{ 'is-favorite': isFavorite(plant.code) }"
-                      :title="isFavorite(plant.code) ? 'Remove from favorites' : 'Add to favorites'"
-                    >
-                      <i class="pi" :class="isFavorite(plant.code) ? 'pi-star-fill' : 'pi-star'"></i>
-                    </button>
-                    <span class="plant-code">{{ plant.code }}</span>
-                    <div v-if="comparisonMode && plant.hasData" class="comparison-checkbox">
-                      <i class="pi" :class="isSelectedForComparison(plant) ? 'pi-check-circle' : 'pi-circle'"></i>
+          <div class="card-body filter-body">
+            <div class="filter-section">
+              <h4>Plant Selection</h4>
+              <div class="plant-list">
+                <label v-for="plant in plantsData" :key="plant.code" class="checkbox-label">
+                  <input type="checkbox" :value="plant.code" v-model="selectedPlantsFilter" @change="applyFilters" />
+                  {{ plant.name }}
+                </label>
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h4>Date Range</h4>
+              <div class="date-filters">
+                <input type="date" v-model="startDate" class="date-input" @change="applyFilters" />
+                <span>to</span>
+                <input type="date" v-model="endDate" class="date-input" @change="applyFilters" />
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h4>Sort By</h4>
+              <select v-model="sortBy" @change="sortPlants" class="sort-select glass-select full-width">
+                <option value="name">Plant Name</option>
+                <option value="generation">Generation Output</option>
+                <option value="capacityFactor">Capacity Factor</option>
+                <option value="availability">Availability</option>
+              </select>
+            </div>
+            
+            <div class="filter-actions">
+              <button @click="clearFilters" class="btn-clear-filters glass-button full-width">
+                Clear All Filters
+              </button>
+            </div>
+
+            <div class="quick-actions-section">
+              <h4>Quick Actions</h4>
+              <div class="vertical-actions">
+                <router-link to="/upload" class="action-btn">
+                  <i class="pi pi-upload"></i> Upload Data
+                </router-link>
+                <router-link to="/generate" class="action-btn">
+                  <i class="pi pi-download"></i> Generate Report
+                </router-link>
+              </div>
+            </div>
+
+            <div class="recent-uploads-section">
+              <h4>Recent Activities</h4>
+              <div v-if="recentUploads.length" class="recent-uploads-list">
+                <div v-for="upload in recentUploads" :key="upload.id" class="upload-item" @click="$router.push('/upload')">
+                  <div class="upload-item-content">
+                    <div class="icon-circle">
+                      <i class="pi pi-file-excel"></i>
+                    </div>
+                    <div class="upload-info">
+                      <p class="upload-filename">{{ upload.filename || upload.name || 'Data Upload' }}</p>
+                      <p class="upload-date">{{ formatDate(upload.uploaded_at || upload.date) }}</p>
+                    </div>
+                    <div class="status-indicator">
+                      <i :class="getStatusIcon(upload.status)" :title="upload.status"></i>
                     </div>
                   </div>
-                  <span v-if="plant.hasData" class="status-badge active">
-                    <i class="pi pi-circle-fill"></i> Active
-                  </span>
-                  <span v-else class="status-badge inactive">
-                    <i class="pi pi-circle"></i> No Data
-                  </span>
                 </div>
               </div>
-              <div v-if="plant.hasData" class="plant-stats">
-                <div class="plant-stat" @mouseenter="highlightStat($event)" @mouseleave="unhighlightStat($event)">
-                  <i class="pi pi-bolt"></i>
-                  <div>
-                    <label>Generation</label>
-                    <span class="animated-value">{{ formatNumber(plant.generation) }} kWh</span>
-                  </div>
-                </div>
-                <div class="plant-stat" @mouseenter="highlightStat($event)" @mouseleave="unhighlightStat($event)">
-                  <i class="pi pi-percentage"></i>
-                  <div>
-                    <label>Capacity Factor</label>
-                    <span class="animated-value">{{ formatNumber(plant.capacityFactor) }}%</span>
-                  </div>
-                </div>
-                <div class="plant-stat" @mouseenter="highlightStat($event)" @mouseleave="unhighlightStat($event)">
-                  <i class="pi pi-check-circle"></i>
-                  <div>
-                    <label>Availability</label>
-                    <span class="animated-value">{{ formatNumber(plant.availability) }}%</span>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="no-data-message">
-                <i class="pi pi-inbox"></i>
-                <p>No data uploaded yet</p>
-              </div>
-              <div v-if="plant.hasData" class="plant-progress">
-                <div class="progress-bar">
-                  <div 
-                    class="progress-fill" 
-                    :style="{ 
-                      width: plant.capacityFactor + '%',
-                      background: getProgressColor(plant.capacityFactor)
-                    }"
-                  ></div>
-                </div>
-                <span class="progress-label">{{ formatNumber(plant.capacityFactor) }}%</span>
-              </div>
-              <div v-if="plant.hasData && !comparisonMode" class="plant-footer">
-                <button @click.stop="comparePlant(plant)" class="btn-compare glass-button">
-                  <i class="pi pi-chart-bar"></i> Compare
-                </button>
-                <button 
-                  @click.stop="exportPlantDataAsExcel(plant)" 
-                  class="btn-export glass-button"
-                  :disabled="exportingPlant === plant.code"
-                >
-                  <i class="pi" :class="exportingPlant === plant.code ? 'pi-spin pi-spinner' : 'pi-download'"></i>
-                  {{ exportingPlant === plant.code ? 'Exporting...' : 'Export' }}
-                </button>
-              </div>
-            </div>
-            </transition-group>
-          </div>
-          <div v-if="filteredPlants.length === 0" class="empty-state">
-            <i class="pi pi-filter-slash"></i>
-            <p>No plants match your filters</p>
-            <button @click="clearFilters" class="btn-clear-filters glass-button">Clear Filters</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Activity -->
-      <div class="card glass-card glass-fade-in">
-        <div class="card-header">
-          <h3 class="card-title">
-            <i class="pi pi-history"></i>
-            Recent Uploads
-          </h3>
-        </div>
-        <div class="card-body">
-          <div v-if="recentUploads.length === 0" class="empty-state-small">
-            <i class="pi pi-inbox"></i>
-            <p>No recent uploads</p>
-          </div>
-          <div v-else class="activity-list">
-            <div v-for="upload in recentUploads" :key="upload.id" class="activity-item">
-              <div class="activity-icon" :class="upload.status.toLowerCase()">
-                <i :class="getStatusIcon(upload.status)"></i>
-              </div>
-              <div class="activity-content">
-                <h4>{{ upload.original_filename }}</h4>
-                <p>{{ upload.plant_name }} • {{ upload.records_imported }} records</p>
-              </div>
-              <div class="activity-meta">
-                <span class="activity-time">{{ formatDate(upload.uploaded_at) }}</span>
-                <span class="activity-status" :class="upload.status.toLowerCase()">
-                  {{ upload.status }}
-                </span>
+              <div v-else class="empty-activities">
+                No recent activities
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Quick Actions -->
-      <div class="quick-actions">
-        <h3 class="section-title">
-          <i class="pi pi-bolt"></i>
-          Quick Actions
-        </h3>
-        <div class="actions-grid">
-          <router-link to="/upload" class="action-card">
-            <i class="pi pi-upload"></i>
-            <h4>Upload Excel</h4>
-            <p>Import generation data</p>
-          </router-link>
-          <router-link to="/view" class="action-card">
-            <i class="pi pi-chart-line"></i>
-            <h4>View Reports</h4>
-            <p>Browse and analyze data</p>
-          </router-link>
-          <router-link to="/generate" class="action-card">
-            <i class="pi pi-download"></i>
-            <h4>Generate Report</h4>
-            <p>Export to Excel</p>
-          </router-link>
-        </div>
-      </div>
-    </div>
 
     <!-- Plant Detail Modal -->
     <PlantDetailModal
@@ -462,6 +447,7 @@
           </button>
         </div>
       </div>
+      </div>
     </div>
     </div>
   </AppLayout>
@@ -483,11 +469,41 @@ import pdfExporter from '../utils/pdfExport';
 import favoritesManager from '../utils/favorites';
 import keyboardShortcuts from '../utils/keyboardShortcuts';
 
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Filler
+} from 'chart.js';
+import { Line, Pie } from 'vue-chartjs';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
+
 export default {
   name: 'DashboardView',
   components: {
     PlantDetailModal,
     AppLayout,
+    LineChart: Line,
+    PieChart: Pie
   },
   data() {
     return {
@@ -507,6 +523,9 @@ export default {
       sortOrder: 'asc',
       viewMode: 'grid',
       activeFilters: [],
+      selectedPlantsFilter: [],
+      startDate: '',
+      endDate: '',
       autoRefresh: false,
       refreshInterval: null,
       lastUpdated: null,
@@ -514,7 +533,110 @@ export default {
       selectedForComparison: [],
       showComparisonModal: false,
       exportingPlant: null,
+      
+      // Chart Options
+      lineChartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      },
+      pieChartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+          }
+        }
+      }
     };
+  },
+  computed: {
+    generationTrendData() {
+      const labels = this.filteredPlants.map(p => p.name.replace(/ Hydroelectric Power Plant/gi, ''));
+      const data = this.filteredPlants.map(p => p.generation);
+      
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Generation (kWh)',
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            borderColor: '#3b82f6',
+            pointBackgroundColor: '#3b82f6',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            data
+          }
+        ]
+      };
+    },
+    plantCapacityData() {
+      const labels = this.filteredPlants.map(p => p.name.replace(/ Hydroelectric Power Plant/gi, ''));
+      const data = this.filteredPlants.map(p => this.getPlantCapacity(p.code));
+      const backgroundColors = [
+        '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316'
+      ];
+      
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Capacity (MW)',
+            backgroundColor: backgroundColors.slice(0, labels.length),
+            data
+          }
+        ]
+      };
+    },
+    availabilityTrendData() {
+      const labels = this.filteredPlants.map(p => p.name.replace(/ Hydroelectric Power Plant/gi, ''));
+      const data = this.filteredPlants.map(p => p.availability);
+      
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Availability (%)',
+            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            borderColor: '#10b981',
+            pointBackgroundColor: '#10b981',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            data
+          }
+        ]
+      };
+    },
+    generationDistributionData() {
+      const labels = this.filteredPlants.map(p => p.name.replace(/ Hydroelectric Power Plant/gi, ''));
+      const data = this.filteredPlants.map(p => p.generation);
+      const backgroundColors = [
+        '#6366f1', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#84cc16', '#a855f7'
+      ];
+      
+      return {
+        labels,
+        datasets: [
+          {
+            label: 'Generation Output',
+            backgroundColor: backgroundColors.slice(0, labels.length),
+            data
+          }
+        ]
+      };
+    }
   },
   mounted() {
     this.loadDashboardData();
@@ -776,6 +898,21 @@ export default {
       this.selectedPlant = null;
     },
     
+    setSort(column) {
+      if (this.sortBy === column) {
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+      } else {
+        this.sortBy = column;
+        // Default to descending for numbers, ascending for name
+        this.sortOrder = column === 'name' ? 'asc' : 'desc';
+      }
+      this.sortPlants();
+    },
+
+    getSortIcon(column) {
+      if (this.sortBy !== column) return 'pi-sort-alt text-gray-400 opacity-50';
+      return this.sortOrder === 'asc' ? 'pi-sort-amount-up-alt text-blue-500' : 'pi-sort-amount-down text-blue-500';
+    },
     
     sortPlants() {
       this.filteredPlants.sort((a, b) => {
@@ -800,10 +937,24 @@ export default {
       this.sortPlants();
     },
     
-    clearFilters() {
-      this.activeFilters = [];
-      this.filteredPlants = [...this.plantsData];
+    applyFilters() {
+      let result = [...this.plantsData];
+      
+      // Filter by selected plants
+      if (this.selectedPlantsFilter.length > 0) {
+        result = result.filter(plant => this.selectedPlantsFilter.includes(plant.code));
+      }
+      
+      this.filteredPlants = result;
       this.sortPlants();
+    },
+
+    clearFilters() {
+      this.selectedPlantsFilter = [];
+      this.startDate = '';
+      this.endDate = '';
+      this.sortBy = 'name';
+      this.applyFilters();
     },
     
     removeFilter(filter) {
@@ -821,12 +972,12 @@ export default {
     
     highlightStat(event) {
       event.currentTarget.style.transform = 'scale(1.05)';
-      event.currentTarget.style.background = '#e0f2fe';
+      event.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
     },
     
     unhighlightStat(event) {
-      event.currentTarget.style.transform = 'scale(1)';
-      event.currentTarget.style.background = 'transparent';
+      event.currentTarget.style.transform = '';
+      event.currentTarget.style.background = '';
     },
     
     toggleComparisonMode() {
@@ -967,6 +1118,186 @@ export default {
 </script>
 
 <style scoped>
+/* Z-Pattern Dashboard Layout */
+.z-dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.z-top-row {
+  /* Inherits from stats-grid */
+  margin-bottom: 0;
+}
+
+.z-main-content {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.z-charts-column {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.z-middle-row, .z-bottom-row {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.z-line-chart {
+  flex: 2;
+  margin-bottom: 0;
+}
+
+.z-pie-chart {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.chart-container {
+  height: 300px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-chart {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.z-filters-column {
+  flex: 1;
+  position: sticky;
+  top: 1.5rem;
+  margin-bottom: 0;
+}
+
+.filter-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.filter-section h4 {
+  margin: 0 0 0.75rem 0;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.plant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  color: #334155;
+  cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #3b82f6;
+  cursor: pointer;
+}
+
+.date-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.date-filters span {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.date-input {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.filter-actions {
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.quick-actions-section {
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.vertical-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  color: #3b82f6;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  border: 1px solid #bfdbfe;
+}
+
+.action-btn:hover {
+  background: #3b82f6;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+}
+
+@media (max-width: 1200px) {
+  .z-main-content {
+    flex-direction: column;
+  }
+  
+  .z-filters-column {
+    width: 100%;
+    position: static;
+  }
+  
+  .z-middle-row, .z-bottom-row {
+    flex-direction: column;
+  }
+  
+  .z-line-chart, .z-pie-chart {
+    width: 100%;
+  }
+}
+
 .dashboard-page {
   max-width: 1400px;
   margin: 0 auto;
@@ -2466,5 +2797,169 @@ export default {
 .empty-state-small p {
   margin: 0;
   font-size: 0.9375rem;
+}
+
+/* New Elements CSS */
+.z-table-row {
+  margin-top: 1.5rem;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.summary-table th {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  color: #475569;
+  font-weight: 600;
+}
+
+.summary-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #334155;
+}
+
+.summary-table tr:hover td {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.btn-details {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #3b82f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.btn-details:hover {
+  color: #2563eb;
+}
+
+.recent-uploads-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.recent-uploads-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.upload-item {
+  background: rgba(255, 255, 255, 0.5);
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.upload-item:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.upload-item-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.icon-circle {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+}
+
+.upload-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.upload-filename {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #334155;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upload-date {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.empty-activities {
+  font-size: 0.875rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* Interactive Enhancements */
+.interactive-card {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+  cursor: pointer;
+}
+
+.hover-header {
+  user-select: pointer;
+  transition: background-color 0.2s;
+}
+
+.hover-header:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.hover-header i {
+  margin-left: 0.25rem;
+  font-size: 0.8rem;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.btn-icon:hover {
+  transform: scale(1.15);
+}
+
+.selected-row td {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
 }
 </style>
