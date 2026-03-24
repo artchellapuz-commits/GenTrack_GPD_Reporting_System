@@ -9,19 +9,30 @@
     <!-- Hero Section -->
     <section id="hero" class="hero-section">
       <div class="hero-background-container">
-        <img 
-          v-for="(image, index) in riverImages" 
-          :key="index"
-          :src="image" 
-          alt="" 
-          class="hero-background-image"
-          :class="{ 'active': index === currentRiverIndex }"
-        />
+        <!-- Modern Mesh Gradient Background -->
+        <div class="mesh-gradient-bg"></div>
+        
+        <!-- Animated Energy Particles -->
+        <div class="energy-particles">
+          <div v-for="n in 15" :key="n" class="energy-particle" :style="generateParticleStyle(n)"></div>
+        </div>
+        
+        <!-- Subtle Texture Overlay -->
+        <div class="grain-overlay"></div>
+        
+        <!-- Animated Data Grid Overlay -->
+        <div class="data-grid-overlay"></div>
+        
+        <!-- Floating Accent Orbs -->
+        <div class="accent-orbs">
+          <div class="accent-orb accent-orb-1"></div>
+          <div class="accent-orb accent-orb-2"></div>
+          <div class="accent-orb accent-orb-3"></div>
+        </div>
       </div>
       <div class="hero-overlay"></div>
       <div class="container">
         <div class="hero-content">
-          <div class="hero-glass-card">
             <div class="logo-hero">
               <!-- Animated SVG Logo for GenTrack -->
               <div class="gentrack-logo hero-logo-svg">
@@ -50,7 +61,18 @@
                 Sign In
               </router-link>
             </div>
-          </div>
+        </div>
+      </div>
+      
+      <!-- Animated Scroll Hint -->
+      <div class="scroll-hint" @click="scrollToFeatures">
+        <div class="mouse">
+          <div class="wheel"></div>
+        </div>
+        <div class="arrows">
+          <span></span>
+          <span></span>
+          <span></span>
         </div>
       </div>
     </section>
@@ -328,198 +350,6 @@
       </div>
     </section>
 
-    <!-- Video Demo Section -->
-    <section id="video-demo" class="video-demo-section">
-      <div class="container">
-        <h2 class="section-title">See It In Action</h2>
-        <p class="section-subtitle">Watch how the GenTrack simplifies your workflow</p>
-        
-        <div class="video-container" @click="openVideoModal">
-          <div class="video-thumbnail">
-            <div class="video-play-button">
-              <i class="pi pi-play"></i>
-            </div>
-            <div class="video-overlay">
-              <div class="video-duration">{{ videoDuration }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Interactive Timeline -->
-    <section id="timeline" class="timeline-section">
-      <div class="container">
-        <h2 class="section-title">Our Journey</h2>
-        <p class="section-subtitle">Evolution of the GenTrack</p>
-        
-        <div class="timeline">
-          <div 
-            v-for="(milestone, index) in timeline" 
-            :key="index"
-            class="timeline-item"
-            :class="{ left: index % 2 === 0, right: index % 2 !== 0 }"
-            @click="openTimelineModal(milestone)"
-          >
-            <div class="timeline-content">
-              <div class="timeline-date">{{ milestone.date }}</div>
-              <h3>{{ milestone.title }}</h3>
-              <p>{{ milestone.description }}</p>
-              <div class="timeline-click-hint">
-                <i class="pi pi-info-circle"></i>
-                Click for details
-              </div>
-            </div>
-            <div class="timeline-dot"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Timeline Detail Modal -->
-    <transition name="modal">
-      <div v-if="showTimelineModal" class="modal-overlay" @click.self="closeTimelineModal">
-        <div class="timeline-modal">
-          <div class="modal-header">
-            <h3>{{ selectedMilestone.title }}</h3>
-            <button @click="closeTimelineModal" class="btn-close">&times;</button>
-          </div>
-          
-          <div class="modal-body">
-            <div class="timeline-modal-date">
-              <i class="pi pi-calendar"></i>
-              {{ selectedMilestone.date }}
-            </div>
-            
-            <div class="timeline-modal-description">
-              <h4>Overview</h4>
-              <p>{{ selectedMilestone.description }}</p>
-            </div>
-            
-            <div v-if="selectedMilestone.details" class="timeline-modal-details">
-              <h4>Key Achievements</h4>
-              <ul>
-                <li v-for="(detail, index) in selectedMilestone.details" :key="index">
-                  <i class="pi pi-check-circle"></i>
-                  {{ detail }}
-                </li>
-              </ul>
-            </div>
-            
-            <div v-if="selectedMilestone.impact" class="timeline-modal-impact">
-              <h4>Impact</h4>
-              <p>{{ selectedMilestone.impact }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </transition>
-
-    <!-- Comparison Table -->
-    <section id="comparison" class="comparison-section">
-      <div class="container">
-        <h2 class="section-title">Before vs After</h2>
-        <p class="section-subtitle">See the transformation with GenTrack</p>
-        
-        <div class="comparison-table">
-          <div class="comparison-header">
-            <div class="comparison-col"></div>
-            <div class="comparison-col before">Before</div>
-            <div class="comparison-col after">After</div>
-          </div>
-          
-          <div 
-            v-for="(item, index) in comparisonItems" 
-            :key="index"
-            class="comparison-row"
-          >
-            <div class="comparison-feature">{{ item.feature }}</div>
-            <div class="comparison-value before">
-              <i class="pi pi-times"></i>
-              {{ item.before }}
-            </div>
-            <div class="comparison-value after">
-              <i class="pi pi-check"></i>
-              {{ item.after }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- FAQ Section -->
-    <section id="faq" class="faq-section">
-      <div class="container">
-        <h2 class="section-title">Frequently Asked Questions</h2>
-        <p class="section-subtitle">Everything you need to know about the GenTrack</p>
-        
-        <div class="faq-grid">
-          <div 
-            v-for="(faq, index) in faqs" 
-            :key="index"
-            class="faq-item"
-            :class="{ active: activeFaq === index }"
-            @click="toggleFaq(index)"
-          >
-            <div class="faq-question">
-              <h3>{{ faq.question }}</h3>
-              <i class="pi" :class="activeFaq === index ? 'pi-minus' : 'pi-plus'"></i>
-            </div>
-            <transition name="faq-answer">
-              <div v-if="activeFaq === index" class="faq-answer">
-                <p>{{ faq.answer }}</p>
-              </div>
-            </transition>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- How It Works Section -->
-    <section id="how-it-works" class="how-it-works-section">
-      <div class="container">
-        <h2 class="section-title">How It Works</h2>
-        <p class="section-subtitle">Get started in three simple steps</p>
-        
-        <div class="steps-grid">
-          <div class="step-card">
-            <div class="step-number">1</div>
-            <div class="step-icon">
-              <i class="pi pi-file-excel"></i>
-            </div>
-            <h3>Upload Reports</h3>
-            <p>Import your daily power generation reports in Excel format</p>
-          </div>
-
-          <div class="step-arrow">
-            <i class="pi pi-arrow-right"></i>
-          </div>
-
-          <div class="step-card">
-            <div class="step-number">2</div>
-            <div class="step-icon">
-              <i class="pi pi-eye"></i>
-            </div>
-            <h3>View Analytics</h3>
-            <p>Monitor real-time data and visualize trends across all plants</p>
-          </div>
-
-          <div class="step-arrow">
-            <i class="pi pi-arrow-right"></i>
-          </div>
-
-          <div class="step-card">
-            <div class="step-number">3</div>
-            <div class="step-icon">
-              <i class="pi pi-file-pdf"></i>
-            </div>
-            <h3>Generate Summaries</h3>
-            <p>Create comprehensive reports for stakeholders and management</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- Call-to-Action Banner -->
     <transition name="slide-up">
       <div v-if="showCtaBanner" class="cta-banner">
@@ -647,38 +477,6 @@ export default {
   },
   data() {
     return {
-      currentRiverIndex: 0,
-      nextRiverIndex: 1,
-      isTransitioning: true,
-      riverImages: [
-        require('@/assets/River2.1.jpg'),
-        require('@/assets/River1.5.jpg'),
-        require('@/assets/River1.3.jpg'),
-        require('@/assets/River1.4.jpg'),
-        require('@/assets/River1.2.jpg'),
-        require('@/assets/River1.6.jpg'),
-        require('@/assets/River1.7.jpg'),
-        require('@/assets/River1.8.jpg'),
-        require('@/assets/River1.9.jpg'),
-        require('@/assets/River2.0.jpg'),
-        require('@/assets/River1.1.jpg'),
-        require('@/assets/River2.2.jpg'),
-        require('@/assets/River2.3.jpg'),
-        require('@/assets/River2.4.jpg'),
-        require('@/assets/River2.5.jpg'),
-        require('@/assets/River2.6.jpg'),
-        require('@/assets/River2.7.jpg'),
-        require('@/assets/River2.8.jpg'),
-        require('@/assets/River2.9.jpg'),
-        require('@/assets/River3.0.jpg'),
-        require('@/assets/River3.1.jpg'),
-        require('@/assets/River3.2.jpg'),
-        require('@/assets/River3.3.jpg'),
-        require('@/assets/River3.4.jpg'),
-        require('@/assets/River3.5.jpg'),
-        require('@/assets/River3.6.jpg'),
-        require('@/assets/River3.7.jpg'),
-      ],
       scrollY: 0,
       scrollProgress: 0,
       darkMode: false,
@@ -921,16 +719,10 @@ export default {
     };
   },
   computed: {
-    currentRiverImage() {
-      return this.riverImages[this.currentRiverIndex];
-    }
   },
   mounted() {
     // Load testimonials from API
     this.loadTestimonials();
-    
-    // Start background slideshow
-    this.startBackgroundSlideshow();
     
     // Hide scrollbar but keep scrolling functionality
     document.body.style.overflowX = 'hidden';
@@ -984,16 +776,24 @@ export default {
     if (this.liveStatsInterval) {
       clearInterval(this.liveStatsInterval);
     }
-    if (this.backgroundInterval) {
-      clearInterval(this.backgroundInterval);
-    }
   },
   methods: {
-    startBackgroundSlideshow() {
-      // Change background every 5 seconds
-      this.backgroundInterval = setInterval(() => {
-        this.currentRiverIndex = (this.currentRiverIndex + 1) % this.riverImages.length;
-      }, 5000);
+    generateParticleStyle(index) {
+      const size = Math.random() * 6 + 2;
+      const left = Math.random() * 100;
+      const top = Math.random() * 100;
+      const duration = Math.random() * 20 + 10;
+      const delay = Math.random() * -20;
+      
+      return {
+        width: `${size}px`,
+        height: `${size}px`,
+        left: `${left}%`,
+        top: `${top}%`,
+        animationDuration: `${duration}s`,
+        animationDelay: `${delay}s`,
+        opacity: Math.random() * 0.5 + 0.2
+      };
     },
     async loadTestimonials() {
       try {
@@ -1182,6 +982,12 @@ export default {
     },
     
     // Newsletter methods
+    scrollToFeatures() {
+      const featuresSection = document.getElementById('features');
+      if (featuresSection) {
+        featuresSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    },
     subscribeNewsletter() {
       if (this.newsletterEmail && this.newsletterEmail.includes('@')) {
         this.newsletterSuccess = true;
@@ -1402,41 +1208,131 @@ export default {
   overflow: hidden;
 }
 
-.hero-background-container {
+/* Hero Section Background */
+.mesh-gradient-bg {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  background: 
+    radial-gradient(at 0% 0%, #1e3a8a 0%, transparent 50%),
+    radial-gradient(at 100% 0%, #1e40af 0%, transparent 50%),
+    radial-gradient(at 100% 100%, #1e3a8a 0%, transparent 50%),
+    radial-gradient(at 0% 100%, #1e40af 0%, transparent 50%),
+    radial-gradient(at 50% 50%, #111827 0%, transparent 50%),
+    #0f172a;
+  filter: blur(10px);
   z-index: 0;
+  animation: meshMove 20s ease-in-out infinite alternate;
 }
 
-.hero-background-image {
+@keyframes meshMove {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.1); }
+}
+
+.energy-particles {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 2s ease-in-out;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  image-rendering: high-quality;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
-.hero-background-image.active {
-  opacity: 1;
+  overflow: hidden;
   z-index: 1;
 }
 
-.hero-background-next {
-  z-index: 0;
+.energy-particle {
+  position: absolute;
+  background: #60a5fa;
+  border-radius: 50%;
+  filter: blur(2px);
+  box-shadow: 0 0 10px #3b82f6, 0 0 20px #2563eb;
+  animation: floatParticle linear infinite;
 }
 
-/* Remove old Vue transition classes */
+@keyframes floatParticle {
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translate(100px, -200px) scale(0); opacity: 0; }
+}
+
+.grain-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3Base-filter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.data-grid-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  z-index: 1;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+}
+
+.accent-orbs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.accent-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  animation: orbFloat 20s infinite alternate;
+}
+
+.accent-orb-1 {
+  width: 400px;
+  height: 400px;
+  background: #3b82f6;
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
+}
+
+.accent-orb-2 {
+  width: 300px;
+  height: 300px;
+  background: #fb923c;
+  bottom: 10%;
+  right: -50px;
+  animation-delay: -5s;
+}
+
+.accent-orb-3 {
+  width: 250px;
+  height: 250px;
+  background: #60a5fa;
+  top: 20%;
+  right: 20%;
+  animation-delay: -10s;
+}
+
+@keyframes orbFloat {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(50px, 30px) scale(1.1); }
+}
 
 .hero-overlay {
   position: absolute;
@@ -1444,8 +1340,12 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(51, 65, 85, 0.5) 100%);
-  z-index: 1;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 23, 42, 0.7) 0%,
+    rgba(30, 41, 59, 0.5) 100%
+  );
+  z-index: 3;
 }
 
 .hero-section::before {
@@ -1482,7 +1382,7 @@ export default {
   margin: 0 auto;
   padding: 0 20px;
   position: relative;
-  z-index: 2;
+  z-index: 4;
 }
 
 .hero-content {
@@ -1490,24 +1390,6 @@ export default {
   margin: 0 auto;
   animation: fadeInUp 1s ease-out;
   transition: transform 0.1s ease-out, opacity 0.1s ease-out;
-}
-
-.hero-glass-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 24px;
-  padding: 60px 50px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  transition: all 0.4s ease;
-}
-
-.hero-glass-card:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
-  transform: translateY(-5px);
 }
 
 /* GenTrack SVG Logo Animations */
@@ -1576,28 +1458,106 @@ export default {
   animation: float 3s ease-in-out infinite;
 }
 
-.hero-title {
-  font-size: 3.5rem;
-  font-weight: 700;
-  color: white;
+#hero .hero-title {
+  font-size: 4rem;
+  font-weight: 800;
+  color: #ffffff !important;
   margin: 0 0 20px 0;
   letter-spacing: -0.02em;
+  text-shadow: none !important;
   animation: fadeInDown 1s ease-out 0.2s both;
 }
 
-.hero-subtitle {
+#hero .hero-subtitle {
   font-size: 1.5rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #ffffff !important;
   margin: 0 0 15px 0;
+  text-shadow: none !important;
   animation: fadeInDown 1s ease-out 0.4s both;
 }
 
-.hero-tagline {
+#hero .hero-tagline {
   font-size: 1.125rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #ffffff !important;
   margin: 0 0 40px 0;
   line-height: 1.6;
+  text-shadow: none !important;
   animation: fadeInDown 1s ease-out 0.6s both;
+}
+
+.scroll-hint {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  z-index: 5;
+  transition: opacity 0.3s;
+  animation: fadeIn 1.5s ease-out 1s both;
+}
+
+.scroll-hint:hover {
+  opacity: 0.8;
+}
+
+.mouse {
+  width: 26px;
+  height: 42px;
+  border: 2px solid #ffffff;
+  border-radius: 15px;
+  position: relative;
+}
+
+.wheel {
+  width: 4px;
+  height: 8px;
+  background: #ffffff;
+  border-radius: 2px;
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: scrollWheel 2s infinite;
+}
+
+.arrows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.arrows span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-bottom: 2px solid #ffffff;
+  border-right: 2px solid #ffffff;
+  transform: rotate(45deg);
+  margin: -5px;
+  animation: arrowDown 2s infinite;
+}
+
+.arrows span:nth-child(2) { animation-delay: -0.2s; }
+.arrows span:nth-child(3) { animation-delay: -0.4s; }
+
+@keyframes scrollWheel {
+  0% { transform: translate(-50%, 0); opacity: 1; }
+  100% { transform: translate(-50%, 15px); opacity: 0; }
+}
+
+@keyframes arrowDown {
+  0% { opacity: 0; transform: rotate(45deg) translate(-10px, -10px); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(45deg) translate(10px, 10px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .cta-buttons {

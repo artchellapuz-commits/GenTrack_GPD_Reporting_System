@@ -1,15 +1,12 @@
 <template>
   <div class="login-page">
-    <!-- Background Slideshow -->
-    <div class="background-slideshow">
-      <img 
-        v-for="(image, index) in riverImages" 
-        :key="index"
-        :src="image" 
-        alt="" 
-        class="background-image"
-        :class="{ 'active': index === currentRiverIndex }"
-      />
+    <!-- Modern Background -->
+    <div class="login-background">
+      <div class="mesh-gradient-bg"></div>
+      <div class="energy-particles">
+        <div v-for="n in 10" :key="n" class="energy-particle" :style="generateParticleStyle(n)"></div>
+      </div>
+      <div class="grain-overlay"></div>
     </div>
     <div class="background-overlay"></div>
 
@@ -233,36 +230,6 @@ export default {
   },
   data() {
     return {
-      currentRiverIndex: 0,
-      riverImages: [
-         require('@/assets/River2.1.jpg'),
-        require('@/assets/River1.5.jpg'),
-        require('@/assets/River1.3.jpg'),
-        require('@/assets/River1.4.jpg'),
-        require('@/assets/River1.2.jpg'),
-        require('@/assets/River1.6.jpg'),
-        require('@/assets/River1.7.jpg'),
-        require('@/assets/River1.8.jpg'),
-        require('@/assets/River1.9.jpg'),
-        require('@/assets/River2.0.jpg'),
-        require('@/assets/River1.1.jpg'),
-        require('@/assets/River2.2.jpg'),
-        require('@/assets/River2.3.jpg'),
-        require('@/assets/River2.4.jpg'),
-        require('@/assets/River2.5.jpg'),
-        require('@/assets/River2.6.jpg'),
-        require('@/assets/River2.7.jpg'),
-        require('@/assets/River2.8.jpg'),
-        require('@/assets/River2.9.jpg'),
-        require('@/assets/River3.0.jpg'),
-        require('@/assets/River3.1.jpg'),
-        require('@/assets/River3.2.jpg'),
-        require('@/assets/River3.3.jpg'),
-        require('@/assets/River3.4.jpg'),
-        require('@/assets/River3.5.jpg'),
-        require('@/assets/River3.6.jpg'),
-        require('@/assets/River3.7.jpg'),
-      ],
       credentials: {
         username: '',
         password: ''
@@ -282,9 +249,6 @@ export default {
     };
   },
   mounted() {
-    // Start background slideshow
-    this.startBackgroundSlideshow();
-
     // Check if user just logged out
     const justLoggedOut = sessionStorage.getItem('justLoggedOut');
     
@@ -317,11 +281,25 @@ export default {
     }
   },
   beforeUnmount() {
-    if (this.backgroundInterval) {
-      clearInterval(this.backgroundInterval);
-    }
   },
   methods: {
+    generateParticleStyle(index) {
+      const size = Math.random() * 4 + 2;
+      const left = Math.random() * 100;
+      const top = Math.random() * 100;
+      const duration = Math.random() * 15 + 10;
+      const delay = Math.random() * -15;
+      
+      return {
+        width: `${size}px`,
+        height: `${size}px`,
+        left: `${left}%`,
+        top: `${top}%`,
+        animationDuration: `${duration}s`,
+        animationDelay: `${delay}s`,
+        opacity: Math.random() * 0.4 + 0.1
+      };
+    },
     async submitResetRequest() {
       this.resetRequestLoading = true;
       this.resetRequestError = null;
@@ -426,33 +404,74 @@ export default {
   overflow: hidden;
 }
 
-/* Background Slideshow */
-.background-slideshow {
+/* Modern Background Styles */
+.login-background {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 0;
+  z-index: -1;
+  overflow: hidden;
 }
 
-.background-image {
+.mesh-gradient-bg {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 2s ease-in-out;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  image-rendering: high-quality;
+  background: 
+    radial-gradient(at 0% 0%, #1e3a8a 0%, transparent 50%),
+    radial-gradient(at 100% 0%, #1e40af 0%, transparent 50%),
+    radial-gradient(at 100% 100%, #1e3a8a 0%, transparent 50%),
+    radial-gradient(at 0% 100%, #1e40af 0%, transparent 50%),
+    radial-gradient(at 50% 50%, #111827 0%, transparent 50%),
+    #0f172a;
+  filter: blur(20px);
+  animation: meshMove 30s ease-in-out infinite alternate;
 }
 
-.background-image.active {
-  opacity: 1;
+@keyframes meshMove {
+  0% { transform: scale(1) rotate(0deg); }
+  100% { transform: scale(1.2) rotate(5deg); }
+}
+
+.energy-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1;
+}
+
+.energy-particle {
+  position: absolute;
+  background: #60a5fa;
+  border-radius: 50%;
+  filter: blur(1px);
+  box-shadow: 0 0 10px #3b82f6;
+  animation: floatParticle linear infinite;
+}
+
+@keyframes floatParticle {
+  0% { transform: translate(0, 0) scale(1); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.6; }
+  100% { transform: translate(50px, -150px) scale(0); opacity: 0; }
+}
+
+.grain-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3Base-filter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .background-overlay {
@@ -461,8 +480,8 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(51, 65, 85, 0.7) 100%);
-  z-index: 1;
+  background: radial-gradient(circle at center, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.8) 100%);
+  z-index: 0;
 }
 
 .login-container {
