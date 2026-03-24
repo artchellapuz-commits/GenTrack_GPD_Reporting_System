@@ -38,8 +38,8 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="loading-state">
-      <i class="pi pi-spin pi-spinner"></i>
+    <div v-if="loading" class="loading-state fade-in">
+      <div class="loader-spinner"></div>
       <p>Loading dashboard data...</p>
     </div>
 
@@ -47,7 +47,7 @@
     <div v-else class="z-dashboard-layout">
       <!-- Top Row: Summary Cards (KPIs) -->
       <div class="stats-grid z-top-row">
-        <div class="stat-card glass-stat-card glass-float interactive-card" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
+        <div class="stat-card glass-stat-card glass-float interactive-card animate-slide-up" style="animation-delay: 0.1s" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
           <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
             <i class="pi pi-bolt"></i>
           </div>
@@ -58,7 +58,7 @@
           </div>
         </div>
 
-        <div class="stat-card glass-stat-card glass-float interactive-card" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
+        <div class="stat-card glass-stat-card glass-float interactive-card animate-slide-up" style="animation-delay: 0.2s" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
           <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
             <i class="pi pi-percentage"></i>
           </div>
@@ -69,7 +69,7 @@
           </div>
         </div>
 
-        <div class="stat-card glass-stat-card glass-float interactive-card" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
+        <div class="stat-card glass-stat-card glass-float interactive-card animate-slide-up" style="animation-delay: 0.3s" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
           <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
             <i class="pi pi-check-circle"></i>
           </div>
@@ -80,7 +80,7 @@
           </div>
         </div>
 
-        <div class="stat-card glass-stat-card glass-float interactive-card" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
+        <div class="stat-card glass-stat-card glass-float interactive-card animate-slide-up" style="animation-delay: 0.4s" @mouseenter="highlightStat" @mouseleave="unhighlightStat">
           <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
             <i class="pi pi-clock"></i>
           </div>
@@ -97,7 +97,7 @@
         <div class="z-charts-column">
           <!-- Middle Row: Line Chart + Pie Chart -->
           <div class="z-middle-row">
-            <div class="card glass-card z-line-chart">
+            <div class="card glass-card z-line-chart animate-slide-up" style="animation-delay: 0.5s">
               <div class="card-header">
                 <h3 class="card-title"><i class="pi pi-chart-line"></i> Generation Trend</h3>
               </div>
@@ -107,7 +107,7 @@
               </div>
             </div>
             
-            <div class="card glass-card z-pie-chart">
+            <div class="card glass-card z-pie-chart animate-slide-up" style="animation-delay: 0.6s">
               <div class="card-header">
                 <h3 class="card-title"><i class="pi pi-chart-pie"></i> Plant Capacity</h3>
               </div>
@@ -120,7 +120,7 @@
 
           <!-- Bottom Row: Line Chart + Pie Chart -->
           <div class="z-bottom-row">
-            <div class="card glass-card z-line-chart">
+            <div class="card glass-card z-line-chart animate-slide-up" style="animation-delay: 0.7s">
               <div class="card-header">
                 <h3 class="card-title"><i class="pi pi-chart-bar"></i> Availability Factor Trend</h3>
               </div>
@@ -130,7 +130,7 @@
               </div>
             </div>
             
-            <div class="card glass-card z-pie-chart">
+            <div class="card glass-card z-pie-chart animate-slide-up" style="animation-delay: 0.8s">
               <div class="card-header">
                 <h3 class="card-title"><i class="pi pi-chart-pie"></i> Generation Distribution</h3>
               </div>
@@ -142,7 +142,7 @@
           </div>
 
           <!-- Plant Performance Summary Table -->
-          <div class="z-table-row mt-4">
+          <div class="z-table-row mt-4 animate-slide-up" style="animation-delay: 0.9s">
             <!-- Comparison Bar -->
             <div v-if="comparisonMode" class="comparison-bar mb-4 glass-card">
               <div class="comparison-info">
@@ -233,7 +233,7 @@
         </div>
 
         <!-- Right Column: Filters and Slicers -->
-        <div class="z-filters-column card glass-card">
+        <div class="z-filters-column card glass-card animate-slide-left" style="animation-delay: 0.3s">
           <div class="card-header">
             <h3 class="card-title"><i class="pi pi-filter"></i> Filters & Slicers</h3>
           </div>
@@ -2961,5 +2961,86 @@ export default {
 .action-buttons {
   display: flex;
   align-items: center;
+}
+
+/* Animations */
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideLeftFade {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-slide-up {
+  opacity: 0;
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-left {
+  opacity: 0;
+  animation: slideLeftFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.4s ease-in-out forwards;
+}
+
+/* Custom Loading Spinner */
+.loader-spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(59, 130, 246, 0.2);
+  border-left-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: var(--surface-card, #ffffff);
+  border-radius: 16px;
+  border: 1px solid var(--surface-border, #e5e7eb);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.loading-state p {
+  color: var(--text-color-secondary, #64748b);
+  font-weight: 500;
+  font-size: 1.1rem;
+  letter-spacing: 0.5px;
 }
 </style>

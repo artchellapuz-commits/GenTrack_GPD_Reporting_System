@@ -130,11 +130,31 @@
                   </span>
                 </div>
               </div>
-              <div class="report-status">
+              <div class="report-status flex items-center gap-2">
                 <span :class="['status-badge', getStatusClass(report.status)]">
                   <i :class="getStatusIcon(report.status)"></i>
                   {{ getStatusLabel(report.status) }}
                 </span>
+                <div class="action-menu">
+                  <button class="menu-trigger" @click="toggleReportMenu(report.id, $event)" :class="{ active: activeMenu === report.id }">
+                    <i class="pi pi-ellipsis-v"></i>
+                  </button>
+                  <div v-if="activeMenu === report.id" class="menu-dropdown" @click.stop>
+                    <button class="menu-item" @click="duplicateReport(report)">
+                      <i class="pi pi-copy"></i>
+                      Duplicate
+                    </button>
+                    <button class="menu-item" @click="archiveReport(report)">
+                      <i class="pi pi-box"></i>
+                      Archive
+                    </button>
+                    <div class="menu-divider"></div>
+                    <button class="menu-item danger" @click="confirmDeleteReport(report)">
+                      <i class="pi pi-trash"></i>
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -206,26 +226,6 @@
                 <i class="pi pi-info-circle"></i>
                 Details
               </button>
-              <div class="action-menu">
-                <button class="menu-trigger" @click="toggleReportMenu(report.id)" :class="{ active: activeMenu === report.id }">
-                  <i class="pi pi-ellipsis-v"></i>
-                </button>
-                <div v-if="activeMenu === report.id" class="menu-dropdown" @click.stop>
-                  <button class="menu-item" @click="duplicateReport(report)">
-                    <i class="pi pi-copy"></i>
-                    Duplicate
-                  </button>
-                  <button class="menu-item" @click="archiveReport(report)">
-                    <i class="pi pi-archive"></i>
-                    Archive
-                  </button>
-                  <div class="menu-divider"></div>
-                  <button class="menu-item danger" @click="confirmDeleteReport(report)">
-                    <i class="pi pi-trash"></i>
-                    Delete
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -365,11 +365,23 @@ export default {
       return this.searchQuery || this.typeFilter || this.statusFilter || this.plantFilter
     }
   },
-  async mounted() {
-    await this.loadReports()
+  mounted() {
+    this.loadReports()
     this.calculateStats()
+    document.addEventListener('click', this.handleClickOutside)
+  },
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleClickOutside)
   },
   methods: {
+    handleClickOutside(event) {
+      if (this.activeMenu) {
+        const isMenuClick = event.target.closest('.action-menu')
+        if (!isMenuClick) {
+          this.activeMenu = null
+        }
+      }
+    },
     async loadReports() {
       this.loading = true
       try {
@@ -463,7 +475,10 @@ export default {
       this.plantFilter = ''
     },
     
-    toggleReportMenu(reportId) {
+    toggleReportMenu(reportId, event) {
+      if (event) {
+        event.stopPropagation()
+      }
       this.activeMenu = this.activeMenu === reportId ? null : reportId
     },
     
@@ -925,9 +940,10 @@ export default {
   transition: all 0.3s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   position: relative;
-  overflow: hidden;
+  /* Removed overflow: hidden so dropdown isn't clipped */
 }
 
+/* Updated before pseudo-element to use absolute positioning but not require overflow: hidden */
 .report-card::before {
   content: '';
   position: absolute;
@@ -937,6 +953,8 @@ export default {
   height: 100%;
   background: #cbd5e1;
   transition: background 0.3s ease;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
 }
 
 .report-card:hover {
@@ -1153,7 +1171,7 @@ export default {
 
 .action-menu {
   position: relative;
-  margin-left: auto;
+  /* Removed margin-left: auto so it sits right next to the badge */
 }
 
 .menu-trigger {
@@ -1180,9 +1198,22 @@ export default {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  z-index: 10;
+  z-index: 50; /* Increased z-index */
   min-width: 160px;
   padding: 0.5rem;
+}
+
+.report-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: visible; /* Ensure dropdown can overflow */
+  display: flex;
+  flex-direction: column;
 }
 
 .menu-item {

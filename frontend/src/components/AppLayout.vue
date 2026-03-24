@@ -169,6 +169,12 @@
         </div>
 
         <div class="topbar-right">
+          <!-- Live Date/Time Display -->
+          <div class="topbar-datetime">
+            <span class="current-date">{{ currentDate }}</span>
+            <span class="current-time">{{ currentTime }}</span>
+          </div>
+
           <!-- Quick Search -->
           <QuickSearch />
           
@@ -316,7 +322,10 @@ export default {
       pendingResetCount: 0,
       notificationInterval: null,
       notificationMenuActive: false,
-      recentRequests: []
+      recentRequests: [],
+      currentDate: '',
+      currentTime: '',
+      timeInterval: null
     };
   },
   created() {
@@ -351,8 +360,14 @@ export default {
     this.loadUserInfo();
     this.checkScreenSize();
     this.checkCurrentRoute();
+    this.updateDateTime();
     window.addEventListener('resize', this.checkScreenSize);
     document.addEventListener('click', this.handleClickOutside);
+    
+    // Update time every second
+    this.timeInterval = setInterval(() => {
+      this.updateDateTime();
+    }, 1000);
     
     // Load pending reset count if admin
     if (this.isAdminUser) {
@@ -380,6 +395,11 @@ export default {
     if (this.notificationInterval) {
       clearInterval(this.notificationInterval);
     }
+    
+    // Clear time interval
+    if (this.timeInterval) {
+      clearInterval(this.timeInterval);
+    }
   },
   watch: {
     '$route'(to) {
@@ -387,6 +407,14 @@ export default {
     }
   },
   methods: {
+    updateDateTime() {
+      const now = new Date();
+      const optionsDate = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+      const optionsTime = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      
+      this.currentDate = now.toLocaleDateString('en-US', optionsDate);
+      this.currentTime = now.toLocaleTimeString('en-US', optionsTime);
+    },
     checkCurrentRoute() {
       // Auto-open dropdown if on water nomination or approval queue pages
       const currentPath = this.$route.path;
@@ -805,6 +833,36 @@ export default {
   z-index: 998;
   gap: 1rem;
   transition: left 0.3s;
+}
+
+/* Date/Time Display Styles */
+.topbar-datetime {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-right: 1.5rem;
+}
+
+.current-date {
+  font-size: 0.875rem;
+  color: var(--text-color-secondary, #64748b);
+  font-weight: 500;
+}
+
+.current-time {
+  font-size: 0.875rem;
+  color: var(--text-color, #334155);
+  font-weight: 600;
+  min-width: 80px;
+}
+
+/* Dark Mode overrides for Date/Time */
+.dark-mode .current-date {
+  color: #94a3b8;
+}
+
+.dark-mode .current-time {
+  color: #e2e8f0;
 }
 
 .layout-static-inactive .layout-topbar {
