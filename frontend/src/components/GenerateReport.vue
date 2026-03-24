@@ -2875,187 +2875,32 @@ export default {
       if (!this.reportPreview) return;
 
       this.generating = true;
-      toast.info('Generating Excel file...');
+      toast.info('Downloading Excel file from server...');
 
       try {
-        // ── Dynamic import (keeps bundle lean) ────────────────────────────
-        const ExcelJSModule = await import('exceljs');
-        const ExcelJS = ExcelJSModule.default || ExcelJSModule;
-
-        const wb = new ExcelJS.Workbook();
-        wb.creator = 'NPC Reporting System';
-        const ws = wb.addWorksheet('PSR PSALM Edit (2)');
-
-        // ─── constants ───────────────────────────────────────────────────
-        const DARK_TEAL = 'FF2F4F4F';
-        const YELLOW    = 'FFFFFF00';
-        const LIGHT_BLUE = 'FFCCECFF';
-        const BLUE_FILL = 'FF99CCFF';
-        const GREY_HDR  = 'FFD9D9D9';
-        const WHITE     = 'FFFFFFFF';
-
-        const mkFill = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
-        const thinBorder = {
-          top:    { style: 'thin' }, left:  { style: 'thin' },
-          bottom: { style: 'thin' }, right: { style: 'thin' }
-        };
-
-        // ─── Extract actual table data from preview DOM ───────────────────
-        const previewContainer = document.querySelector('.preview-content-wrapper');
-        if (!previewContainer) {
-          throw new Error('Preview container not found');
-        }
-
-        // Get the actual rendered table from the preview
-        const mainTable = previewContainer.querySelector('.main-content-left .excel-table');
-        const rightSideContent = previewContainer.querySelector('.right-side-content');
-
-        if (!mainTable) {
-          throw new Error('Main table not found in preview');
-        }
-
-        // ─── Set up wide worksheet to accommodate all content ─────────────
-        // Set column widths for main table columns
-        ws.getColumn(1).width = 30;  // A – PLANT NAME
-        ws.getColumn(2).width = 12;  // B – Rated Cap
-        ws.getColumn(3).width = 12;  // C – Available Cap
-        ws.getColumn(4).width = 16;  // D – Lake Lanao Outflow
-        ws.getColumn(5).width = 13;  // E – Load @0800H
-        ws.getColumn(6).width = 70;  // F – REMARKS
+        const dateStr = this.reportDate.replace(/-/g, '');
+        const filename = `PLANT_STATUS_${dateStr}.xlsx`;
         
-        // Add extra columns for right-side content
-        for (let i = 7; i <= 50; i++) {
-          ws.getColumn(i).width = 15;
-        }
-
-        // Apply style to a cell
-        const sc = (cell, { font, alignment, fill, border, numFmt } = {}) => {
-          if (font)      cell.font      = font;
-          if (alignment) cell.alignment = alignment;
-          if (fill)      cell.fill      = fill;
-          if (border)    cell.border    = border;
-          if (numFmt)    cell.numFmt    = numFmt;
-        };
-
-        // Set value + style
-        const sv = (ws, row, col, value, styleObj = {}) => {
-          const cell = ws.getCell(row, col);
-          cell.value = value;
-          sc(cell, styleObj);
-          return cell;
-        };
-
-        // Safe merge helper
-        const safeMerge = (ws, r1, c1, r2, c2) => {
-          try { ws.mergeCells(r1, c1, r2, c2); } catch(e) {}
-        };
-
-        let r = 1;
-
-        // ════════════════════════════════════════════════════════════════
-        // CREATE COMPLETE WIDE TABLE FROM PREVIEW
-        // ════════════════════════════════════════════════════════════════
-        
-        // Extract all content from preview and create wide Excel sheet
-        r = this._exportPreviewToExcel(ws, mainTable, rightSideContent, r, {
-          DARK_TEAL, YELLOW, LIGHT_BLUE, BLUE_FILL, GREY_HDR, WHITE,
-          mkFill, thinBorder, safeMerge, sv
+        // Fetch the Excel file from backend
+        const response = await api.generateReport({
+          plant_codes: this.selectedPlants,
+          start_date: this.reportDate,
+          end_date: this.reportDate,
+          report_type: this.reportType,
         });
 
-        ws.getRow(r).height = 10; r++;
-        ws.getRow(r).height = 16;
-        safeMerge(ws, r, 1, r, 20);
-        sv(ws, r, 1, 'AUTHORIZATION', {
-          font: { bold: true, size: 13 }, alignment: { horizontal: 'center', vertical: 'middle' }
-        });
-        r++;
-
-        const writeSignatureGroup = (sigs) => {
-          if (!sigs || !sigs.length) return;
-          const total = sigs.length;
-          // Role header row
-          ws.getRow(r).height = 14;
-          sigs.forEach((sig, i) => {
-            const c1 = i * Math.floor(20 / total) + 1;
-            const c2 = (i + 1) * Math.floor(20 / total);
-            if (c1 < c2) safeMerge(ws, r, c1, r, c2);
-            sv(ws, r, c1, sig.role, { font: { size: 10, italic: true }, alignment: { horizontal: 'center', vertical: 'middle' } });
-          });
-          r++;
-          // Signature space rows
-          for (let sr = 0; sr < 3; sr++) { ws.getRow(r).height = sr === 1 ? 24 : 12; r++; }
-          // Name row
-          ws.getRow(r).height = 16;
-          sigs.forEach((sig, i) => {
-            const c1 = i * Math.floor(20 / total) + 1;
-            const c2 = (i + 1) * Math.floor(20 / total);
-            if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) {} }
-            sv(ws, r, c1, sig.name, { font: { bold: true, size: 11, underline: true }, alignment: { horizontal: 'center', vertical: 'middle' } });
-          });
-          r++;
-          // Title row
-          ws.getRow(r).height = 14;
-          sigs.forEach((sig, i) => {
-            const c1 = i * Math.floor(20 / total) + 1;
-            const c2 = (i + 1) * Math.floor(20 / total);
-            if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) {} }
-            sv(ws, r, c1, sig.title, { font: { size: 10 }, alignment: { horizontal: 'center', vertical: 'middle' } });
-          });
-          r++;
-          ws.getRow(r).height = 8; r++;
-        };
-
-        writeSignatureGroup(this.reportPreview.signatures?.first_row);
-        writeSignatureGroup(this.reportPreview.signatures?.second_row);
-
-        // ════════════════════════════════════════════════════════════════
-        // 8. ADDITIONAL NOTES
-        // ════════════════════════════════════════════════════════════════
-        ws.getRow(r).height = 10; r++;
-        ws.getRow(r).height = 16;
-        safeMerge(ws, r, 1, r, 20);
-        sv(ws, r, 1, 'Note:', { font: { bold: true, size: 11 }, alignment: { horizontal: 'left', vertical: 'middle' } });
-        r++;
-        (this.reportPreview.additional_notes || []).forEach((note, idx) => {
-          ws.getRow(r).height = 22;
-          safeMerge(ws, r, 1, r, 20);
-          sv(ws, r, 1, `${idx + 1}. ${note}`, {
-            font: { size: 10 },
-            alignment: { horizontal: 'left', vertical: 'middle', wrapText: true }
-          });
-          r++;
-        });
-
-        // ════════════════════════════════════════════════════════════════
-        // 9. FOOTER NOTE
-        // ════════════════════════════════════════════════════════════════
-        ws.getRow(r).height = 8; r++;
-        if (this.reportPreview.footer_note) {
-          ws.getRow(r).height = 40;
-          safeMerge(ws, r, 1, r, 20);
-          sv(ws, r, 1, this.reportPreview.footer_note, {
-            font: { italic: true, size: 10 },
-            alignment: { horizontal: 'left', vertical: 'middle', wrapText: true }
-          });
-          r++;
-        }
-
-        // ════════════════════════════════════════════════════════════════
-        // WRITE & DOWNLOAD
-        // ════════════════════════════════════════════════════════════════
-        const buffer = await wb.xlsx.writeBuffer();
-        const blob   = new Blob([buffer], {
+        // Create download link from blob
+        const blob = new Blob([response.data], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         });
-        const url  = URL.createObjectURL(blob);
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href  = url;
-        const dateStr = this.reportDate.replace(/-/g, '');
-        link.setAttribute('download', `PLANT_STATUS_${dateStr}.xlsx`);
+        link.href = url;
+        link.setAttribute('download', filename);
         document.body.appendChild(link);
         link.click();
         link.remove();
-        URL.revokeObjectURL(url);
+        window.URL.revokeObjectURL(url);
 
         // Save to history
         const selectedPlantNamesForHistory = this.plants
@@ -3064,7 +2909,7 @@ export default {
           .join(', ');
         const reportTypeNameForHistory = this.reportTypes.find(t => t.value === this.reportType)?.label || this.reportType;
         this.saveToHistory({
-          filename: `PLANT_STATUS_${dateStr}.xlsx`,
+          filename: filename,
           plantCode: this.selectedPlants.join(','),
           plantName: selectedPlantNamesForHistory,
           reportDate: this.reportDate,
@@ -3074,8 +2919,8 @@ export default {
 
         toast.success('Excel file downloaded successfully!');
       } catch (error) {
-        console.error('Download Excel (client-side) error:', error);
-        toast.error('Failed to generate Excel file: ' + (error.message || 'Unknown error'), 6000);
+        console.error('Download Excel error:', error);
+        toast.error('Failed to download Excel file: ' + (error.message || 'Unknown error'), 6000);
       } finally {
         this.generating = false;
       }

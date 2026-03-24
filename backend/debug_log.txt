@@ -3585,3 +3585,21 @@ Request path: /api/signatory-authorizations/my-authorizations/
 Args: ()
 Kwargs: {}
 ==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-24 00:35:11.403650+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-24 00:42:26.316840+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-24 00:45:21.132886+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
