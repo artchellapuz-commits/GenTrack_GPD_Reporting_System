@@ -26,11 +26,22 @@
       <div class="login-card">
         <!-- Logo and Title -->
         <div class="login-header">
-          <div class="logo-icon">
-            <img src="@/assets/NPC-logo.png" alt="GPD Logo" />
+          <div class="logo-icon gentrack-logo-container">
+            <!-- Animated SVG Logo for GenTrack -->
+            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="gentrack-svg">
+              <!-- Background Hexagon -->
+              <polygon points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5" fill="none" stroke="#3b82f6" stroke-width="6" class="logo-hex"/>
+              <!-- Power Lightning Bolt -->
+              <path d="M55,20 L35,55 L50,55 L45,80 L65,45 L50,45 Z" fill="#60a5fa" class="logo-bolt"/>
+              <!-- Data Connection Nodes -->
+              <circle cx="35" cy="55" r="4" fill="#fb923c" class="logo-node"/>
+              <circle cx="50" cy="55" r="4" fill="#fb923c" class="logo-node"/>
+              <circle cx="65" cy="45" r="4" fill="#fb923c" class="logo-node"/>
+              <circle cx="50" cy="45" r="4" fill="#fb923c" class="logo-node"/>
+            </svg>
           </div>
-          <h2>Welcome to GPD Reporting System!</h2>
-          <p>Sign in to continue</p>
+          <h2>Welcome to GenTrack!</h2>
+          <p>Plant Status Report Generator</p>
         </div>
 
         <!-- Login Form -->
@@ -492,6 +503,58 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+/* GenTrack SVG Logo Animations */
+.gentrack-logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.gentrack-svg {
+  width: 100px;
+  height: 100px;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+}
+
+.logo-hex {
+  stroke-dasharray: 260;
+  stroke-dashoffset: 0;
+  animation: drawHex 4s ease-in-out infinite alternate;
+}
+
+.logo-bolt {
+  transform-origin: center;
+  animation: pulseBolt 2s infinite alternate;
+}
+
+.logo-node {
+  animation: blinkNode 2s infinite;
+}
+
+.logo-node:nth-child(3) { animation-delay: 0s; }
+.logo-node:nth-child(4) { animation-delay: 0.5s; }
+.logo-node:nth-child(5) { animation-delay: 1s; }
+.logo-node:nth-child(6) { animation-delay: 1.5s; }
+
+@keyframes drawHex {
+  0% { stroke-dashoffset: 260; }
+  50% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes pulseBolt {
+  0% { transform: scale(0.95); fill: #3b82f6; }
+  100% { transform: scale(1.05); fill: #93c5fd; }
+}
+
+@keyframes blinkNode {
+  0%, 100% { opacity: 0.3; r: 3; fill: #fb923c; }
+  50% { opacity: 1; r: 5; fill: #fde047; }
 }
 
 .login-header h2 {

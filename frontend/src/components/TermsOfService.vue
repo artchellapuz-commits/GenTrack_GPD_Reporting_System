@@ -52,7 +52,7 @@ export default {
         {
           title: '1. Acceptance of Terms',
           content: [
-            'By accessing and using the GPD Reporting System, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the system.'
+            'By accessing and using the GenTrack, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the system.'
           ]
         },
         {

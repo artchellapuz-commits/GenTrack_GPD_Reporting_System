@@ -19,7 +19,7 @@
     <div class="page-header">
       <div class="header-content">
         <div class="logo-container">
-          <img src="@/assets/NPC-logo.png" alt="GPD Logo" class="header-logo" />
+          <img src="@/assets/NPC-logo.png" alt="GenTrack Logo" class="header-logo" />
           <div class="logo-glow"></div>
         </div>
         <h1 class="glowing-text">About GPD</h1>

@@ -22,7 +22,7 @@
           <i class="pi pi-book"></i>
         </div>
         <h1 class="glowing-text">Documentation</h1>
-        <p class="subtitle">Complete guides and resources for the GPD Reporting System</p>
+        <p class="subtitle">Complete guides and resources for the GenTrack</p>
       </div>
     </div>
 

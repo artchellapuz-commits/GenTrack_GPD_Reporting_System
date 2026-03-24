@@ -23,9 +23,24 @@
         <div class="hero-content">
           <div class="hero-glass-card">
             <div class="logo-hero">
-              <img src="@/assets/NPC-logo.png" alt="GPD Logo" class="hero-logo" />
+              <!-- Animated SVG Logo for GenTrack -->
+              <div class="gentrack-logo hero-logo-svg">
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Background Hexagon -->
+                  <polygon points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5" fill="none" stroke="#3b82f6" stroke-width="6" class="logo-hex"/>
+                  
+                  <!-- Power Lightning Bolt -->
+                  <path d="M55,20 L35,55 L50,55 L45,80 L65,45 L50,45 Z" fill="#60a5fa" class="logo-bolt"/>
+                  
+                  <!-- Data Connection Nodes -->
+                  <circle cx="35" cy="55" r="4" fill="#fb923c" class="logo-node"/>
+                  <circle cx="50" cy="55" r="4" fill="#fb923c" class="logo-node"/>
+                  <circle cx="65" cy="45" r="4" fill="#fb923c" class="logo-node"/>
+                  <circle cx="50" cy="45" r="4" fill="#fb923c" class="logo-node"/>
+                </svg>
+              </div>
             </div>
-            <h1 class="hero-title">GPD Reporting System</h1>
+            <h1 class="hero-title">GenTrack</h1>
             <p class="hero-subtitle">Generation and Performance Division - Agus-Pulangi Hydro-Electric Power Plants</p>
             <p class="hero-tagline">Streamline your power generation reporting with real-time analytics</p>
             
@@ -150,7 +165,7 @@
     <section id="live-stats" class="live-stats-section">
       <div class="container">
         <h2 class="section-title">Live System Statistics</h2>
-        <p class="section-subtitle">Real-time monitoring of the GPD Reporting System</p>
+        <p class="section-subtitle">Real-time monitoring of the GenTrack</p>
         
         <div class="live-stats-grid">
           <div class="live-stat-card">
@@ -300,7 +315,7 @@
               
               <div class="form-group">
                 <label>Your Testimonial *</label>
-                <textarea v-model="feedbackForm.testimonial" rows="4" placeholder="Share your experience with the GPD Reporting System..." required></textarea>
+                <textarea v-model="feedbackForm.testimonial" rows="4" placeholder="Share your experience with the GenTrack..." required></textarea>
               </div>
             </div>
             
@@ -317,7 +332,7 @@
     <section id="video-demo" class="video-demo-section">
       <div class="container">
         <h2 class="section-title">See It In Action</h2>
-        <p class="section-subtitle">Watch how the GPD Reporting System simplifies your workflow</p>
+        <p class="section-subtitle">Watch how the GenTrack simplifies your workflow</p>
         
         <div class="video-container" @click="openVideoModal">
           <div class="video-thumbnail">
@@ -336,7 +351,7 @@
     <section id="timeline" class="timeline-section">
       <div class="container">
         <h2 class="section-title">Our Journey</h2>
-        <p class="section-subtitle">Evolution of the GPD Reporting System</p>
+        <p class="section-subtitle">Evolution of the GenTrack</p>
         
         <div class="timeline">
           <div 
@@ -404,7 +419,7 @@
     <section id="comparison" class="comparison-section">
       <div class="container">
         <h2 class="section-title">Before vs After</h2>
-        <p class="section-subtitle">See the transformation with GPD Reporting System</p>
+        <p class="section-subtitle">See the transformation with GenTrack</p>
         
         <div class="comparison-table">
           <div class="comparison-header">
@@ -436,7 +451,7 @@
     <section id="faq" class="faq-section">
       <div class="container">
         <h2 class="section-title">Frequently Asked Questions</h2>
-        <p class="section-subtitle">Everything you need to know about the GPD Reporting System</p>
+        <p class="section-subtitle">Everything you need to know about the GenTrack</p>
         
         <div class="faq-grid">
           <div 
@@ -511,7 +526,7 @@
         <div class="cta-banner-content">
           <div class="cta-banner-text">
             <strong>Ready to streamline your reporting?</strong>
-            <span>Contact your administrator for access to GPD Reporting System</span>
+            <span>Contact your administrator for access to GenTrack</span>
           </div>
           <div class="cta-banner-actions">
             <router-link to="/login" class="cta-banner-btn">
@@ -569,7 +584,22 @@
       <div class="container">
         <div class="footer-content">
           <div class="footer-brand">
-            <img src="@/assets/NPC-logo.png" alt="GPD Logo" class="footer-logo" />
+            <!-- Animated SVG Logo for GenTrack -->
+            <div class="gentrack-logo footer-logo-svg">
+              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <!-- Background Hexagon -->
+                <polygon points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5" fill="none" stroke="#3b82f6" stroke-width="6" class="logo-hex"/>
+                
+                <!-- Power Lightning Bolt -->
+                <path d="M55,20 L35,55 L50,55 L45,80 L65,45 L50,45 Z" fill="#60a5fa" class="logo-bolt"/>
+                
+                <!-- Data Connection Nodes -->
+                <circle cx="35" cy="55" r="4" fill="#fb923c" class="logo-node"/>
+                <circle cx="50" cy="55" r="4" fill="#fb923c" class="logo-node"/>
+                <circle cx="65" cy="45" r="4" fill="#fb923c" class="logo-node"/>
+                <circle cx="50" cy="45" r="4" fill="#fb923c" class="logo-node"/>
+              </svg>
+            </div>
             <p>Generation and Performance Division</p>
             <p class="footer-tagline">Powering Excellence in Reporting</p>
           </div>
@@ -740,7 +770,7 @@ export default {
         {
           date: 'Q1 2025',
           title: 'Project Inception',
-          description: 'Initial planning and requirements gathering for the GPD Reporting System',
+          description: 'Initial planning and requirements gathering for the GenTrack',
           details: [
             'Stakeholder consultations with GPD personnel',
             'Requirements analysis and system design',
@@ -856,8 +886,8 @@ export default {
       activeFaq: null,
       faqs: [
         {
-          question: 'What is the GPD Reporting System?',
-          answer: 'The GPD Reporting System is a comprehensive platform designed to streamline the management and reporting of power generation data from the Agus-Pulangi hydroelectric power plants. It provides real-time monitoring, data analytics, and automated report generation for the Generation and Performance Division.'
+          question: 'What is the GenTrack?',
+          answer: 'The GenTrack is a comprehensive platform designed to streamline the management and reporting of power generation data from the Agus-Pulangi hydroelectric power plants. It provides real-time monitoring, data analytics, and automated report generation for the Generation and Performance Division.'
         },
         {
           question: 'How do I upload daily reports?',
@@ -873,7 +903,7 @@ export default {
         },
         {
           question: 'Is the system accessible on mobile devices?',
-          answer: 'Yes, the GPD Reporting System is fully responsive and optimized for mobile devices. You can access all features including dashboard monitoring, report viewing, and data uploads from your smartphone or tablet.'
+          answer: 'Yes, the GenTrack is fully responsive and optimized for mobile devices. You can access all features including dashboard monitoring, report viewing, and data uploads from your smartphone or tablet.'
         },
         {
           question: 'How often is the data updated?',
@@ -985,7 +1015,7 @@ export default {
           this.testimonials = [{
             name: 'GPD User',
             role: 'Power Plant Personnel',
-            text: 'The GPD Reporting System has transformed how we manage daily reports.',
+            text: 'The GenTrack has transformed how we manage daily reports.',
             rating: 5
           }];
         }
@@ -995,7 +1025,7 @@ export default {
         this.testimonials = [{
           name: 'GPD User',
           role: 'Power Plant Personnel',
-          text: 'The GPD Reporting System has transformed how we manage daily reports.',
+          text: 'The GenTrack has transformed how we manage daily reports.',
           rating: 5
         }];
       }
@@ -1480,21 +1510,70 @@ export default {
   transform: translateY(-5px);
 }
 
+/* GenTrack SVG Logo Animations */
+.hero-logo-svg {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+}
+
+.hero-logo-svg svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.6));
+}
+
+.footer-logo-svg {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 20px;
+}
+
+.footer-logo-svg svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.4));
+}
+
+.logo-hex {
+  stroke-dasharray: 260;
+  stroke-dashoffset: 0;
+  animation: drawHex 4s ease-in-out infinite alternate;
+}
+
+.logo-bolt {
+  transform-origin: center;
+  animation: pulseBolt 2s infinite alternate;
+}
+
+.logo-node {
+  animation: blinkNode 2s infinite;
+}
+
+.logo-node:nth-child(3) { animation-delay: 0s; }
+.logo-node:nth-child(4) { animation-delay: 0.5s; }
+.logo-node:nth-child(5) { animation-delay: 1s; }
+.logo-node:nth-child(6) { animation-delay: 1.5s; }
+
+@keyframes drawHex {
+  0% { stroke-dashoffset: 260; }
+  50% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes pulseBolt {
+  0% { transform: scale(0.95); fill: #3b82f6; }
+  100% { transform: scale(1.05); fill: #93c5fd; }
+}
+
+@keyframes blinkNode {
+  0%, 100% { opacity: 0.3; r: 3; fill: #fb923c; }
+  50% { opacity: 1; r: 5; fill: #fde047; }
+}
+
 .logo-hero {
   margin-bottom: 30px;
   animation: float 3s ease-in-out infinite;
-}
-
-.hero-logo {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 20px rgba(59, 130, 246, 0.3));
-  transition: transform 0.3s ease;
-}
-
-.hero-logo:hover {
-  transform: scale(1.1) rotate(5deg);
 }
 
 .hero-title {
@@ -2497,18 +2576,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
-}
-
-.footer-logo {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-  margin-bottom: 10px;
-  transition: transform 0.3s ease;
-}
-
-.footer-logo:hover {
-  transform: scale(1.1) rotate(5deg);
 }
 
 .footer-brand p {

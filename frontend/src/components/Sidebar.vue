@@ -10,8 +10,23 @@
     <!-- Sidebar -->
     <div class="sidebar" :class="{ open: isOpen }">
       <div class="sidebar-header">
-        <img src="@/assets/NPC-logo.png" alt="GPD Logo" class="sidebar-logo" />
-        <h3>GPD System</h3>
+        <!-- Animated SVG Logo for GenTrack -->
+        <div class="gentrack-logo sidebar-logo-svg">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background Hexagon -->
+            <polygon points="50,5 90,27.5 90,72.5 50,95 10,72.5 10,27.5" fill="none" stroke="#3b82f6" stroke-width="6" class="logo-hex"/>
+            
+            <!-- Power Lightning Bolt -->
+            <path d="M55,20 L35,55 L50,55 L45,80 L65,45 L50,45 Z" fill="#60a5fa" class="logo-bolt"/>
+            
+            <!-- Data Connection Nodes -->
+            <circle cx="35" cy="55" r="4" fill="#fb923c" class="logo-node"/>
+            <circle cx="50" cy="55" r="4" fill="#fb923c" class="logo-node"/>
+            <circle cx="65" cy="45" r="4" fill="#fb923c" class="logo-node"/>
+            <circle cx="50" cy="45" r="4" fill="#fb923c" class="logo-node"/>
+          </svg>
+        </div>
+        <h3>GenTrack</h3>
         <p class="user-info">{{ username }}</p>
         <span class="role-badge" :class="`role-${roleBadgeColor}`">{{ roleDisplay }}</span>
       </div>
@@ -293,12 +308,53 @@ export default {
   background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
 }
 
-.sidebar-logo {
+/* GenTrack SVG Logo Animations */
+.sidebar-logo-svg {
   width: 80px;
   height: 80px;
-  object-fit: contain;
-  margin-bottom: 15px;
-  filter: drop-shadow(0 2px 8px rgba(0, 61, 130, 0.2));
+  margin: 0 auto 15px;
+}
+
+.sidebar-logo-svg svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+}
+
+.logo-hex {
+  stroke-dasharray: 260;
+  stroke-dashoffset: 0;
+  animation: drawHex 4s ease-in-out infinite alternate;
+}
+
+.logo-bolt {
+  transform-origin: center;
+  animation: pulseBolt 2s infinite alternate;
+}
+
+.logo-node {
+  animation: blinkNode 2s infinite;
+}
+
+.logo-node:nth-child(3) { animation-delay: 0s; }
+.logo-node:nth-child(4) { animation-delay: 0.5s; }
+.logo-node:nth-child(5) { animation-delay: 1s; }
+.logo-node:nth-child(6) { animation-delay: 1.5s; }
+
+@keyframes drawHex {
+  0% { stroke-dashoffset: 260; }
+  50% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes pulseBolt {
+  0% { transform: scale(0.95); fill: #3b82f6; }
+  100% { transform: scale(1.05); fill: #93c5fd; }
+}
+
+@keyframes blinkNode {
+  0%, 100% { opacity: 0.3; r: 3; fill: #fb923c; }
+  50% { opacity: 1; r: 5; fill: #fde047; }
 }
 
 .sidebar-header h3 {
