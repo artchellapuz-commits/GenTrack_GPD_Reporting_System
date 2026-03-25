@@ -524,6 +524,12 @@ class AuditLog(models.Model):
         ('DATA_FILTER', 'Data Filtered'),
         ('DATA_SORT', 'Data Sorted'),
         
+        # Document Operations
+        ('DOCUMENT_CREATE', 'Document Created / Saved'),
+        ('DOCUMENT_UPDATE', 'Document Updated'),
+        ('DOCUMENT_DELETE', 'Document Deleted'),
+        ('DOCUMENT_VIEW', 'Document Viewed'),
+        
         # System Operations
         ('SYSTEM_BACKUP', 'System Backup'),
         ('SYSTEM_RESTORE', 'System Restore'),

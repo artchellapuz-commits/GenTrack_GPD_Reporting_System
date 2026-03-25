@@ -427,27 +427,77 @@ export default {
     },
     
     loadSampleReports() {
-      // Sample data for demonstration
+      // Realistic Sample Data for Demonstration
       this.reports = [
         {
-          id: 'sample-1',
-          title: 'PSR Report - March 2026',
-          document_type: 'PSR',
-          status: 'SIGNED',
-          created_at: '2026-03-19T06:00:00Z',
-          plant_code: 'PLANT_A',
-          description: 'Monthly PSR report for Plant A operations',
-          file_path: '/reports/psr-march-2026.xlsx',
+          id: 'report-2026-001',
+          title: 'Agus Fleet Daily Status Report',
+          document_type: 'Daily Status',
+          status: 'COMPLETED',
+          created_at: new Date(Date.now() - 86400000 * 1).toISOString(),
+          plant_code: 'AGUS_FLEET',
+          description: 'Comprehensive daily generation status and availability for the entire Agus Hydroelectric complex.',
+          file_path: '/reports/agus-fleet-daily-2026.xlsx',
           signature_requests: [
             {
-              id: 1,
-              signer_name: 'JMM_MATA',
-              signer_role: 'Checked and Reviewed by',
-              signer_email: 'zahurtongtong@gmail.com',
+              id: 101,
+              signer_name: 'EL ADIONG',
+              signer_role: 'Prepared by',
+              signer_email: 'eladiong@npc.gov.ph',
               status: 'SIGNED',
-              signed_at: '2026-03-19T06:08:47Z'
+              signed_at: new Date(Date.now() - 86400000 * 1 + 3600000).toISOString(),
+              digitalSignature: { signature_type: 'UPLOADED', signing_timestamp: new Date(Date.now() - 86400000 * 1 + 3600000).toISOString() }
+            },
+            {
+              id: 102,
+              signer_name: 'O.M. LAVA',
+              signer_role: 'Noted by',
+              signer_email: 'omlava@npc.gov.ph',
+              status: 'SIGNED',
+              signed_at: new Date(Date.now() - 86400000 * 1 + 7200000).toISOString(),
+              digitalSignature: { signature_type: 'DRAWN', signing_timestamp: new Date(Date.now() - 86400000 * 1 + 7200000).toISOString() }
             }
           ]
+        },
+        {
+          id: 'report-2026-002',
+          title: 'Plant Status Report - Agus 6',
+          document_type: 'PSR',
+          status: 'PENDING_SIGNATURE',
+          created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
+          plant_code: 'AGUS_6',
+          description: 'Detailed weekly capacity factor analysis and maintenance logs for Agus 6 Units 1-5.',
+          file_path: '/reports/psr-agus6-wk12.xlsx',
+          signature_requests: [
+            {
+              id: 201,
+              signer_name: 'JMM MATA',
+              signer_role: 'Prepared by',
+              signer_email: 'jmmmata@npc.gov.ph',
+              status: 'SIGNED',
+              signed_at: new Date(Date.now() - 86400000 * 1.5).toISOString(),
+              digitalSignature: { signature_type: 'TYPED', signing_timestamp: new Date(Date.now() - 86400000 * 1.5).toISOString() }
+            },
+            {
+              id: 202,
+              signer_name: 'EL ADIONG',
+              signer_role: 'Approved by',
+              signer_email: 'eladiong@npc.gov.ph',
+              status: 'PENDING',
+              signed_at: null
+            }
+          ]
+        },
+        {
+          id: 'report-2026-003',
+          title: 'Monthly Efficiency Summary',
+          document_type: 'Monthly',
+          status: 'DRAFT',
+          created_at: new Date().toISOString(),
+          plant_code: 'ALL_PLANTS',
+          description: 'Aggregated monthly efficiency metrics, identifying top performers and deviation anomalies.',
+          file_path: '/reports/monthly-efficiency-mar.pdf',
+          signature_requests: []
         }
       ]
     },
@@ -748,38 +798,38 @@ export default {
 .stat-card {
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1.25rem;
   transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
   border-color: #cbd5e1;
 }
 
 .stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #3b82f6; /* Solid background color */
-  color: #ffffff !important; /* White icon color */
-  font-size: 1.75rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff !important;
+  font-size: 2rem;
   transition: transform 0.3s ease;
-  z-index: 2; /* ensure it's above other elements */
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); /* Add subtle shadow */
+  z-index: 2;
+  box-shadow: 0 6px 12px -2px rgba(59, 130, 246, 0.4);
 }
 
 .stat-card:hover .stat-icon {
-  transform: scale(1.1);
+  transform: scale(1.05) rotate(5deg);
 }
 
 .stat-icon i {
@@ -787,25 +837,22 @@ export default {
   opacity: 1 !important;
   display: inline-block !important;
   visibility: visible !important;
-  font-size: 1.75rem !important; /* Adjust icon size for solid background */
+  font-size: 2rem !important;
 }
 
 .stat-icon.signed {
-  background: #10b981; /* Solid background color */
-  color: #ffffff !important;
-  box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 6px 12px -2px rgba(16, 185, 129, 0.4);
 }
 
 .stat-icon.pending {
-  background: #f59e0b; /* Solid background color */
-  color: #ffffff !important;
-  box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 6px 12px -2px rgba(245, 158, 11, 0.4);
 }
 
 .stat-icon.recent {
-  background: #8b5cf6; /* Solid background color */
-  color: #ffffff !important;
-  box-shadow: 0 4px 6px -1px rgba(139, 92, 246, 0.3);
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  box-shadow: 0 6px 12px -2px rgba(139, 92, 246, 0.4);
 }
 
 .stat-content h3 {
@@ -934,13 +981,15 @@ export default {
 
 .report-card {
   background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 16px;
   padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   position: relative;
-  /* Removed overflow: hidden so dropdown isn't clipped */
+  overflow: visible; /* Ensure dropdown can overflow */
+  display: flex;
+  flex-direction: column;
 }
 
 /* Updated before pseudo-element to use absolute positioning but not require overflow: hidden */
@@ -949,22 +998,22 @@ export default {
   position: absolute;
   top: 0;
   left: 0;
-  width: 4px;
+  width: 6px;
   height: 100%;
   background: #cbd5e1;
   transition: background 0.3s ease;
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
 }
 
 .report-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px -5px rgba(0, 0, 0, 0.1);
   border-color: #cbd5e1;
 }
 
 .report-card:hover::before {
-  background: #3b82f6;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
 }
 
 .report-header {

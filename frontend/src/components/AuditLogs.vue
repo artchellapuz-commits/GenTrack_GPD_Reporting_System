@@ -9,15 +9,17 @@
             <label>Action Type</label>
             <select v-model="filters.action">
               <option value="">All Actions</option>
-              <option value="CREATE">Create</option>
+              <option value="LOGIN">Login</option>
+              <option value="LOGOUT">Logout</option>
+              <option value="CREATE">Create / Request</option>
               <option value="UPDATE">Update</option>
               <option value="DELETE">Delete</option>
               <option value="UPLOAD">Upload</option>
+              <option value="GENERATE">Generate Report</option>
               <option value="EXPORT">Export</option>
+              <option value="ARCHIVE">Archive</option>
               <option value="APPROVE">Approve</option>
               <option value="REJECT">Reject</option>
-              <option value="LOGIN">Login</option>
-              <option value="LOGOUT">Logout</option>
             </select>
           </div>
           
@@ -120,21 +122,24 @@
                 <td>
                   <div class="user-cell">
                     <i class="pi pi-user"></i>
-                    {{ log.user ? log.user.username : 'System' }}
+                    <div class="user-info">
+                      <div class="user-name">{{ log.user_full_name || 'System' }}</div>
+                      <div class="user-role" v-if="log.user_role">{{ log.user_role }}</div>
+                    </div>
                   </div>
                 </td>
                 <td>
                   <span :class="['action-badge', getActionClass(log.action)]">
-                    {{ log.action }}
+                    {{ log.action_display || log.action }}
                   </span>
                 </td>
-                <td>{{ log.model_name }}</td>
+                <td>{{ log.model_display_name || log.model_name || 'N/A' }}</td>
                 <td class="description-cell">{{ log.description }}</td>
                 <td>{{ log.ip_address || 'N/A' }}</td>
                 <td>
                   <div class="location-cell">
                     <i class="pi pi-map-marker"></i>
-                    {{ log.location || 'Unknown' }}
+                    {{ log.location_display || 'Internal Network' }}
                   </div>
                 </td>
               </tr>
@@ -184,7 +189,8 @@ export default {
       totalEntries: 0,
       // Sorting
       sortField: 'timestamp',
-      sortOrder: -1 // -1 for descending, 1 for ascending
+      sortOrder: -1, // -1 for descending, 1 for ascending
+      refreshInterval: null
     };
   },
   computed: {
@@ -198,16 +204,16 @@ export default {
             bVal = new Date(b.timestamp);
             break;
           case 'user':
-            aVal = a.user?.username?.toLowerCase() || 'system';
-            bVal = b.user?.username?.toLowerCase() || 'system';
+            aVal = (a.user_full_name || 'System').toLowerCase();
+            bVal = (b.user_full_name || 'System').toLowerCase();
             break;
           case 'action':
-            aVal = a.action?.toLowerCase() || '';
-            bVal = b.action?.toLowerCase() || '';
+            aVal = (a.action_display || a.action || '').toLowerCase();
+            bVal = (b.action_display || b.action || '').toLowerCase();
             break;
           case 'model':
-            aVal = a.model_name?.toLowerCase() || '';
-            bVal = b.model_name?.toLowerCase() || '';
+            aVal = (a.model_display_name || a.model_name || '').toLowerCase();
+            bVal = (b.model_display_name || b.model_name || '').toLowerCase();
             break;
           case 'description':
             aVal = a.description?.toLowerCase() || '';
@@ -218,8 +224,8 @@ export default {
             bVal = b.ip_address || '';
             break;
           case 'location':
-            aVal = a.location?.toLowerCase() || '';
-            bVal = b.location?.toLowerCase() || '';
+            aVal = (a.location_display || '').toLowerCase();
+            bVal = (b.location_display || '').toLowerCase();
             break;
           default:
             return 0;
@@ -242,6 +248,16 @@ export default {
   },
   mounted() {
     this.loadLogs();
+    // Auto-refresh every 30 seconds
+    this.refreshInterval = setInterval(() => {
+      this.loadLogs(true); // Pass true to indicate background refresh
+    }, 30000);
+  },
+  beforeUnmount() {
+    // Clear interval when component is destroyed to prevent memory leaks
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
   },
   methods: {
     sortBy(field) {
@@ -262,8 +278,12 @@ export default {
       return this.sortOrder === 1 ? 'pi-sort-amount-up' : 'pi-sort-amount-down';
     },
     
-    async loadLogs() {
-      this.loading = true;
+    async loadLogs(isBackgroundRefresh = false) {
+      // Only show loading spinner if it's not a background refresh
+      if (!isBackgroundRefresh) {
+        this.loading = true;
+      }
+      
       try {
         const params = {
           page: this.currentPage,
@@ -287,11 +307,18 @@ export default {
         }
       } catch (error) {
         console.error('Error loading audit logs:', error);
-        alert('Failed to load audit logs');
-        this.logs = [];
-        this.totalEntries = 0;
+        if (!isBackgroundRefresh) {
+          alert('Failed to load audit logs');
+        }
+        // Don't clear existing logs on background refresh failure
+        if (!isBackgroundRefresh) {
+          this.logs = [];
+          this.totalEntries = 0;
+        }
       } finally {
-        this.loading = false;
+        if (!isBackgroundRefresh) {
+          this.loading = false;
+        }
       }
     },
     onPageChange(event) {
@@ -707,6 +734,22 @@ h1 {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
 }
 
 .location-cell {

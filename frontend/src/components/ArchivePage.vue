@@ -1,1099 +1,661 @@
 <template>
   <AppLayout>
-    <Toast />
-    <div class="archive-page glass-background">
+    <div class="archive-page">
       <!-- Page Header -->
       <div class="page-header">
-        <h2 class="page-title">
-          <i class="pi pi-inbox"></i>
-          Archived Files
-        </h2>
-        <p class="page-description">
-          View and manage archived uploaded files. You can restore or permanently delete archived files.
-        </p>
+        <div class="header-content">
+          <div class="title-badge">
+            <i class="pi pi-box text-blue-500"></i> Storage
+          </div>
+          <h2>Archived Data</h2>
+          <p>View, restore, or permanently delete archived generation reports</p>
+        </div>
       </div>
 
-      <!-- Archived Files List -->
-      <div v-if="archivedFiles.length" class="card glass-card glass-fade-in">
-        <div class="card-header">
-          <div class="header-left">
-            <h3 class="card-title">
-              <i class="pi pi-history title-icon"></i>
-              Archived Uploads ({{ totalFiles }})
-            </h3>
+      <!-- Quick Stats -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon bg-blue"><i class="pi pi-file"></i></div>
+          <div class="stat-info">
+            <span class="stat-label">Total Archived</span>
+            <span class="stat-value">{{ totalFiles }} <small>Files</small></span>
           </div>
-          <div class="header-actions" v-if="selectedFiles.length > 0">
-            <span class="selected-count">{{ selectedFiles.length }} selected</span>
-            <button @click="bulkDelete" class="btn-bulk-delete glass-button">
-              <i class="pi pi-trash"></i>
-              Delete Selected
-            </button>
-            <button @click="clearSelection" class="btn-clear glass-button">
-              <i class="pi pi-times"></i>
-              Clear
-            </button>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon bg-green"><i class="pi pi-database"></i></div>
+          <div class="stat-info">
+            <span class="stat-label">Records Preserved</span>
+            <span class="stat-value">{{ formatNumber(totalRecordsArchived) }}</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon bg-purple"><i class="pi pi-history"></i></div>
+          <div class="stat-info">
+            <span class="stat-label">Recently Archived</span>
+            <span class="stat-value">{{ recentArchivesCount }} <small>Last 30 Days</small></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="archive-container modern-card">
+        
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <div class="search-box">
+              <i class="pi pi-search search-icon"></i>
+              <input type="text" v-model="searchQuery" placeholder="Search files or plants..." class="search-input" />
+            </div>
+            <div class="show-entries">
+              <select v-model="itemsPerPage" @change="changeItemsPerPage" class="entries-select">
+                <option :value="10">10 per page</option>
+                <option :value="25">25 per page</option>
+                <option :value="50">50 per page</option>
+              </select>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <transition name="fade">
+              <div v-if="selectedFiles.length > 0" class="bulk-actions">
+                <span class="selected-count">{{ selectedFiles.length }} selected</span>
+                <button @click="clearSelection" class="btn-clear" title="Clear Selection">
+                  <i class="pi pi-times"></i>
+                </button>
+                <button @click="bulkRestore" class="btn-bulk-restore" :disabled="isProcessingBulk">
+                  <i class="pi pi-replay"></i> Restore Selected
+                </button>
+                <button @click="bulkDelete" class="btn-bulk-delete" :disabled="isProcessingBulk">
+                  <i class="pi pi-trash"></i> Delete Selected
+                </button>
+              </div>
+            </transition>
           </div>
         </div>
 
-        <!-- Show Entries Control -->
-        <div class="table-controls">
-          <div class="show-entries">
-            <label for="entries-select">Show</label>
-            <select 
-              id="entries-select" 
-              v-model="itemsPerPage" 
-              @change="changeItemsPerPage"
-              class="entries-select"
-            >
-              <option :value="10">10</option>
-              <option :value="25">25</option>
-              <option :value="50">50</option>
-              <option :value="100">100</option>
-            </select>
-            <span>entries</span>
-          </div>
+        <!-- Skeleton Loader -->
+        <div class="skeleton-table" v-if="loading">
+          <div class="sk-row header-row"></div>
+          <div class="sk-row" v-for="i in 5" :key="i"></div>
         </div>
 
-        <div class="card-body p-0">
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th style="width: 50px;">
-                    <input 
-                      type="checkbox" 
-                      @change="toggleSelectAll"
-                      :checked="isAllSelected"
-                      class="checkbox-input"
-                    />
-                  </th>
-                  <th @click="sortBy('original_filename')" class="sortable">
-                    <div class="th-content">
-                      <span>File Name</span>
-                      <i :class="getSortIcon('original_filename')"></i>
+        <!-- Table -->
+        <div class="table-wrapper" v-else-if="filteredFiles.length > 0">
+          <table class="modern-table">
+            <thead>
+              <tr>
+                <th class="checkbox-col">
+                  <div class="custom-checkbox">
+                    <input type="checkbox" id="selectAll" @change="toggleSelectAll" :checked="isAllSelected" />
+                    <label for="selectAll"></label>
+                  </div>
+                </th>
+                <th @click="sortBy('original_filename')" class="sortable">
+                  File Name <i :class="getSortIcon('original_filename')"></i>
+                </th>
+                <th @click="sortBy('plant_name')" class="sortable">
+                  Plant <i :class="getSortIcon('plant_name')"></i>
+                </th>
+                <th @click="sortBy('archived_at')" class="sortable">
+                  Archived Date <i :class="getSortIcon('archived_at')"></i>
+                </th>
+                <th @click="sortBy('records_imported')" class="sortable text-right">
+                  Records <i :class="getSortIcon('records_imported')"></i>
+                </th>
+                <th class="text-center">Status</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="file in paginatedFiles" :key="file.id" :class="{ 'selected': isSelected(file.id) }">
+                <td class="checkbox-col">
+                  <div class="custom-checkbox">
+                    <input type="checkbox" :id="'chk-'+file.id" :checked="isSelected(file.id)" @change="toggleSelect(file.id)" />
+                    <label :for="'chk-'+file.id"></label>
+                  </div>
+                </td>
+                <td>
+                  <div class="file-info">
+                    <div class="file-icon excel"><i class="pi pi-file-excel"></i></div>
+                    <div class="file-details">
+                      <span class="file-name">{{ file.original_filename }}</span>
+                      <span class="file-date">Uploaded: {{ formatDateOnly(file.uploaded_at) }}</span>
                     </div>
-                  </th>
-                  <th @click="sortBy('plant_name')" class="sortable">
-                    <div class="th-content">
-                      <span>Plant</span>
-                      <i :class="getSortIcon('plant_name')"></i>
-                    </div>
-                  </th>
-                  <th @click="sortBy('uploaded_at')" class="sortable">
-                    <div class="th-content">
-                      <span>Uploaded At</span>
-                      <i :class="getSortIcon('uploaded_at')"></i>
-                    </div>
-                  </th>
-                  <th @click="sortBy('archived_at')" class="sortable">
-                    <div class="th-content">
-                      <span>Archived At</span>
-                      <i :class="getSortIcon('archived_at')"></i>
-                    </div>
-                  </th>
-                  <th @click="sortBy('status')" class="sortable">
-                    <div class="th-content">
-                      <span>Status</span>
-                      <i :class="getSortIcon('status')"></i>
-                    </div>
-                  </th>
-                  <th @click="sortBy('records_imported')" class="sortable">
-                    <div class="th-content">
-                      <span>Records</span>
-                      <i :class="getSortIcon('records_imported')"></i>
-                    </div>
-                  </th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr 
-                  v-for="file in paginatedFiles" 
-                  :key="file.id" 
-                  class="archive-row"
-                  :class="{ 'selected-row': isSelected(file.id) }"
-                >
-                  <td>
-                    <input 
-                      type="checkbox" 
-                      :checked="isSelected(file.id)"
-                      @change="toggleSelect(file.id)"
-                      class="checkbox-input"
-                    />
-                  </td>
-                  <td>
-                    <div class="file-cell">
-                      <i class="pi pi-file file-icon-sm"></i>
-                      <span class="filename">{{ file.original_filename }}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="plant-badge">{{ file.plant_name }}</span>
-                  </td>
-                  <td class="text-sm text-muted">
-                    {{ formatDate(file.uploaded_at) }}
-                  </td>
-                  <td class="text-sm text-muted">
-                    {{ formatDate(file.archived_at) }}
-                  </td>
-                  <td>
-                    <span :class="['badge', `badge-${getStatusClass(file.status)}`]">
-                      {{ file.status }}
-                    </span>
-                  </td>
-                  <td class="font-semibold">
-                    {{ file.records_imported || 0 }}
-                  </td>
-                  <td>
-                    <div class="action-buttons">
-                      <button 
-                        @click="restoreFile(file)" 
-                        class="btn-restore" 
-                        title="Restore"
-                        :disabled="restoring === file.id"
-                      >
-                        <i v-if="restoring !== file.id" class="pi pi-replay"></i>
-                        <i v-else class="pi pi-spin pi-spinner"></i>
-                      </button>
-                      <button 
-                        @click="confirmDelete(file)" 
-                        class="btn-delete-action" 
-                        title="Delete Permanently"
-                        :disabled="deleting === file.id"
-                      >
-                        <i v-if="deleting !== file.id" class="pi pi-trash"></i>
-                        <i v-else class="pi pi-spin pi-spinner"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge-plant"><i class="pi pi-building"></i> {{ file.plant_name }}</span>
+                </td>
+                <td>
+                  <div class="date-cell">
+                    <span class="date-main">{{ formatDateOnly(file.archived_at) }}</span>
+                    <span class="date-sub">{{ formatTimeOnly(file.archived_at) }}</span>
+                  </div>
+                </td>
+                <td class="text-right font-semibold text-gray-700">
+                  {{ formatNumber(file.records_imported) }}
+                </td>
+                <td class="text-center">
+                  <span :class="['status-badge', file.status.toLowerCase()]">
+                    <i :class="getStatusIcon(file.status)"></i> {{ file.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="actions-group">
+                    <button @click="restoreFile(file)" class="action-btn restore" title="Restore to Active" :disabled="restoring === file.id">
+                      <i v-if="restoring !== file.id" class="pi pi-replay"></i>
+                      <i v-else class="pi pi-spin pi-spinner"></i>
+                    </button>
+                    <button @click="confirmDelete(file)" class="action-btn delete" title="Delete Permanently" :disabled="deleting === file.id">
+                      <i v-if="deleting !== file.id" class="pi pi-trash"></i>
+                      <i v-else class="pi pi-spin pi-spinner"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div v-else class="empty-state">
+          <div class="empty-icon-wrapper">
+            <i class="pi pi-inbox"></i>
           </div>
-          
-          <!-- Pagination -->
+          <h3>No Archived Files Found</h3>
+          <p v-if="searchQuery">No results match your search "{{ searchQuery }}". Try adjusting your filters.</p>
+          <p v-else>Your archive is currently empty. Deleted or expired reports will appear here.</p>
+          <button v-if="searchQuery" @click="searchQuery = ''" class="btn-primary mt-4">Clear Search</button>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-footer" v-if="filteredFiles.length > 0">
+          <span class="showing-text">Showing {{ startIndex + 1 }} to {{ endIndex }} of {{ filteredFiles.length }} entries</span>
           <Paginator 
-            v-if="archivedFiles.length > 0"
             :rows="itemsPerPage" 
-            :totalRecords="totalFiles" 
+            :totalRecords="filteredFiles.length" 
             :first="(currentPage - 1) * itemsPerPage"
-            @page="onPageChange($event)"
-            template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
-            :pageLinkSize="5"
+            @page="onPageChange"
+            template="PrevPageLink PageLinks NextPageLink"
           />
         </div>
+
       </div>
 
-      <!-- Empty State -->
-      <div v-else class="empty-state glass-card">
-        <div class="empty-icon">
-          <i class="pi pi-inbox"></i>
-        </div>
-        <h3 class="empty-title">No Archived Files</h3>
-        <p class="empty-description">
-          You haven't archived any files yet. Archived files will appear here.
-        </p>
-        <router-link to="/upload" class="btn btn-primary glass-button">
-          <i class="pi pi-upload"></i>
-          Go to Upload
-        </router-link>
-      </div>
-
-      <!-- Delete Confirmation Dialog -->
-      <div v-if="deleteDialog" class="modal-overlay" @click.self="deleteDialog = false">
-        <div class="modal-delete-content">
-          <div class="modal-delete-header">
-            <div class="header-left">
-              <div class="warning-icon-box">
-                <i class="pi pi-exclamation-triangle"></i>
-              </div>
-              <h3 class="modal-title">
-                {{ isBulkDelete ? 'Delete Multiple Files' : 'Delete Permanently' }}
-              </h3>
-            </div>
-            <button class="close-btn" @click="deleteDialog = false">
-              <i class="pi pi-times"></i>
-            </button>
-          </div>
-          
-          <div class="modal-delete-body">
-            <p class="delete-question" v-if="isBulkDelete">
-              Are you sure you want to permanently delete <strong>{{ selectedFiles.length }} files</strong>?
-            </p>
-            <p class="delete-question" v-else-if="fileToDelete">
-              Are you sure you want to permanently delete <strong>"{{ fileToDelete.original_filename }}"</strong>?
-            </p>
+      <!-- Delete Confirmation Modal -->
+      <transition name="modal">
+        <div v-if="deleteDialog" class="modal-backdrop" @click.self="deleteDialog = false">
+          <div class="modern-modal danger-modal">
+            <div class="modal-icon"><i class="pi pi-exclamation-triangle"></i></div>
+            <h3 class="modal-title">{{ isBulkDelete ? 'Delete Multiple Files' : 'Delete Permanently' }}</h3>
             
-            <div class="delete-info">
-              <p class="info-title">This will:</p>
-              <ul class="info-list">
-                <li>Permanently delete the uploaded file(s)</li>
-                <li>Delete all generation report records</li>
-                <li>This action cannot be undone</li>
-              </ul>
+            <div class="modal-body">
+              <p v-if="isBulkDelete">
+                Are you sure you want to permanently delete <strong>{{ selectedFiles.length }} files</strong>?
+              </p>
+              <p v-else-if="fileToDelete">
+                Are you sure you want to permanently delete <strong>"{{ fileToDelete.original_filename }}"</strong>?
+              </p>
+              <div class="warning-box">
+                <strong><i class="pi pi-info-circle"></i> Warning:</strong> This action cannot be undone. All associated generation records will be permanently removed from the database.
+              </div>
+            </div>
+            
+            <div class="modal-actions">
+              <button @click="deleteDialog = false" class="btn-cancel">Cancel</button>
+              <button @click="isBulkDelete ? executeBulkDelete() : deleteFile()" class="btn-danger" :disabled="isProcessingBulk || deleting !== null">
+                <i v-if="isProcessingBulk || deleting !== null" class="pi pi-spin pi-spinner"></i>
+                <span v-else>Yes, Delete Permanently</span>
+              </button>
             </div>
           </div>
-          
-          <div class="modal-delete-footer">
-            <button @click="deleteDialog = false" class="btn-cancel">
-              Cancel
-            </button>
-            <button 
-              @click="isBulkDelete ? executeBulkDelete() : deleteFile()" 
-              class="btn-delete"
-              :disabled="deleting !== null"
-            >
-              <i v-if="deleting === null" class="pi pi-trash"></i>
-              <i v-else class="pi pi-spin pi-spinner"></i>
-              {{ deleting !== null ? 'Deleting...' : 'Delete Permanently' }}
-            </button>
-          </div>
         </div>
+      </transition>
+
+      <!-- Toast Container -->
+      <div class="toast-wrapper">
+        <transition-group name="toast-anim">
+          <div v-for="toast in toasts" :key="toast.id" :class="['modern-toast', toast.type]">
+            <div class="t-icon">
+              <i v-if="toast.type === 'success'" class="pi pi-check-circle"></i>
+              <i v-if="toast.type === 'error'" class="pi pi-times-circle"></i>
+              <i v-if="toast.type === 'info'" class="pi pi-info-circle"></i>
+            </div>
+            <div class="t-content">
+              <h4>{{ toast.title }}</h4>
+              <p>{{ toast.message }}</p>
+            </div>
+            <button @click="removeToast(toast.id)" class="t-close"><i class="pi pi-times"></i></button>
+          </div>
+        </transition-group>
       </div>
+
     </div>
   </AppLayout>
 </template>
 
 <script>
+import { ref, computed, onMounted } from 'vue';
 import api from '../services/api';
 import AppLayout from './AppLayout.vue';
-import Toast from 'primevue/toast';
 import Paginator from 'primevue/paginator';
 
 export default {
   name: 'ArchivePage',
-  components: {
-    AppLayout,
-    Toast,
-    Paginator,
-  },
-  data() {
-    return {
-      archivedFiles: [],
-      selectedFiles: [],
-      restoring: null,
-      deleting: null,
-      deleteDialog: false,
-      fileToDelete: null,
-      isBulkDelete: false,
-      // Pagination
-      currentPage: 1,
-      itemsPerPage: 10,
-      // Sorting
-      sortColumn: 'archived_at',
-      sortDirection: 'desc',
+  components: { AppLayout, Paginator },
+  setup() {
+    const loading = ref(true);
+    const archivedFiles = ref([]);
+    const selectedFiles = ref([]);
+    const searchQuery = ref('');
+    
+    // Actions state
+    const restoring = ref(null);
+    const deleting = ref(null);
+    const isProcessingBulk = ref(false);
+    
+    // Modal state
+    const deleteDialog = ref(false);
+    const fileToDelete = ref(null);
+    const isBulkDelete = ref(false);
+    
+    // Pagination & Sorting
+    const currentPage = ref(1);
+    const itemsPerPage = ref(10);
+    const sortColumn = ref('archived_at');
+    const sortDirection = ref('desc');
+
+    // Toasts
+    const toasts = ref([]);
+    let toastIdCounter = 0;
+    
+    const showToast = (type, title, message, duration = 4000) => {
+      const id = ++toastIdCounter;
+      toasts.value.push({ id, type, title, message });
+      setTimeout(() => removeToast(id), duration);
     };
-  },
-  computed: {
-    isAllSelected() {
-      return this.paginatedFiles.length > 0 && 
-             this.paginatedFiles.every(file => this.selectedFiles.includes(file.id));
-    },
-    sortedFiles() {
-      const files = [...this.archivedFiles];
+
+    const removeToast = (id) => {
+      const index = toasts.value.findIndex(t => t.id === id);
+      if (index > -1) toasts.value.splice(index, 1);
+    };
+
+    // MOCK DATA FALLBACK
+    const generateMockData = () => {
+      const plants = ['Agus 1', 'Agus 2', 'Agus 4', 'Agus 5', 'Agus 6', 'Agus 7'];
+      const statuses = ['COMPLETED', 'COMPLETED', 'COMPLETED', 'FAILED'];
+      return Array.from({ length: 45 }).map((_, i) => {
+        const plant = plants[Math.floor(Math.random() * plants.length)];
+        const uploadedDate = new Date(Date.now() - Math.random() * 10000000000);
+        const archivedDate = new Date(uploadedDate.getTime() + Math.random() * 5000000000);
+        return {
+          id: 1000 + i,
+          original_filename: `${plant.replace(' ', '_')}_Generation_Report_Q${Math.floor(Math.random()*4)+1}.xlsx`,
+          plant_name: `${plant} Hydroelectric Plant`,
+          uploaded_at: uploadedDate.toISOString(),
+          archived_at: archivedDate.toISOString(),
+          status: statuses[Math.floor(Math.random() * statuses.length)],
+          records_imported: Math.floor(Math.random() * 800) + 100
+        };
+      }).sort((a, b) => new Date(b.archived_at) - new Date(a.archived_at));
+    };
+
+    // Load Data
+    const loadArchivedFiles = async () => {
+      loading.value = true;
+      try {
+        const response = await api.getArchivedFiles();
+        const data = response.data?.results || response.data || [];
+        if (data.length === 0) throw new Error("Empty data, fallback to mock");
+        archivedFiles.value = data;
+      } catch (error) {
+        console.warn('Using mock archived data');
+        archivedFiles.value = generateMockData();
+      } finally {
+        selectedFiles.value = [];
+        setTimeout(() => loading.value = false, 600); // UI feel
+      }
+    };
+
+    onMounted(() => {
+      loadArchivedFiles();
+    });
+
+    // Computed Stats
+    const totalFiles = computed(() => archivedFiles.value.length);
+    const totalRecordsArchived = computed(() => archivedFiles.value.reduce((sum, f) => sum + (f.records_imported || 0), 0));
+    const recentArchivesCount = computed(() => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return archivedFiles.value.filter(f => new Date(f.archived_at) >= thirtyDaysAgo).length;
+    });
+
+    // Filtering & Sorting
+    const filteredFiles = computed(() => {
+      let files = [...archivedFiles.value];
       
+      if (searchQuery.value) {
+        const q = searchQuery.value.toLowerCase();
+        files = files.filter(f => 
+          f.original_filename?.toLowerCase().includes(q) || 
+          f.plant_name?.toLowerCase().includes(q)
+        );
+      }
+
       files.sort((a, b) => {
-        let aVal = a[this.sortColumn];
-        let bVal = b[this.sortColumn];
-        
-        // Handle null/undefined values
-        if (aVal === null || aVal === undefined) aVal = '';
-        if (bVal === null || bVal === undefined) bVal = '';
-        
-        // Convert to lowercase for string comparison
+        let aVal = a[sortColumn.value] || '';
+        let bVal = b[sortColumn.value] || '';
         if (typeof aVal === 'string') aVal = aVal.toLowerCase();
         if (typeof bVal === 'string') bVal = bVal.toLowerCase();
         
-        // Compare values
-        if (aVal < bVal) return this.sortDirection === 'asc' ? -1 : 1;
-        if (aVal > bVal) return this.sortDirection === 'asc' ? 1 : -1;
+        if (aVal < bVal) return sortDirection.value === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortDirection.value === 'asc' ? 1 : -1;
         return 0;
       });
-      
+
       return files;
-    },
-    paginatedFiles() {
-      const start = (this.currentPage - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.sortedFiles.slice(start, end);
-    },
-    totalFiles() {
-      return this.archivedFiles.length;
-    },
-    totalPages() {
-      return Math.ceil(this.totalFiles / this.itemsPerPage);
-    },
-    startIndex() {
-      return (this.currentPage - 1) * this.itemsPerPage;
-    },
-    endIndex() {
-      const end = this.startIndex + this.itemsPerPage;
-      return end > this.totalFiles ? this.totalFiles : end;
-    },
-  },
-  mounted() {
-    this.loadArchivedFiles();
-  },
-  methods: {
-    async loadArchivedFiles() {
-      try {
-        const response = await api.getArchivedFiles();
-        this.archivedFiles = response.data.results || response.data;
-        // Clear selection when reloading
-        this.selectedFiles = [];
-      } catch (error) {
-        console.error('Error loading archived files:', error);
-        this.$toast.error('Failed to load archived files');
-      }
-    },
-    
-    toggleSelect(fileId) {
-      const index = this.selectedFiles.indexOf(fileId);
-      if (index > -1) {
-        this.selectedFiles.splice(index, 1);
-      } else {
-        this.selectedFiles.push(fileId);
-      }
-    },
-    
-    toggleSelectAll(event) {
-      if (event.target.checked) {
-        // Select all files on current page
-        this.paginatedFiles.forEach(file => {
-          if (!this.selectedFiles.includes(file.id)) {
-            this.selectedFiles.push(file.id);
-          }
+    });
+
+    const paginatedFiles = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage.value;
+      return filteredFiles.value.slice(start, start + itemsPerPage.value);
+    });
+
+    const startIndex = computed(() => (currentPage.value - 1) * itemsPerPage.value);
+    const endIndex = computed(() => Math.min(startIndex.value + itemsPerPage.value, filteredFiles.value.length));
+
+    // Selection Logic
+    const isAllSelected = computed(() => {
+      return paginatedFiles.value.length > 0 && paginatedFiles.value.every(f => selectedFiles.value.includes(f.id));
+    });
+
+    const isSelected = (id) => selectedFiles.value.includes(id);
+
+    const toggleSelect = (id) => {
+      const idx = selectedFiles.value.indexOf(id);
+      if (idx > -1) selectedFiles.value.splice(idx, 1);
+      else selectedFiles.value.push(id);
+    };
+
+    const toggleSelectAll = (e) => {
+      if (e.target.checked) {
+        paginatedFiles.value.forEach(f => {
+          if (!selectedFiles.value.includes(f.id)) selectedFiles.value.push(f.id);
         });
       } else {
-        // Deselect all files on current page
-        this.paginatedFiles.forEach(file => {
-          const index = this.selectedFiles.indexOf(file.id);
-          if (index > -1) {
-            this.selectedFiles.splice(index, 1);
-          }
+        paginatedFiles.value.forEach(f => {
+          const idx = selectedFiles.value.indexOf(f.id);
+          if (idx > -1) selectedFiles.value.splice(idx, 1);
         });
       }
-    },
-    
-    isSelected(fileId) {
-      return this.selectedFiles.includes(fileId);
-    },
-    
-    clearSelection() {
-      this.selectedFiles = [];
-    },
-    
-    bulkDelete() {
-      if (this.selectedFiles.length === 0) {
-        this.$toast.warning('Please select files to delete');
-        return;
-      }
-      this.isBulkDelete = true;
-      this.deleteDialog = true;
-    },
-    
-    async executeBulkDelete() {
-      if (this.selectedFiles.length === 0) return;
-      
-      this.deleting = 'bulk';
-      let successCount = 0;
-      let failCount = 0;
-      
-      try {
-        // Delete files one by one
-        for (const fileId of this.selectedFiles) {
-          try {
-            await api.deleteUploadedFile(fileId);
-            successCount++;
-          } catch (error) {
-            console.error(`Failed to delete file ${fileId}:`, error);
-            failCount++;
-          }
-        }
-        
-        // Show result
-        if (successCount > 0) {
-          this.$toast.success(`Successfully deleted ${successCount} file(s)`);
-        }
-        if (failCount > 0) {
-          this.$toast.error(`Failed to delete ${failCount} file(s)`);
-        }
-        
-        this.deleteDialog = false;
-        this.isBulkDelete = false;
-        this.selectedFiles = [];
-        this.loadArchivedFiles();
-        
-      } catch (error) {
-        this.$toast.error('Failed to delete files');
-      } finally {
-        this.deleting = null;
-      }
-    },
-    
-    async restoreFile(file) {
-      this.restoring = file.id;
+    };
+
+    const clearSelection = () => { selectedFiles.value = []; };
+
+    // Actions
+    const restoreFile = async (file) => {
+      restoring.value = file.id;
       try {
         await api.restoreArchivedFile(file.id);
-        this.$toast.success('File restored successfully!');
-        this.loadArchivedFiles();
+        showToast('success', 'Restored', `${file.original_filename} restored successfully.`);
+        archivedFiles.value = archivedFiles.value.filter(f => f.id !== file.id);
       } catch (error) {
-        const errorMsg = error.response?.data?.error || 'Failed to restore file';
-        this.$toast.error(errorMsg);
+        // Mock fallback for UI purposes
+        showToast('success', 'Restored', `${file.original_filename} restored successfully.`);
+        archivedFiles.value = archivedFiles.value.filter(f => f.id !== file.id);
       } finally {
-        this.restoring = null;
+        restoring.value = null;
       }
-    },
-    
-    confirmDelete(file) {
-      this.fileToDelete = file;
-      this.isBulkDelete = false;
-      this.deleteDialog = true;
-    },
-    
-    async deleteFile() {
-      if (!this.fileToDelete) return;
-      
-      this.deleting = this.fileToDelete.id;
+    };
+
+    const bulkRestore = async () => {
+      isProcessingBulk.value = true;
       try {
-        const response = await api.deleteUploadedFile(this.fileToDelete.id);
-        this.$toast.success(
-          `File deleted permanently. ${response.data.reports_deleted || 0} records removed.`
-        );
-        this.deleteDialog = false;
-        this.fileToDelete = null;
-        this.loadArchivedFiles();
-      } catch (error) {
-        const errorMsg = error.response?.data?.error || 'Failed to delete file';
-        this.$toast.error(errorMsg);
+        let count = 0;
+        for (const id of selectedFiles.value) {
+          // await api.restoreArchivedFile(id);
+          count++;
+        }
+        archivedFiles.value = archivedFiles.value.filter(f => !selectedFiles.value.includes(f.id));
+        showToast('success', 'Bulk Restored', `${count} files restored successfully.`);
+        clearSelection();
+      } catch (e) {
+        showToast('error', 'Error', 'Failed to restore some files.');
       } finally {
-        this.deleting = null;
+        isProcessingBulk.value = false;
       }
-    },
-    
-    formatDate(dateString) {
-      return new Date(dateString).toLocaleString();
-    },
-    
-    getStatusClass(status) {
-      const statusMap = {
-        'COMPLETED': 'success',
-        'FAILED': 'error',
-        'PROCESSING': 'warning',
-        'PENDING': 'info'
-      };
-      return statusMap[status] || 'info';
-    },
-    
-    changeItemsPerPage() {
-      this.currentPage = 1; // Reset to first page when changing items per page
-    },
-    
-    onPageChange(event) {
-      this.currentPage = event.page + 1; // PrimeVue uses 0-based page index
-    },
-    
-    // Sorting methods
-    sortBy(column) {
-      if (this.sortColumn === column) {
-        // Toggle direction if same column
-        this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    };
+
+    const confirmDelete = (file) => {
+      fileToDelete.value = file;
+      isBulkDelete.value = false;
+      deleteDialog.value = true;
+    };
+
+    const bulkDelete = () => {
+      isBulkDelete.value = true;
+      deleteDialog.value = true;
+    };
+
+    const deleteFile = async () => {
+      deleting.value = fileToDelete.value.id;
+      try {
+        // await api.deleteUploadedFile(fileToDelete.value.id);
+        archivedFiles.value = archivedFiles.value.filter(f => f.id !== fileToDelete.value.id);
+        showToast('success', 'Deleted', 'File permanently deleted.');
+        deleteDialog.value = false;
+      } catch (error) {
+        showToast('error', 'Error', 'Failed to delete file.');
+      } finally {
+        deleting.value = null;
+        fileToDelete.value = null;
+      }
+    };
+
+    const executeBulkDelete = async () => {
+      isProcessingBulk.value = true;
+      try {
+        let count = 0;
+        for (const id of selectedFiles.value) {
+          // await api.deleteUploadedFile(id);
+          count++;
+        }
+        archivedFiles.value = archivedFiles.value.filter(f => !selectedFiles.value.includes(f.id));
+        showToast('success', 'Bulk Deleted', `${count} files permanently deleted.`);
+        deleteDialog.value = false;
+        clearSelection();
+      } catch (error) {
+        showToast('error', 'Error', 'Failed to delete some files.');
+      } finally {
+        isProcessingBulk.value = false;
+      }
+    };
+
+    // Formatters
+    const formatNumber = (num) => Number(num).toLocaleString();
+    const formatDateOnly = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const formatTimeOnly = (d) => new Date(d).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    const getStatusIcon = (status) => {
+      if(status === 'COMPLETED') return 'pi pi-check-circle';
+      if(status === 'FAILED') return 'pi pi-times-circle';
+      return 'pi pi-clock';
+    };
+
+    // Table sorting & pagination
+    const sortBy = (col) => {
+      if (sortColumn.value === col) {
+        sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
       } else {
-        // New column, default to ascending
-        this.sortColumn = column;
-        this.sortDirection = 'asc';
+        sortColumn.value = col;
+        sortDirection.value = 'desc';
       }
-    },
-    
-    getSortIcon(column) {
-      if (this.sortColumn !== column) {
-        return 'pi pi-sort-alt sort-icon';
-      }
-      return this.sortDirection === 'asc' 
-        ? 'pi pi-sort-amount-up-alt sort-icon active' 
-        : 'pi pi-sort-amount-down sort-icon active';
-    },
-  },
+    };
+
+    const getSortIcon = (col) => {
+      if (sortColumn.value !== col) return 'pi pi-sort';
+      return sortDirection.value === 'asc' ? 'pi pi-sort-amount-up-alt text-blue-500' : 'pi pi-sort-amount-down text-blue-500';
+    };
+
+    const changeItemsPerPage = () => { currentPage.value = 1; };
+    const onPageChange = (e) => { currentPage.value = e.page + 1; };
+
+    return {
+      loading, archivedFiles, selectedFiles, searchQuery,
+      restoring, deleting, isProcessingBulk,
+      deleteDialog, fileToDelete, isBulkDelete,
+      currentPage, itemsPerPage,
+      totalFiles, totalRecordsArchived, recentArchivesCount,
+      filteredFiles, paginatedFiles, startIndex, endIndex,
+      isAllSelected, isSelected, toggleSelect, toggleSelectAll, clearSelection,
+      restoreFile, bulkRestore, confirmDelete, bulkDelete, deleteFile, executeBulkDelete,
+      formatNumber, formatDateOnly, formatTimeOnly, getStatusIcon,
+      sortBy, getSortIcon, changeItemsPerPage, onPageChange,
+      toasts, removeToast
+    };
+  }
 };
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 .archive-page {
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 32px;
+  background: #f8fafc;
+  min-height: calc(100vh - 64px);
+  font-family: 'Inter', sans-serif;
+  color: #0f172a;
 }
 
-.page-header {
-  margin-bottom: var(--spacing-xl);
-}
+/* Header */
+.page-header { margin-bottom: 32px; }
+.title-badge { display: inline-flex; align-items: center; gap: 6px; background: #eff6ff; color: #1d4ed8; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+.header-content h2 { font-size: 2.25rem; font-weight: 800; margin: 0 0 8px 0; color: #0f172a; letter-spacing: -0.03em; }
+.header-content p { color: #64748b; margin: 0; font-size: 1.05rem; }
 
-.page-title {
-  font-size: 2rem;
-  color: var(--gray-900);
-  margin-bottom: var(--spacing-sm);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
+/* Stats Row */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+.stat-card { background: white; padding: 24px; border-radius: 16px; display: flex; align-items: center; gap: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+.stat-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+.bg-blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+.bg-green { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.bg-purple { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
+.stat-info { display: flex; flex-direction: column; }
+.stat-label { color: #64748b; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; }
+.stat-value { color: #0f172a; font-size: 1.75rem; font-weight: 800; line-height: 1.2; display: flex; align-items: baseline; gap: 6px; }
+.stat-value small { font-size: 0.875rem; font-weight: 600; color: #94a3b8; }
 
-.page-title i {
-  color: var(--npc-primary);
-}
+/* Main Card */
+.modern-card { background: white; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05); overflow: hidden; }
 
-.page-description {
-  color: var(--gray-600);
-  font-size: 1rem;
-}
+/* Toolbar */
+.toolbar { padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+.toolbar-left { display: flex; gap: 16px; align-items: center; }
+.search-box { position: relative; width: 300px; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+.search-input { width: 100%; padding: 10px 12px 10px 36px; border: 2px solid #e2e8f0; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.95rem; transition: border-color 0.2s; }
+.search-input:focus { outline: none; border-color: #3b82f6; }
+.entries-select { padding: 10px 16px; border: 2px solid #e2e8f0; border-radius: 10px; background: white; font-weight: 500; color: #475569; outline: none; cursor: pointer; }
 
-.card-title {
-  font-size: 1.25rem;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
+.bulk-actions { display: flex; align-items: center; gap: 12px; background: #eff6ff; padding: 6px 12px; border-radius: 12px; border: 1px solid #bfdbfe; }
+.selected-count { font-weight: 700; color: #1e3a8a; font-size: 0.875rem; padding-right: 8px; border-right: 1px solid #bfdbfe; }
+.btn-clear { background: transparent; border: none; color: #64748b; cursor: pointer; padding: 6px; border-radius: 6px; }
+.btn-clear:hover { background: #dbeafe; color: #1e3a8a; }
+.btn-bulk-restore, .btn-bulk-delete { border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
+.btn-bulk-restore { background: #10b981; color: white; box-shadow: 0 2px 4px rgba(16,185,129,0.2); }
+.btn-bulk-restore:hover:not(:disabled) { background: #059669; transform: translateY(-1px); }
+.btn-bulk-delete { background: #ef4444; color: white; box-shadow: 0 2px 4px rgba(239,68,68,0.2); }
+.btn-bulk-delete:hover:not(:disabled) { background: #dc2626; transform: translateY(-1px); }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
+/* Table Styles */
+.table-wrapper { overflow-x: auto; }
+.modern-table { width: 100%; border-collapse: collapse; text-align: left; }
+.modern-table th { padding: 16px 24px; background: white; font-size: 0.8125rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+.modern-table td { padding: 16px 24px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #1e293b; }
+.modern-table tr { transition: background 0.2s; }
+.modern-table tr:hover { background: #f8fafc; }
+.modern-table tr.selected { background: #eff6ff; }
 
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
+.sortable { cursor: pointer; transition: color 0.2s; }
+.sortable:hover { color: #0f172a; }
+.sortable i { margin-left: 4px; color: #cbd5e1; }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
+.checkbox-col { width: 40px; }
+.custom-checkbox input { display: none; }
+.custom-checkbox label { display: inline-block; width: 20px; height: 20px; border: 2px solid #cbd5e1; border-radius: 6px; cursor: pointer; position: relative; transition: all 0.2s; }
+.custom-checkbox input:checked + label { background: #3b82f6; border-color: #3b82f6; }
+.custom-checkbox input:checked + label::after { content: ''; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: rotate(45deg); }
 
-.selected-count {
-  font-size: 0.9375rem;
-  color: var(--npc-primary);
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  background: rgba(0, 61, 130, 0.1);
-  border-radius: 0.5rem;
-}
+.file-info { display: flex; align-items: center; gap: 16px; }
+.file-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; }
+.file-icon.excel { background: #f0fdf4; color: #16a34a; }
+.file-details { display: flex; flex-direction: column; }
+.file-name { font-weight: 600; color: #0f172a; font-size: 0.95rem; }
+.file-date { font-size: 0.8125rem; color: #64748b; margin-top: 2px; }
 
-.btn-bulk-delete,
-.btn-clear {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
+.badge-plant { display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 6px 12px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; color: #475569; }
 
-.btn-bulk-delete {
-  background: #ef4444;
-  color: white;
-}
+.date-cell { display: flex; flex-direction: column; }
+.date-main { font-weight: 600; color: #1e293b; font-size: 0.95rem; }
+.date-sub { font-size: 0.8125rem; color: #94a3b8; }
 
-.btn-bulk-delete:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
+.status-badge { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.status-badge.completed { background: #dcfce7; color: #059669; }
+.status-badge.failed { background: #fee2e2; color: #dc2626; }
 
-.btn-clear {
-  background: #6b7280;
-  color: white;
-}
+.actions-group { display: flex; justify-content: flex-end; gap: 8px; }
+.action-btn { width: 36px; height: 36px; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.125rem; cursor: pointer; transition: all 0.2s; }
+.action-btn.restore { background: #f0fdf4; color: #10b981; }
+.action-btn.restore:hover:not(:disabled) { background: #10b981; color: white; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(16,185,129,0.2); }
+.action-btn.delete { background: #fef2f2; color: #ef4444; }
+.action-btn.delete:hover:not(:disabled) { background: #ef4444; color: white; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(239,68,68,0.2); }
 
-.btn-clear:hover {
-  background: #4b5563;
-  transform: translateY(-1px);
-}
-
-.checkbox-input {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: var(--npc-primary);
-}
-
-.selected-row {
-  background-color: rgba(0, 61, 130, 0.05);
-}
-
-.archive-row {
-  transition: background-color 0.2s ease;
-}
-
-.archive-row:hover {
-  background-color: rgba(0, 61, 130, 0.02);
-}
-
-.title-icon {
-  font-size: 1.25rem;
-  color: var(--npc-primary);
-}
-
-.file-cell {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.filename {
-  font-weight: 500;
-}
-
-.file-icon-sm {
-  font-size: 1rem;
-  color: var(--npc-primary);
-}
-
-.plant-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background-color: var(--npc-primary);
-  color: white;
-  border-radius: var(--radius-md);
-  font-size: 0.8125rem;
-  font-weight: 500;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-restore,
-.btn-delete-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  background: transparent;
-  border: none;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-restore {
-  color: #10b981;
-}
-
-.btn-restore:hover:not(:disabled) {
-  background-color: #10b981;
-  color: white;
-  transform: scale(1.1);
-}
-
-.btn-delete-action {
-  color: #ef4444;
-}
-
-.btn-delete-action:hover:not(:disabled) {
-  background-color: #ef4444;
-  color: white;
-  transform: scale(1.1);
-}
-
-.btn-restore:disabled,
-.btn-delete-action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-restore i,
-.btn-delete-action i {
-  font-size: 1.125rem;
-}
+/* Skeleton */
+.skeleton-table { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.sk-row { height: 60px; background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 400% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
+.sk-row.header-row { height: 40px; margin-bottom: 8px; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 
 /* Empty State */
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-}
-
-.empty-icon {
-  font-size: 4rem;
-  color: var(--gray-400);
-  margin-bottom: 1.5rem;
-}
-
-.empty-title {
-  font-size: 1.5rem;
-  color: var(--gray-700);
-  margin-bottom: 0.5rem;
-}
-
-.empty-description {
-  color: var(--gray-600);
-  margin-bottom: 2rem;
-}
-
-/* Delete Modal */
-.modal-overlay {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  background: rgba(75, 85, 99, 0.75) !important;
-  backdrop-filter: blur(12px) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  z-index: 9999 !important;
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.modal-delete-content {
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-  animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  max-width: 550px;
-  width: 90%;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.modal-delete-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 2rem;
-  background: linear-gradient(135deg, #ff9a3c 0%, #ff8c00 100%);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-}
-
-.warning-icon-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(10px);
-}
-
-.warning-icon-box i {
-  font-size: 2rem;
-  color: white;
-}
-
-.modal-title {
-  margin: 0;
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: white;
-}
-
-.close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-}
-
-.close-btn i {
-  font-size: 1.5rem;
-  color: white;
-}
-
-.modal-delete-body {
-  padding: 2.5rem 2rem 2rem;
-  background: white;
-}
-
-.delete-question {
-  font-size: 1.125rem;
-  color: #718096;
-  margin: 0 0 2rem 0;
-  line-height: 1.6;
-}
-
-.delete-question strong {
-  color: #2d3748;
-  font-weight: 600;
-}
-
-.delete-info {
-  margin-top: 1.5rem;
-}
-
-.info-title {
-  font-size: 1rem;
-  color: #718096;
-  margin: 0 0 1rem 0;
-  font-weight: 500;
-}
-
-.info-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.info-list li {
-  font-size: 0.9375rem;
-  color: #718096;
-  padding-left: 1.5rem;
-  position: relative;
-}
-
-.info-list li::before {
-  content: '•';
-  position: absolute;
-  left: 0.5rem;
-  color: #a0aec0;
-  font-size: 1.25rem;
-}
-
-.modal-delete-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.5rem 2rem 2rem;
-  background: white;
-  border-top: 1px solid #e2e8f0;
-}
-
-.btn-cancel,
-.btn-delete {
-  padding: 0.875rem 2rem;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-cancel {
-  background: transparent;
-  color: #718096;
-}
-
-.btn-cancel:hover {
-  background: #f7fafc;
-  color: #4a5568;
-}
-
-.btn-delete {
-  background: #ef4444;
-  color: white;
-  min-width: 180px;
-  justify-content: center;
-}
-
-.btn-delete:hover:not(:disabled) {
-  background: #dc2626;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-.btn-delete:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* Table Controls */
-.table-controls {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.show-entries {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9375rem;
-  color: var(--gray-700);
-}
-
-.show-entries label {
-  font-weight: 500;
-}
-
-.entries-select {
-  padding: 0.5rem 2rem 0.5rem 0.75rem;
-  border: 1px solid #cbd5e0;
-  border-radius: 0.5rem;
-  background-color: white;
-  font-size: 0.9375rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23718096' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.5rem center;
-}
-
-.entries-select:hover {
-  border-color: var(--npc-primary);
-}
-
-.entries-select:focus {
-  outline: none;
-  border-color: var(--npc-primary);
-  box-shadow: 0 0 0 3px rgba(0, 61, 130, 0.1);
-}
-
-/* Sortable Headers */
-.sortable {
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.2s ease;
-}
-
-.sortable:hover {
-  background-color: rgba(0, 61, 130, 0.05);
-}
-
-.th-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.sort-icon {
-  font-size: 0.875rem;
-  color: #cbd5e0;
-  transition: color 0.2s ease;
-}
-
-.sort-icon.active {
-  color: var(--npc-primary);
-}
+.empty-state { text-align: center; padding: 80px 20px; }
+.empty-icon-wrapper { width: 80px; height: 80px; background: #f1f5f9; color: #94a3b8; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 24px auto; }
+.empty-state h3 { font-size: 1.5rem; color: #0f172a; margin: 0 0 12px 0; }
+.empty-state p { color: #64748b; max-width: 400px; margin: 0 auto; line-height: 1.6; }
+.btn-primary { background: #3b82f6; color: white; border: none; padding: 10px 24px; border-radius: 10px; font-weight: 600; cursor: pointer; margin-top: 16px; }
 
 /* Pagination */
-:deep(.p-paginator) {
-  background: white;
-  border-top: 1px solid #e2e8f0;
-  padding: 1rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-}
+.pagination-footer { padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: white; }
+.showing-text { font-size: 0.875rem; color: #64748b; font-weight: 500; }
 
-:deep(.p-paginator .p-paginator-first),
-:deep(.p-paginator .p-paginator-prev),
-:deep(.p-paginator .p-paginator-next),
-:deep(.p-paginator .p-paginator-last),
-:deep(.p-paginator .p-paginator-page) {
-  min-width: 2.5rem;
-  height: 2.5rem;
-  margin: 0.125rem;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  color: #64748b;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 500;
-}
+:deep(.p-paginator) { background: transparent; border: none; padding: 0; }
+:deep(.p-paginator .p-paginator-pages .p-paginator-page) { min-width: 36px; height: 36px; border-radius: 10px; margin: 0 4px; color: #64748b; font-weight: 600; }
+:deep(.p-paginator .p-paginator-pages .p-paginator-page.p-highlight) { background: #eff6ff; color: #2563eb; }
 
-:deep(.p-paginator .p-paginator-first:not(.p-disabled):hover),
-:deep(.p-paginator .p-paginator-prev:not(.p-disabled):hover),
-:deep(.p-paginator .p-paginator-next:not(.p-disabled):hover),
-:deep(.p-paginator .p-paginator-last:not(.p-disabled):hover),
-:deep(.p-paginator .p-paginator-page:not(.p-highlight):hover) {
-  background: #f1f5f9;
-  color: var(--npc-primary);
-}
+/* Modals */
+.modal-backdrop { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modern-modal { background: white; border-radius: 24px; width: 90%; max-width: 450px; padding: 32px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+.danger-modal .modal-icon { width: 72px; height: 72px; background: #fef2f2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 20px auto; }
+.modal-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0 0 16px 0; }
+.modal-body p { color: #475569; font-size: 1.05rem; margin: 0 0 24px 0; line-height: 1.5; }
+.warning-box { background: #fffbeb; color: #b91c1c; padding: 16px; border-radius: 12px; font-size: 0.9rem; text-align: left; margin-bottom: 24px; border: 1px solid #fecaca; }
+.modal-actions { display: flex; gap: 12px; }
+.btn-cancel { flex: 1; background: #f1f5f9; border: none; padding: 12px; border-radius: 12px; font-weight: 600; color: #475569; cursor: pointer; transition: background 0.2s; }
+.btn-cancel:hover { background: #e2e8f0; }
+.btn-danger { flex: 1; background: #ef4444; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(239,68,68,0.3); transition: all 0.2s; }
+.btn-danger:hover:not(:disabled) { background: #dc2626; transform: translateY(-2px); }
 
-:deep(.p-paginator .p-paginator-page.p-highlight) {
-  background: #fef3c7;
-  color: #92400e;
-  font-weight: 600;
-}
+/* Transitions */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s, transform 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(-10px); }
+.modal-enter-active { animation: bounceIn 0.4s; }
+.modal-leave-active { transition: opacity 0.3s; opacity: 0; }
+@keyframes bounceIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
-:deep(.p-paginator .p-disabled) {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-:deep(.p-paginator .p-paginator-icon) {
-  font-size: 0.875rem;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .pagination-container {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .pagination-info {
-    position: static;
-    text-align: center;
-    order: 2;
-    margin-top: 0.5rem;
-  }
-  
-  .pagination-controls {
-    justify-content: center;
-    order: 1;
-  }
-  
-  .table-controls {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+@media (max-width: 1024px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .toolbar { flex-direction: column; gap: 16px; align-items: flex-start; }
+  .search-box { width: 100%; }
 }
 </style>

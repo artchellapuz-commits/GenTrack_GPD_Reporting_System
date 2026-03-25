@@ -384,11 +384,88 @@ class UserProfileDetailSerializer(serializers.ModelSerializer):
 class AuditLogSerializer(serializers.ModelSerializer):
     """Audit log serializer"""
     username = serializers.CharField(source='user.username', read_only=True)
+    user_full_name = serializers.SerializerMethodField()
+    user_role = serializers.SerializerMethodField()
+    model_display_name = serializers.SerializerMethodField()
+    location_display = serializers.SerializerMethodField()
+    action_display = serializers.CharField(source='get_action_display', read_only=True)
     
     class Meta:
         model = AuditLog
         fields = '__all__'
         read_only_fields = ['user', 'timestamp']
+
+    def get_user_full_name(self, obj):
+        if obj.user:
+            full_name = obj.user.get_full_name()
+            return full_name if full_name else obj.user.username
+        return "System"
+        
+    def get_user_role(self, obj):
+        if obj.user and hasattr(obj.user, 'profile'):
+            role_map = {
+                'VIEWER': 'Viewer',
+                'OPERATOR': 'Data Encoder / Operator',
+                'MANAGER': 'Data Manager',
+                'ADMIN': 'Administrator'
+            }
+            return role_map.get(obj.user.profile.role, obj.user.profile.get_role_display())
+        if obj.user and obj.user.is_superuser:
+            return "Administrator"
+        return "System Role"
+
+    def get_model_display_name(self, obj):
+        if not obj.model_name:
+            # Check category or action to provide a better name than N/A
+            if obj.category == 'authentication':
+                return "Authentication"
+            if obj.category == 'security':
+                return "Security"
+            if obj.category == 'system':
+                return "System"
+            if 'view' in obj.description.lower() or 'access' in obj.description.lower():
+                return "Page Access"
+            return "General System"
+            
+        model_map = {
+            'Plant': 'Power Plant',
+            'Unit': 'Generation Unit',
+            'UploadedFile': 'File Upload',
+            'GenerationReport': 'Generation Report',
+            'PlantCapacity': 'Plant Capacity',
+            'HistoricalData': 'Historical Data',
+            'WaterNomination': 'Water Nomination',
+            'ActualGeneration': 'Actual Generation',
+            'Testimonial': 'User Testimonial',
+            'UserProfile': 'User Profile',
+            'User': 'System User',
+            'AuditLog': 'Audit Log',
+            'PasswordResetRequest': 'Password Reset',
+            'ESignature': 'Electronic Signature',
+            'ReportSignature': 'Report Signature',
+            'SignatoryAuthorization': 'Signatory Authorization',
+            'SignatureVerificationToken': 'Security Token',
+            'SignatureSecuritySettings': 'Security Settings',
+            'Document': 'System Document',
+            'AuthRequest': 'Authorization Request',
+            'SignatoryAuthorizationRequest': 'Authorization Request',
+        }
+        
+        # Check if the model_name is in our map
+        if obj.model_name in model_map:
+            return model_map[obj.model_name]
+            
+        # If not in map, try to make it more readable (e.g., "GenerationReport" -> "Generation Report")
+        import re
+        readable = re.sub(r'(?<!^)(?=[A-Z])', ' ', obj.model_name)
+        return readable
+
+    def get_location_display(self, obj):
+        if not obj.location or obj.location.lower() == 'unknown':
+            if obj.ip_address in ['127.0.0.1', '::1']:
+                return "Local System (Internal)"
+            return "Internal Network"
+        return obj.location
 
 
 class PasswordResetRequestSerializer(serializers.ModelSerializer):

@@ -127,14 +127,34 @@ class AuditLoggingMiddleware(MiddlewareMixin):
             # Get page name from URL resolver
             try:
                 resolved = resolve(request.path)
-                page_name = getattr(resolved, 'url_name', None) or getattr(resolved, 'view_name', None) or 'Unknown'
+                page_name_raw = getattr(resolved, 'url_name', None) or getattr(resolved, 'view_name', None) or 'Unknown'
             except (Resolver404, AttributeError):
-                page_name = request.path
+                page_name_raw = request.path
+            
+            # Map raw page names to user-friendly names
+            page_map = {
+                'landing': 'Home Page',
+                'dashboard': 'System Dashboard',
+                'upload': 'Data Upload Page',
+                'generate-report': 'Report Generation',
+                'view-reports': 'View Reports',
+                'audit-logs': 'Audit Logs View',
+                'user-management': 'User Management',
+                'signature-setup': 'Signature Setup',
+                'authorization-request': 'Signature Authorization',
+                'password-reset': 'Password Reset Page',
+                'login': 'Login Page',
+                'register': 'Registration Page',
+            }
+            
+            # Try to clean up path-based names
+            clean_name = page_name_raw.strip('/').replace('/', ' ').replace('-', ' ').replace('_', ' ').title()
+            page_name = page_map.get(page_name_raw.lower(), clean_name)
             
             AuditLog.log_action(
                 user=self._get_user_safely(request),
                 action='PAGE_ACCESS',
-                description=f'Accessed page: {page_name} ({request.path})',
+                description=f'Accessed {page_name}',
                 request=request,
                 category=category,
                 severity='LOW',
@@ -192,7 +212,7 @@ class AuditLoggingMiddleware(MiddlewareMixin):
         method = request.method.upper()
         
         # Authentication endpoints
-        if '/auth/login' in path:
+        if '/auth/login' in path or '/token/' in path:
             return 'LOGIN'
         elif '/auth/logout' in path:
             return 'LOGOUT'
@@ -215,6 +235,10 @@ class AuditLoggingMiddleware(MiddlewareMixin):
             elif 'restore' in path:
                 return 'FILE_RESTORE'
             elif method == 'GET':
+                # Similar to generation-reports, a simple GET is often just loading a list
+                # for the dashboard or tables, not necessarily "viewing" a specific file content.
+                if request.GET.get('page') or 'summary' in path:
+                     return 'DATA_VIEW'
                 return 'FILE_VIEW'
         
         # Report operations
@@ -224,6 +248,10 @@ class AuditLoggingMiddleware(MiddlewareMixin):
             elif 'preview-report' in path:
                 return 'REPORT_PREVIEW'
             elif method == 'GET':
+                # Avoid logging simple dashboard data loads as "REPORT_VIEW" 
+                # to prevent spamming logs right after login
+                if 'summary' in path or 'dashboard' in path or request.GET.get('page'):
+                    return 'DATA_VIEW'
                 return 'REPORT_VIEW'
             elif method == 'DELETE':
                 return 'REPORT_DELETE'
@@ -247,14 +275,14 @@ class AuditLoggingMiddleware(MiddlewareMixin):
                 return 'SIGNATURE_VIEW'
         
         # Authorization operations
-        elif '/signatory-authorizations/' in path:
+        elif '/signatory-authorizations/' in path or '/signature-requests/' in path:
             if 'request' in path and method == 'POST':
                 return 'AUTH_REQUEST_CREATE'
-            elif 'approve-request' in path:
+            elif 'approve-request' in path or 'approve' in path:
                 return 'AUTH_REQUEST_APPROVE'
-            elif 'reject-request' in path:
+            elif 'reject-request' in path or 'reject' in path:
                 return 'AUTH_REQUEST_REJECT'
-            elif 'cancel-request' in path:
+            elif 'cancel-request' in path or 'cancel' in path:
                 return 'AUTH_REQUEST_CANCEL'
             elif 'approve-with-existing' in path:
                 return 'AUTH_APPROVE_EXISTING'
@@ -265,7 +293,11 @@ class AuditLoggingMiddleware(MiddlewareMixin):
             elif method == 'DELETE':
                 return 'AUTH_REVOKE'
             elif method == 'GET':
+                if request.GET.get('page') or 'summary' in path:
+                    return 'DATA_VIEW'
                 return 'AUTH_REQUEST_VIEW'
+            elif method == 'POST':
+                return 'AUTH_REQUEST_CREATE'
         
         # User management
         elif '/users/' in path:
@@ -277,6 +309,21 @@ class AuditLoggingMiddleware(MiddlewareMixin):
                 return 'USER_DELETE'
             elif method == 'GET':
                 return 'DATA_VIEW'
+                
+        # Document/Storage operations
+        elif '/documents/' in path:
+            if 'request_signatures' in path or 'request-signatures' in path:
+                return 'AUTH_REQUEST_CREATE'
+            elif method == 'POST':
+                return 'DOCUMENT_CREATE'
+            elif method == 'PUT' or method == 'PATCH':
+                return 'DOCUMENT_UPDATE'
+            elif method == 'DELETE':
+                return 'DOCUMENT_DELETE'
+            elif method == 'GET':
+                if request.GET.get('page') or 'summary' in path:
+                    return 'DATA_VIEW'
+                return 'DOCUMENT_VIEW'
         
         # Generic CRUD operations
         else:
@@ -293,51 +340,96 @@ class AuditLoggingMiddleware(MiddlewareMixin):
     
     def _get_api_description(self, request, action):
         """Generate description for API action"""
-        path = request.path
-        method = request.method
+        path = request.path.lower()
+        method = request.method.upper()
         
         # Try to extract meaningful identifiers
         path_parts = [part for part in path.split('/') if part and not part.isdigit()]
-        resource = path_parts[-1] if path_parts else 'resource'
+        resource_raw = path_parts[-1] if path_parts else 'resource'
         
-        descriptions = {
-            'LOGIN': 'User login attempt',
-            'LOGOUT': 'User logout',
-            'USER_CREATE': 'New user registration',
-            'PASSWORD_RESET_REQUEST': 'Password reset requested',
-            'PASSWORD_CHANGE': 'Password changed',
-            'FILE_UPLOAD': 'File uploaded to system',
-            'FILE_DELETE': 'File deleted from system',
-            'FILE_ARCHIVE': 'File archived',
-            'FILE_RESTORE': 'File restored from archive',
-            'FILE_VIEW': 'File accessed/viewed',
-            'REPORT_GENERATE': 'Report generated',
-            'REPORT_PREVIEW': 'Report previewed',
-            'REPORT_VIEW': 'Report viewed',
-            'REPORT_DELETE': 'Report deleted',
-            'SIGNATURE_CREATE': 'E-signature created',
-            'SIGNATURE_UPDATE': 'E-signature updated',
-            'SIGNATURE_DELETE': 'E-signature deleted',
-            'SIGNATURE_VIEW': 'E-signature viewed',
-            'REPORT_SIGN': 'Report signed with e-signature',
-            'AUTH_REQUEST_CREATE': 'Authorization request submitted',
-            'AUTH_REQUEST_APPROVE': 'Authorization request approved',
-            'AUTH_REQUEST_REJECT': 'Authorization request rejected',
-            'AUTH_REQUEST_CANCEL': 'Authorization request cancelled',
-            'AUTH_APPROVE_EXISTING': 'Authorization approved with existing signature',
-            'SIGNATURE_SETUP_ACCESS': 'Signature setup page accessed',
-            'SIGNATURE_SETUP_COMPLETE': 'Signature setup completed',
-            'AUTH_REVOKE': 'Authorization revoked',
-            'AUTH_REQUEST_VIEW': 'Authorization request viewed',
-            'USER_UPDATE': 'User information updated',
-            'USER_DELETE': 'User deleted',
-            'DATA_CREATE': f'{method} request to create {resource}',
-            'DATA_UPDATE': f'{method} request to update {resource}',
-            'DATA_DELETE': f'{method} request to delete {resource}',
-            'DATA_VIEW': f'{method} request to view {resource}',
+        # Map raw resource names to user-friendly names
+        resource_map = {
+            'audit-logs': 'audit logs',
+            'pending_reset_count': 'pending password reset count',
+            'uploaded-files': 'uploaded files',
+            'generation-reports': 'generation reports',
+            'plants': 'power plants',
+            'units': 'generation units',
+            'plant-capacities': 'plant capacities',
+            'historical-data': 'historical data',
+            'water-nominations': 'water nominations',
+            'actual-generations': 'actual generations',
+            'testimonials': 'user testimonials',
+            'profiles': 'user profiles',
+            'users': 'system users',
+            'password-reset-requests': 'password reset requests',
+            'e-signatures': 'electronic signatures',
+            'report-signatures': 'report signatures',
+            'signatory-authorizations': 'signatory authorizations',
+            'authorization-requests': 'authorization requests',
+            'signature-verification-tokens': 'security tokens',
+            'signature-security-settings': 'security settings',
+            'documents': 'system documents',
+            'analytics': 'system analytics',
+            'dashboard-stats': 'dashboard statistics',
+            'plant-status': 'plant status information',
         }
         
-        return descriptions.get(action, f'{method} request to {path}')
+        resource = resource_map.get(resource_raw, resource_raw.replace('-', ' ').replace('_', ' '))
+        
+        # Specialized descriptions for common actions
+        descriptions = {
+            'LOGIN': 'User logged into the system',
+            'LOGOUT': 'User logged out of the system',
+            'USER_CREATE': f'Created new user account: {resource}',
+            'PASSWORD_RESET_REQUEST': 'Requested a password reset',
+            'PASSWORD_CHANGE': 'Changed account password',
+            'FILE_UPLOAD': 'Uploaded a new file to the system',
+            'FILE_DELETE': 'Deleted a file from the system',
+            'FILE_ARCHIVE': 'Moved a file to the archive',
+            'FILE_RESTORE': 'Restored a file from the archive',
+            'FILE_VIEW': f'Accessed or viewed file: {resource}',
+            'REPORT_GENERATE': 'Generated a new system report',
+            'REPORT_PREVIEW': 'Previewed a report',
+            'REPORT_VIEW': 'Viewed a system report',
+            'REPORT_DELETE': 'Deleted a report',
+            'SIGNATURE_CREATE': 'Created a new electronic signature',
+            'SIGNATURE_UPDATE': 'Updated electronic signature details',
+            'SIGNATURE_DELETE': 'Deleted an electronic signature',
+            'SIGNATURE_VIEW': 'Viewed electronic signature details',
+            'REPORT_SIGN': 'Applied an electronic signature to a report',
+            'AUTH_REQUEST_CREATE': 'Submitted a request for signature authorization',
+            'AUTH_REQUEST_APPROVE': 'Approved a signature authorization request',
+            'AUTH_REQUEST_REJECT': 'Rejected a signature authorization request',
+            'AUTH_REQUEST_CANCEL': 'Cancelled a signature authorization request',
+            'AUTH_APPROVE_EXISTING': 'Approved authorization using an existing signature',
+            'SIGNATURE_SETUP_ACCESS': 'Accessed the signature setup page',
+            'SIGNATURE_SETUP_COMPLETE': 'Successfully completed signature setup',
+            'AUTH_REVOKE': 'Revoked a signature authorization',
+            'AUTH_REQUEST_VIEW': 'Viewed a signature authorization request',
+            'USER_UPDATE': 'Updated user account information',
+            'USER_DELETE': 'Deleted a user account',
+            'DOCUMENT_CREATE': 'Saved a report to storage',
+            'DOCUMENT_UPDATE': 'Updated a stored report',
+            'DOCUMENT_DELETE': 'Deleted a stored report',
+            'DOCUMENT_VIEW': 'Viewed a stored report',
+            'DATA_CREATE': f'Created new {resource} record',
+            'DATA_UPDATE': f'Updated {resource} information',
+            'DATA_DELETE': f'Deleted {resource} record',
+            'DATA_VIEW': f'Viewed {resource}',
+            'PAGE_ACCESS': f'Accessed page: {resource}',
+            'DASHBOARD_VIEW': 'Viewed system dashboard',
+            'SYSTEM_ERROR': 'A system error occurred',
+        }
+        
+        # Fallback for generic DATA_VIEW to make it more natural
+        if action == 'DATA_VIEW':
+            if method == 'GET':
+                return f'Viewed {resource}'
+        
+        # Return mapped description or a cleaned-up fallback
+        fallback = f'{method} operation on {resource}'
+        return descriptions.get(action, fallback)
     
     def _get_page_category(self, path):
         """Determine page category"""

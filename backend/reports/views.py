@@ -177,15 +177,15 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
             
             # Log the action
             if request.user.is_authenticated:
-                AuditLog.objects.create(
+                AuditLogger.log_user_action(
                     user=request.user,
-                    action='UPDATE',
+                    action='FILE_ARCHIVE',
                     model_name='UploadedFile',
                     object_id=uploaded_file.id,
                     description=f'Archived file: {uploaded_file.original_filename}',
-                    ip_address=get_client_ip(request),
-                    location=get_location_from_ip(get_client_ip(request)),
-                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                    category='file_management',
+                    severity='MEDIUM',
+                    request=request
                 )
             
             return Response({
@@ -215,15 +215,15 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
             
             # Log the action
             if request.user.is_authenticated:
-                AuditLog.objects.create(
+                AuditLogger.log_user_action(
                     user=request.user,
-                    action='UPDATE',
+                    action='FILE_RESTORE',
                     model_name='UploadedFile',
                     object_id=uploaded_file.id,
                     description=f'Restored file: {uploaded_file.original_filename}',
-                    ip_address=get_client_ip(request),
-                    location=get_location_from_ip(get_client_ip(request)),
-                    user_agent=request.META.get('HTTP_USER_AGENT', '')
+                    category='file_management',
+                    severity='MEDIUM',
+                    request=request
                 )
             
             return Response({
@@ -335,9 +335,9 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
                 # Log successful processing
                 AuditLogger.log_user_action(
                     user=request.user,
-                    action='DATA_CREATE',
+                    action='FILE_UPLOAD',
                     description=f'File processed successfully: {records_imported} records imported from {file.name}',
-                    model_name='GenerationReport',
+                    model_name='UploadedFile',
                     category='data_processing',
                     severity='MEDIUM',
                     request=request
@@ -1245,7 +1245,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         # Filter by action type
         action = self.request.query_params.get('action')
         if action:
-            queryset = queryset.filter(action=action)
+            queryset = queryset.filter(action__icontains=action)
         
         # Filter by username
         username = self.request.query_params.get('username')
@@ -1276,7 +1276,7 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         ws.title = "Audit Logs"
         
         # Headers
-        headers = ['Timestamp', 'User', 'Action', 'Model', 'Description', 'IP Address', 'Location']
+        headers = ['Timestamp', 'User', 'User Role', 'Action', 'Model', 'Description', 'IP Address', 'Location']
         ws.append(headers)
         
         # Style headers
@@ -1289,16 +1289,90 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
             cell.font = header_font
             cell.alignment = Alignment(horizontal='center', vertical='center')
         
+        # Model mapping for export
+        model_map = {
+            'Plant': 'Power Plant',
+            'Unit': 'Generation Unit',
+            'UploadedFile': 'File Upload',
+            'GenerationReport': 'Generation Report',
+            'PlantCapacity': 'Plant Capacity',
+            'HistoricalData': 'Historical Data',
+            'WaterNomination': 'Water Nomination',
+            'ActualGeneration': 'Actual Generation',
+            'Testimonial': 'User Testimonial',
+            'UserProfile': 'User Profile',
+            'User': 'System User',
+            'AuditLog': 'Audit Log',
+            'PasswordResetRequest': 'Password Reset',
+            'ESignature': 'Electronic Signature',
+            'ReportSignature': 'Report Signature',
+            'SignatoryAuthorization': 'Signatory Authorization',
+            'SignatureVerificationToken': 'Security Token',
+            'SignatureSecuritySettings': 'Security Settings',
+            'Document': 'System Document',
+            'AuthRequest': 'Authorization Request',
+            'SignatoryAuthorizationRequest': 'Authorization Request',
+        }
+        
         # Data rows
         for log in queryset:
+            # Get user full name
+            user_display = 'System'
+            if log.user:
+                full_name = log.user.get_full_name()
+                user_display = full_name if full_name else log.user.username
+            
+            # Get model display name
+            model_display = log.model_name
+            if log.model_name in model_map:
+                model_display = model_map[log.model_name]
+            elif log.model_name:
+                import re
+                model_display = re.sub(r'(?<!^)(?=[A-Z])', ' ', log.model_name)
+            else:
+                # Handle empty model_name
+                if log.category == 'authentication':
+                    model_display = "Authentication"
+                elif log.category == 'security':
+                    model_display = "Security"
+                elif log.category == 'system':
+                    model_display = "System"
+                elif 'view' in log.description.lower() or 'access' in log.description.lower():
+                    model_display = "Page Access"
+                else:
+                    model_display = "General System"
+            
+            # Get location display
+            location_display = log.location
+            if not log.location or log.location.lower() == 'unknown':
+                if log.ip_address in ['127.0.0.1', '::1']:
+                    location_display = "Local System (Internal)"
+                else:
+                    location_display = "Internal Network"
+            
+            # Get user role
+            user_role = "System Role"
+            if log.user:
+                if hasattr(log.user, 'profile'):
+                    role_map = {
+                        'VIEWER': 'Viewer',
+                        'OPERATOR': 'Data Encoder / Operator',
+                        'MANAGER': 'Data Manager',
+                        'ADMIN': 'Administrator'
+                    }
+                    user_role = role_map.get(log.user.profile.role, log.user.profile.get_role_display())
+                elif log.user.is_superuser:
+                    user_role = "Administrator"
+
             ws.append([
                 log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-                log.user.username if log.user else 'System',
-                log.action,
-                log.model_name,
+                user_display,
+                user_role,
+                log.get_action_display(),
+                model_display,
                 log.description,
                 log.ip_address or 'N/A',
-                log.location or 'Unknown'
+                location_display
             ])
         
         # Auto-size columns

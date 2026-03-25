@@ -29,6 +29,25 @@
           <div class="accent-orb accent-orb-2"></div>
           <div class="accent-orb accent-orb-3"></div>
         </div>
+        
+        <!-- Animated UI Mockup -->
+        <div class="ui-mockup-container">
+          <div class="ui-mockup">
+            <div class="mockup-header">
+              <div class="mockup-dot"></div>
+              <div class="mockup-dot"></div>
+              <div class="mockup-dot"></div>
+            </div>
+            <div class="mockup-body">
+              <div class="mockup-sidebar"></div>
+              <div class="mockup-content">
+                <div class="mockup-row"></div>
+                <div class="mockup-row"></div>
+                <div class="mockup-row"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="hero-overlay"></div>
       <div class="container">
@@ -1332,6 +1351,87 @@ export default {
 @keyframes orbFloat {
   0% { transform: translate(0, 0) scale(1); }
   100% { transform: translate(50px, 30px) scale(1.1); }
+}
+
+.ui-mockup-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+  z-index: 1;
+}
+
+.ui-mockup {
+  width: 700px;
+  height: 450px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  transform: rotateX(50deg) rotateZ(-45deg) translateY(120px);
+  opacity: 0.6;
+  animation: floatMockup 15s ease-in-out infinite alternate;
+  display: flex;
+  flex-direction: column;
+}
+
+.mockup-header {
+  height: 35px;
+  background: rgba(59, 130, 246, 0.15);
+  display: flex;
+  align-items: center;
+  padding: 0 15px;
+  gap: 8px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.mockup-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.4);
+}
+
+.mockup-body {
+  display: flex;
+  flex-grow: 1;
+}
+
+.mockup-sidebar {
+  width: 140px;
+  background: rgba(59, 130, 246, 0.1);
+  border-right: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.mockup-content {
+  flex-grow: 1;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.mockup-row {
+  height: 25px;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 5px;
+}
+
+@keyframes floatMockup {
+  0% {
+    transform: rotateX(50deg) rotateZ(-45deg) translateY(120px) scale(0.98);
+    opacity: 0.5;
+  }
+  100% {
+    transform: rotateX(48deg) rotateZ(-42deg) translateY(100px) scale(1);
+    opacity: 0.7;
+  }
 }
 
 .hero-overlay {

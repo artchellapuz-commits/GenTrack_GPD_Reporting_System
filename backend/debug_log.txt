@@ -3741,3 +3741,219 @@ Request path: /api/signatory-authorizations/my-authorizations/
 Args: ()
 Kwargs: {}
 ==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:08:07.621513+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:08:10.654250+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:08:12.981410+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:08:13.972767+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:35:23.277312+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:35:23.378716+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:35:55.306932+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:35:55.307386+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:38:44.537431+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:38:44.537961+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:38:47.246055+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:38:47.246117+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:38:55.422137+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:38:55.422382+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:38:57.454091+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:38:57.455339+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:42:02.376527+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:42:02.376804+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 01:49:02.723755+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 03:14:19.244326+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 03:14:19.244913+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 03:17:55.478387+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 05:57:49.128907+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 05:58:34.066856+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 05:58:34.069688+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 06:13:14.304251+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 06:26:05.146282+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 06:26:06.650732+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 06:26:07.642772+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 06:26:10.701465+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 06:26:15.642867+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 06:26:15.648206+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 06:26:17.872425+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 08:17:10.198420+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 08:17:17.617628+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-authorizations/
+Args: ()
+Kwargs: {}
+==================================================
+DISPATCH METHOD CALLED! Time: 2026-03-25 08:17:17.618596+00:00
+Request method: GET
+Request path: /api/signatory-authorizations/my-requests/
+Args: ()
+Kwargs: {}
+==================================================
