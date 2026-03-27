@@ -1,0 +1,1563 @@
+/* Sakai Theme Variables and Styles */
+:root {
+  /* Colors */
+  --sakai-primary: #3b82f6;
+  --sakai-primary-dark: #2563eb;
+  --sakai-primary-light: #60a5fa;
+  
+  --sakai-success: #16a34a;
+  --sakai-success-light: #dcfce7;
+  --sakai-danger: #dc2626;
+  --sakai-danger-light: #fee2e2;
+  --sakai-warning: #f59e0b;
+  --sakai-warning-light: #fef3c7;
+  --sakai-info: #2563eb;
+  --sakai-info-light: #dbeafe;
+  
+  --sakai-text-primary: #1e293b;
+  --sakai-text-secondary: #64748b;
+  --sakai-text-muted: #94a3b8;
+  
+  --sakai-bg-primary: #ffffff;
+  --sakai-bg-secondary: #f8fafc;
+  --sakai-bg-tertiary: #f1f5f9;
+  
+  --sakai-border: #e2e8f0;
+  --sakai-border-light: #f1f5f9;
+  
+  /* Spacing */
+  --sakai-spacing-xs: 0.25rem;
+  --sakai-spacing-sm: 0.5rem;
+  --sakai-spacing-md: 1rem;
+  --sakai-spacing-lg: 1.5rem;
+  --sakai-spacing-xl: 2rem;
+  
+  /* Border Radius */
+  --sakai-radius-sm: 6px;
+  --sakai-radius-md: 8px;
+  --sakai-radius-lg: 12px;
+  
+  /* Shadows */
+  --sakai-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --sakai-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --sakai-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Sakai Card Styles */
+.sakai-card {
+  background: var(--sakai-bg-primary);
+  border-radius: var(--sakai-radius-lg);
+  border: 1px solid var(--sakai-border);
+  overflow: hidden;
+}
+
+.sakai-card-header {
+  padding: var(--sakai-spacing-lg);
+  border-bottom: 1px solid var(--sakai-border);
+  background: var(--sakai-bg-secondary);
+}
+
+.sakai-card-title {
+  font-size: 1.25rem;
+  color: var(--sakai-text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+}
+
+.sakai-card-title i {
+  color: var(--sakai-primary);
+}
+
+.sakai-card-body {
+  padding: var(--sakai-spacing-lg);
+}
+
+/* Sakai Button Styles */
+.sakai-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--sakai-radius-md);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sakai-btn-primary {
+  background: var(--sakai-primary);
+  color: white;
+}
+
+.sakai-btn-primary:hover {
+  background: var(--sakai-primary-dark);
+  box-shadow: var(--sakai-shadow-md);
+}
+
+.sakai-btn-secondary {
+  background: var(--sakai-bg-tertiary);
+  color: var(--sakai-text-primary);
+  border: 1px solid var(--sakai-border);
+}
+
+.sakai-btn-secondary:hover {
+  background: var(--sakai-border);
+}
+
+.sakai-btn-success {
+  background: var(--sakai-success);
+  color: white;
+}
+
+.sakai-btn-success:hover {
+  background: #15803d;
+}
+
+.sakai-btn-danger {
+  background: var(--sakai-danger);
+  color: white;
+}
+
+.sakai-btn-danger:hover {
+  background: #b91c1c;
+}
+
+/* Sakai Form Styles */
+.sakai-form-group {
+  margin-bottom: var(--sakai-spacing-lg);
+}
+
+.sakai-form-label {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--sakai-text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.sakai-form-input,
+.sakai-form-select,
+.sakai-form-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--sakai-border);
+  border-radius: var(--sakai-radius-md);
+  font-size: 0.9375rem;
+  color: var(--sakai-text-primary);
+  background: var(--sakai-bg-primary);
+  transition: all 0.2s ease;
+}
+
+.sakai-form-input:focus,
+.sakai-form-select:focus,
+.sakai-form-textarea:focus {
+  outline: none;
+  border-color: var(--sakai-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Sakai Table Styles */
+.sakai-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sakai-table thead {
+  background: var(--sakai-bg-secondary);
+  border-bottom: 2px solid var(--sakai-border);
+}
+
+.sakai-table th {
+  padding: 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sakai-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sakai-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--sakai-border);
+  color: var(--sakai-text-secondary);
+  font-size: 0.9375rem;
+}
+
+.sakai-table tbody tr:hover {
+  background: var(--sakai-bg-secondary);
+}
+
+/* Sakai Badge Styles */
+.sakai-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--sakai-radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+}
+
+.sakai-badge-success {
+  background: var(--sakai-success-light);
+  color: var(--sakai-success);
+}
+
+.sakai-badge-danger {
+  background: var(--sakai-danger-light);
+  color: var(--sakai-danger);
+}
+
+.sakai-badge-warning {
+  background: var(--sakai-warning-light);
+  color: var(--sakai-warning);
+}
+
+.sakai-badge-info {
+  background: var(--sakai-info-light);
+  color: var(--sakai-info);
+}
+
+/* Sakai Alert Styles */
+.sakai-alert {
+  padding: 1rem 1.25rem;
+  border-radius: var(--sakai-radius-md);
+  border: 1px solid;
+  margin-bottom: var(--sakai-spacing-lg);
+}
+
+.sakai-alert-success {
+  background: var(--sakai-success-light);
+  border-color: var(--sakai-success);
+  color: var(--sakai-success);
+}
+
+.sakai-alert-danger {
+  background: var(--sakai-danger-light);
+  border-color: var(--sakai-danger);
+  color: var(--sakai-danger);
+}
+
+.sakai-alert-warning {
+  background: var(--sakai-warning-light);
+  border-color: var(--sakai-warning);
+  color: var(--sakai-warning);
+}
+
+.sakai-alert-info {
+  background: var(--sakai-info-light);
+  border-color: var(--sakai-info);
+  color: var(--sakai-info);
+}
+
+/* Utility Classes */
+.sakai-text-primary {
+  color: var(--sakai-text-primary);
+}
+
+.sakai-text-secondary {
+  color: var(--sakai-text-secondary);
+}
+
+.sakai-text-muted {
+  color: var(--sakai-text-muted);
+}
+
+.sakai-bg-primary {
+  background: var(--sakai-bg-primary);
+}
+
+.sakai-bg-secondary {
+  background: var(--sakai-bg-secondary);
+}
+
+
+/* Dynamic Theme Variables - Updated by Theme Customizer */
+:root {
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-color-rgb: 59, 130, 246;
+  --surface-color: #1e293b;
+  --border-radius: 6px;
+  --font-family: system-ui, sans-serif;
+}
+
+/* Ensure PrimeIcons are visible */
+.pi {
+  font-family: 'primeicons' !important;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  display: inline-block;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Apply Dynamic Colors to Components */
+.menu-link.router-link-active {
+  background: rgba(59, 130, 246, 0.1) !important;
+  color: var(--primary-color) !important;
+  border-left-color: var(--primary-color) !important;
+}
+
+.layout-sidebar {
+  background: var(--surface-color) !important;
+}
+
+.topbar-icon-btn.theme-btn {
+  background: var(--primary-color) !important;
+}
+
+.topbar-icon-btn.theme-btn:hover {
+  background: var(--primary-hover) !important;
+}
+
+/* Apply to all buttons with primary class */
+button[class*="primary"],
+.btn-primary,
+.login-button,
+.register-button,
+.sakai-btn-primary {
+  background: var(--primary-color) !important;
+}
+
+button[class*="primary"]:hover,
+.btn-primary:hover,
+.login-button:hover:not(:disabled),
+.register-button:hover:not(:disabled),
+.sakai-btn-primary:hover {
+  background: var(--primary-hover) !important;
+}
+
+/* Login/register buttons now use primary color from theme palette */
+
+/* Apply primary color to links and active states */
+a.router-link-active,
+.active-link {
+  color: var(--primary-color) !important;
+}
+
+/* Apply to status badges */
+.status-badge.operational,
+.badge-success {
+  background: rgba(22, 163, 74, 0.1) !important;
+  color: #16a34a !important;
+}
+
+/* Apply to stat cards and plant cards */
+.stat-card,
+.plant-card {
+  background: white !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.stat-card:hover,
+.plant-card.clickable:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Apply primary color to icons in stat cards */
+.stat-icon {
+  /* Keep gradient backgrounds but ensure icons are visible */
+}
+
+/* Apply to card headers */
+.card-title i,
+.page-title i {
+  color: var(--primary-color) !important;
+}
+
+/* Apply border radius from preset */
+.card,
+.sakai-card,
+button,
+.btn,
+input,
+textarea,
+select,
+.form-control,
+.sakai-form-input,
+.sakai-form-select,
+.sakai-form-textarea,
+.stat-card,
+.plant-card,
+.login-card,
+.register-card {
+  border-radius: var(--border-radius) !important;
+}
+
+/* Apply font family */
+body {
+  font-family: var(--font-family) !important;
+}
+
+/* Dark Mode Styles */
+body.dark-mode,
+html.dark-mode {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .layout-topbar {
+  background: #1e293b !important;
+  border-bottom-color: #334155 !important;
+}
+
+.dark-mode .page-title,
+.dark-mode .topbar-item,
+.dark-mode .menu-button {
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .topbar-item:hover,
+.dark-mode .menu-button:hover,
+.dark-mode .topbar-icon-btn:hover {
+  background: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .layout-main {
+  background: #0f172a !important;
+}
+
+.dark-mode .card,
+.dark-mode .stat-card,
+.dark-mode .plant-card,
+.dark-mode .sakai-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .card-title,
+.dark-mode .page-title,
+.dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4 {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .page-description,
+.dark-mode label,
+.dark-mode .stat-unit {
+  color: #94a3b8 !important;
+}
+
+.dark-mode .plant-card:hover,
+.dark-mode .stat-card:hover {
+  background: #334155 !important;
+}
+
+.dark-mode .profile-menu {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark-mode .profile-menu-item {
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .profile-menu-item:hover {
+  background: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .customizer-panel {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .customizer-header {
+  background: #0f172a !important;
+  border-bottom-color: #334155 !important;
+}
+
+.dark-mode .customizer-header h3 {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .customizer-section h4 {
+  color: #94a3b8 !important;
+}
+
+.dark-mode .preset-btn {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .preset-btn:hover {
+  background: #475569 !important;
+}
+
+.dark-mode .preset-btn.active {
+  background: #fef3c7 !important;
+  border-color: #f59e0b !important;
+  color: #92400e !important;
+}
+
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark-mode input:focus,
+.dark-mode select:focus,
+.dark-mode textarea:focus {
+  border-color: var(--primary-color) !important;
+}
+
+.dark-mode .sakai-table {
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .sakai-table thead {
+  background: #334155 !important;
+}
+
+.dark-mode .sakai-table th {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .sakai-table td {
+  border-bottom-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+.dark-mode .sakai-table tbody tr:hover {
+  background: #334155 !important;
+}
+
+
+/* Dark Mode for Login Page */
+.dark-mode .login-page {
+  background: #000000 !important;
+}
+
+.dark-mode .login-card {
+  background: #1a1a1a !important;
+  border-color: #10b981 !important;
+}
+
+.dark-mode .login-header h2,
+.dark-mode .login-header p {
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .form-group label {
+  color: #cbd5e1 !important;
+}
+
+.dark-mode .form-group input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .form-group input:focus {
+  border-color: #10b981 !important;
+  background: #1e293b !important;
+}
+
+.dark-mode .toggle-password {
+  background: transparent !important;
+  color: #94a3b8 !important;
+}
+
+.dark-mode .remember-me span,
+.dark-mode .forgot-password {
+  color: #cbd5e1 !important;
+}
+
+.dark-mode .forgot-password:hover {
+  color: #10b981 !important;
+}
+
+.dark-mode .register-link {
+  color: #94a3b8 !important;
+}
+
+.dark-mode .register-link a {
+  color: #10b981 !important;
+}
+
+.dark-mode .back-button {
+  background: rgba(30, 41, 59, 0.9) !important;
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .back-button:hover {
+  background: #334155 !important;
+}
+
+/* Dark Mode for Register Page */
+.dark-mode .register-page {
+  background: #000000 !important;
+}
+
+.dark-mode .register-card {
+  background: #1a1a1a !important;
+  border-color: #10b981 !important;
+}
+
+.dark-mode .register-header h2,
+.dark-mode .register-header p {
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .login-link {
+  color: #94a3b8 !important;
+}
+
+.dark-mode .login-link a {
+  color: #10b981 !important;
+}
+
+/* Dark Mode for Landing Page */
+.dark-mode .landing-page {
+  background: #0f172a !important;
+}
+
+.dark-mode .hero-section {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+}
+
+.dark-mode .hero-content h1,
+.dark-mode .hero-content p {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .features-section {
+  background: #1e293b !important;
+}
+
+.dark-mode .section-title,
+.dark-mode .section-subtitle {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .feature-card {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.dark-mode .feature-card h3 {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .feature-card p {
+  color: #cbd5e1 !important;
+}
+
+.dark-mode .stats-section {
+  background: #0f172a !important;
+}
+
+.dark-mode .stat-item h3 {
+  color: var(--primary-color) !important;
+}
+
+.dark-mode .stat-item p {
+  color: #cbd5e1 !important;
+}
+
+.dark-mode .how-it-works-section {
+  background: #1e293b !important;
+}
+
+.dark-mode .step-card {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.dark-mode .step-number {
+  background: var(--primary-color) !important;
+  color: white !important;
+}
+
+.dark-mode .step-card h3 {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .step-card p {
+  color: #cbd5e1 !important;
+}
+
+.dark-mode .footer {
+  background: #0f172a !important;
+  border-top-color: #334155 !important;
+}
+
+.dark-mode .footer p {
+  color: #94a3b8 !important;
+}
+
+/* Dark mode for navigation */
+.dark-mode .nav-container {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-bottom-color: #334155 !important;
+}
+
+.dark-mode .nav-links a {
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .nav-links a:hover {
+  color: var(--primary-color) !important;
+}
+
+.dark-mode .btn-secondary {
+  background: transparent !important;
+  border-color: #e2e8f0 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .btn-secondary:hover {
+  background: #334155 !important;
+}
+
+
+/* Adjust back button to not overlap with theme controls */
+.back-button {
+  z-index: 999 !important;
+}
+
+/* Light mode - Glassmorphic back button */
+body:not(.dark-mode) .back-button {
+  background: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+body:not(.dark-mode) .back-button:hover {
+  background: rgba(255, 255, 255, 0.5) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+body:not(.dark-mode) .back-button i {
+  font-weight: bold !important;
+}
+
+/* Ensure theme controls are above everything on login/register/landing pages */
+.login-page .theme-controls,
+.register-page .theme-controls,
+.landing-page .theme-controls {
+  z-index: 1001 !important;
+}
+
+/* Responsive adjustments for theme controls */
+@media (max-width: 576px) {
+  .theme-controls {
+    top: 10px !important;
+    right: 10px !important;
+  }
+  
+  .back-button {
+    top: 10px !important;
+    left: 10px !important;
+  }
+}
+
+
+/* Apply primary color to login/register card borders - ONLY TOP BORDER */
+.login-card,
+.register-card {
+  border-top: 5px solid var(--primary-color) !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  border-radius: 32px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  background: rgba(26, 26, 26, 0.95) !important;
+  position: relative;
+  overflow: visible;
+}
+
+/* Remove left and right border pseudo-elements */
+.login-card::before,
+.register-card::before,
+.login-card::after,
+.register-card::after {
+  display: none;
+}
+
+/* Apply primary color glow effect on hover */
+.login-card:hover,
+.register-card:hover {
+  border-top-color: var(--primary-color) !important;
+  box-shadow: 0 0 20px rgba(var(--primary-color-rgb), 0.3), 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Apply primary color to login/register buttons */
+.login-button,
+.register-button {
+  background: var(--primary-color) !important;
+  border: none !important;
+}
+
+.login-button:hover:not(:disabled),
+.register-button:hover:not(:disabled) {
+  background: var(--primary-hover) !important;
+}
+
+/* Apply primary color to links in login/register */
+.register-link a,
+.login-link a,
+.forgot-password {
+  color: var(--primary-color) !important;
+}
+
+.register-link a:hover,
+.login-link a:hover,
+.forgot-password:hover {
+  color: var(--primary-hover) !important;
+}
+
+/* Apply primary color to focused inputs */
+.login-form input:focus,
+.register-form input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 1px var(--primary-color) !important;
+}
+
+/* Dark mode overrides for login/register with primary color - ONLY TOP BORDER */
+.dark-mode .login-card,
+.dark-mode .register-card {
+  border-top: 5px solid var(--primary-color) !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  border-radius: 32px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+  background: rgba(26, 26, 26, 0.98) !important;
+}
+
+.dark-mode .login-card:hover,
+.dark-mode .register-card:hover {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 20px rgba(var(--primary-color-rgb), 0.3), 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dark-mode .login-form input:focus,
+.dark-mode .register-form input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 1px var(--primary-color) !important;
+}
+
+.dark-mode .register-link a,
+.dark-mode .login-link a,
+.dark-mode .forgot-password {
+  color: var(--primary-color) !important;
+}
+
+.dark-mode .register-link a:hover,
+.dark-mode .login-link a:hover,
+.dark-mode .forgot-password:hover {
+  color: var(--primary-hover) !important;
+}
+
+/* Light mode login/register cards - GLASSMORPHIC EFFECT */
+body:not(.dark-mode) .login-card,
+body:not(.dark-mode) .register-card {
+  border-top: 5px solid var(--primary-color) !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: none !important;
+  border-radius: 32px !important;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37) !important;
+  background: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  border-top: 5px solid var(--primary-color) !important;
+}
+
+body:not(.dark-mode) .login-card:hover,
+body:not(.dark-mode) .register-card:hover {
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37), 0 0 20px rgba(var(--primary-color-rgb), 0.3) !important;
+  background: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Light mode - Error messages with better visibility */
+body:not(.dark-mode) .error-message {
+  background: rgba(254, 226, 226, 0.9) !important;
+  border: 2px solid #dc2626 !important;
+  color: #991b1b !important;
+  font-weight: 600 !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+
+/* Ensure landing page buttons are clickable */
+.landing-page .cta-buttons {
+  position: relative;
+  z-index: 10 !important;
+}
+
+.landing-page .btn {
+  position: relative;
+  z-index: 10 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.landing-page .hero-section {
+  position: relative;
+  z-index: 1;
+}
+
+/* Make sure theme controls don't block buttons */
+.landing-page .theme-controls {
+  pointer-events: none;
+}
+
+.landing-page .theme-controls .theme-control-btn {
+  pointer-events: auto;
+}
+
+/* Ensure buttons work in both light and dark mode */
+.btn-primary,
+.btn-secondary {
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+
+/* Force buttons to be interactive and visible */
+.landing-page .btn-primary,
+.landing-page .btn-secondary {
+  position: relative !important;
+  z-index: 100 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Ensure router-link works */
+a.btn-primary,
+a.btn-secondary {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Add hover effect to confirm buttons are interactive */
+.landing-page .btn-primary:hover,
+.landing-page .btn-secondary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Apply primary color to Get Started button */
+.landing-page .btn-primary {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.landing-page .btn-primary:hover {
+  background: var(--primary-hover) !important;
+  border-color: var(--primary-hover) !important;
+}
+
+
+/* Ensure theme customizer is fully interactive */
+.customizer-panel,
+.customizer-panel * {
+  pointer-events: auto !important;
+}
+
+.customizer-overlay {
+  pointer-events: auto !important;
+}
+
+.color-option,
+.preset-btn,
+.close-btn {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  user-select: none !important;
+}
+
+/* Ensure customizer has highest z-index */
+.theme-customizer {
+  z-index: 10000 !important;
+}
+
+.customizer-panel {
+  z-index: 10001 !important;
+}
+
+.customizer-overlay {
+  z-index: 10000 !important;
+}
+
+
+/* Apply primary color to back button */
+.back-button {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: var(--primary-color) !important;
+  transition: all 0.3s ease !important;
+}
+
+.back-button:hover {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: white !important;
+  transform: translateX(-4px) !important;
+}
+
+.back-button i {
+  color: inherit !important;
+}
+
+/* Dark mode back button */
+.dark-mode .back-button {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+}
+
+.dark-mode .back-button:hover {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  color: white !important;
+}
+
+
+/* ========================================
+   LIGHT MODE TEXT VISIBILITY
+   ======================================== */
+
+body:not(.dark-mode) {
+  color: #1e293b !important;
+}
+
+/* Light mode - Glassmorphic background for login/register pages */
+body:not(.dark-mode) .login-page,
+body:not(.dark-mode) .register-page {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  position: relative;
+}
+
+body:not(.dark-mode) .login-page::before,
+body:not(.dark-mode) .register-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(138, 43, 226, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%);
+  animation: gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Light mode - Login/Register text - Enhanced visibility */
+body:not(.dark-mode) .login-header h2,
+body:not(.dark-mode) .register-header h2 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.8), 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+  letter-spacing: -0.5px !important;
+}
+
+body:not(.dark-mode) .login-header p,
+body:not(.dark-mode) .register-header p {
+  color: #1e293b !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 4px rgba(255, 255, 255, 0.6) !important;
+}
+
+body:not(.dark-mode) .form-group label {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+  font-size: 15px !important;
+}
+
+body:not(.dark-mode) .form-group input {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  color: #0f172a !important;
+  font-weight: 500 !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+body:not(.dark-mode) .form-group input::placeholder {
+  color: #64748b !important;
+  font-weight: 400 !important;
+}
+
+body:not(.dark-mode) .form-group input:focus {
+  background: rgba(255, 255, 255, 0.75) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+body:not(.dark-mode) .remember-me span {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+body:not(.dark-mode) .register-link,
+body:not(.dark-mode) .login-link {
+  color: #334155 !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+body:not(.dark-mode) .register-link a,
+body:not(.dark-mode) .login-link a {
+  color: var(--primary-color) !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+  text-decoration: none !important;
+}
+
+body:not(.dark-mode) .register-link a:hover,
+body:not(.dark-mode) .login-link a:hover {
+  text-decoration: underline !important;
+  color: var(--primary-hover) !important;
+}
+
+body:not(.dark-mode) .forgot-password {
+  color: var(--primary-color) !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+body:not(.dark-mode) .forgot-password:hover {
+  color: var(--primary-hover) !important;
+}
+
+body:not(.dark-mode) .form-group small {
+  color: #475569 !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+body:not(.dark-mode) .toggle-password {
+  color: #475569 !important;
+}
+
+body:not(.dark-mode) .toggle-password:hover {
+  color: var(--primary-color) !important;
+}
+
+/* Light mode - Dashboard text */
+body:not(.dark-mode) .page-title,
+body:not(.dark-mode) .card-title,
+body:not(.dark-mode) h1, 
+body:not(.dark-mode) h2, 
+body:not(.dark-mode) h3, 
+body:not(.dark-mode) h4 {
+  color: #1e293b !important;
+}
+
+body:not(.dark-mode) .page-description,
+body:not(.dark-mode) label,
+body:not(.dark-mode) p {
+  color: #64748b !important;
+}
+
+body:not(.dark-mode) .stat-value {
+  color: #1e293b !important;
+}
+
+/* Light mode - Landing page text - Enhanced visibility */
+body:not(.dark-mode) .hero-title,
+body:not(.dark-mode) .section-title {
+  color: #0f172a !important;
+  font-weight: 800 !important;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.8), 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+body:not(.dark-mode) .hero-subtitle,
+body:not(.dark-mode) .hero-tagline {
+  color: #1e293b !important;
+  font-weight: 500 !important;
+  text-shadow: 0 2px 6px rgba(255, 255, 255, 0.7), 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+body:not(.dark-mode) .section-subtitle {
+  color: #334155 !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 4px rgba(255, 255, 255, 0.6) !important;
+}
+
+body:not(.dark-mode) .feature-card h3 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.5) !important;
+}
+
+body:not(.dark-mode) .feature-card p {
+  color: #1e293b !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+  line-height: 1.6 !important;
+}
+
+body:not(.dark-mode) .step-card h3 {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.5) !important;
+}
+
+body:not(.dark-mode) .step-card p {
+  color: #1e293b !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+  line-height: 1.6 !important;
+}
+
+body:not(.dark-mode) .step-number {
+  background: var(--primary-color) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(var(--primary-color-rgb), 0.4) !important;
+}
+
+/* Light mode - Glassmorphic effect for landing page cards */
+body:not(.dark-mode) .feature-card {
+  background: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37) !important;
+}
+
+body:not(.dark-mode) .feature-card:hover {
+  background: rgba(255, 255, 255, 0.45) !important;
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 40px rgba(31, 38, 135, 0.45) !important;
+}
+
+body:not(.dark-mode) .step-card {
+  background: rgba(255, 255, 255, 0.35) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37) !important;
+}
+
+body:not(.dark-mode) .stat-item h3 {
+  color: var(--primary-color) !important;
+  font-weight: 800 !important;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.8), 0 2px 4px rgba(var(--primary-color-rgb), 0.3) !important;
+}
+
+body:not(.dark-mode) .stat-item p {
+  color: #1e293b !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 4px rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Light mode - Glassmorphic background for landing page */
+body:not(.dark-mode) .landing-page {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+body:not(.dark-mode) .hero-section {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+  position: relative;
+}
+
+body:not(.dark-mode) .hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(138, 43, 226, 0.3) 0%, transparent 50%);
+  animation: gradientShift 15s ease infinite;
+  pointer-events: none;
+}
+
+body:not(.dark-mode) .hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+body:not(.dark-mode) .features-section,
+body:not(.dark-mode) .how-it-works-section {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+body:not(.dark-mode) .stats-section {
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+body:not(.dark-mode) .footer {
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+body:not(.dark-mode) .footer p {
+  color: #1e293b !important;
+  font-weight: 500 !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ========================================
+   DARK MODE TEXT VISIBILITY
+   ======================================== */
+
+.dark-mode {
+  color: #e2e8f0 !important;
+}
+
+/* Dark mode - Login/Register text */
+.dark-mode .login-header h2,
+.dark-mode .login-header p,
+.dark-mode .register-header h2,
+.dark-mode .register-header p {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .form-group label {
+  color: #cbd5e1 !important;
+}
+
+.dark-mode .form-group input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark-mode .form-group input::placeholder {
+  color: #64748b !important;
+}
+
+.dark-mode .remember-me span,
+.dark-mode .register-link,
+.dark-mode .login-link {
+  color: #94a3b8 !important;
+}
+
+/* Dark mode - Dashboard text */
+.dark-mode .page-title,
+.dark-mode .card-title,
+.dark-mode h1, 
+.dark-mode h2, 
+.dark-mode h3, 
+.dark-mode h4 {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .page-description,
+.dark-mode label:not(.form-group label),
+.dark-mode p {
+  color: #94a3b8 !important;
+}
+
+.dark-mode .stat-value {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .stat-unit {
+  color: #94a3b8 !important;
+}
+
+/* Dark mode - Landing page text */
+.dark-mode .hero-title,
+.dark-mode .section-title {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .hero-subtitle,
+.dark-mode .hero-tagline,
+.dark-mode .section-subtitle {
+  color: #cbd5e1 !important;
+}
+
+.dark-mode .feature-card h3 {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .feature-card p {
+  color: #cbd5e1 !important;
+}
+
+/* Dark mode - Table text */
+.dark-mode .sakai-table th {
+  color: #f1f5f9 !important;
+}
+
+.dark-mode .sakai-table td {
+  color: #cbd5e1 !important;
+}
+
+/* Dark mode - Topbar text */
+.dark-mode .page-title,
+.dark-mode .topbar-item,
+.dark-mode .menu-button,
+.dark-mode .username {
+  color: #e2e8f0 !important;
+}
+
+/* Dark mode - Sidebar text */
+.dark-mode .menu-link {
+  color: rgba(255, 255, 255, 0.87) !important;
+}
+
+.dark-mode .menu-link:hover {
+  color: white !important;
+}
+
+.dark-mode .logo-text {
+  color: white !important;
+}
+
+/* ========================================
+   ENSURE BUTTONS ARE VISIBLE
+   ======================================== */
+
+/* Light mode buttons */
+body:not(.dark-mode) .btn-primary {
+  background: var(--primary-color) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(var(--primary-color-rgb), 0.4) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+body:not(.dark-mode) .btn-primary:hover {
+  box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.6) !important;
+  transform: translateY(-2px) !important;
+}
+
+body:not(.dark-mode) .btn-secondary {
+  background: rgba(255, 255, 255, 0.4) !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  border: 2px solid rgba(255, 255, 255, 0.5) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+}
+
+body:not(.dark-mode) .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.55) !important;
+  transform: translateY(-2px) !important;
+}
+
+body:not(.dark-mode) .login-button,
+body:not(.dark-mode) .register-button {
+  background: var(--primary-color) !important;
+  color: white !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(var(--primary-color-rgb), 0.4) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+body:not(.dark-mode) .login-button:hover:not(:disabled),
+body:not(.dark-mode) .register-button:hover:not(:disabled) {
+  box-shadow: 0 6px 20px rgba(var(--primary-color-rgb), 0.6) !important;
+}
+
+/* Dark mode buttons */
+.dark-mode .btn-primary {
+  background: var(--primary-color) !important;
+  color: white !important;
+}
+
+.dark-mode .btn-secondary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark-mode .login-button,
+.dark-mode .register-button {
+  background: var(--primary-color) !important;
+  color: white !important;
+}
+
+/* ========================================
+   ERROR MESSAGES VISIBILITY
+   ======================================== */
+
+.error-message {
+  color: #dc2626 !important;
+  background: #fee2e2 !important;
+}
+
+.dark-mode .error-message {
+  color: #fca5a5 !important;
+  background: rgba(220, 38, 38, 0.2) !important;
+}
+
+/* ========================================
+   ENSURE ICONS ARE VISIBLE
+   ======================================== */
+
+body:not(.dark-mode) .pi {
+  color: inherit !important;
+}
+
+.dark-mode .pi {
+  color: inherit !important;
+}
+
+/* Light mode icon colors */
+body:not(.dark-mode) .feature-icon i,
+body:not(.dark-mode) .stat-icon i {
+  color: white !important;
+}
+
+/* Dark mode icon colors */
+.dark-mode .feature-icon i,
+.dark-mode .stat-icon i {
+  color: white !important;
+}
+
+
+/* Remove the ::before pseudo-element for top border only */
+.login-card,
+.register-card {
+  position: relative;
+  overflow: visible;
+}

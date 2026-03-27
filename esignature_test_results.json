@@ -1,0 +1,86 @@
+[
+  {
+    "test": "User Setup",
+    "status": "\u2705 PASS",
+    "message": "Test user retrieved: esig_test_user",
+    "details": null,
+    "timestamp": "2026-03-17T14:44:34.445257"
+  },
+  {
+    "test": "Direct Authorization Creation",
+    "status": "\u274c FAIL",
+    "message": "Failed: UNIQUE constraint failed: signatory_authorizations.user_id, signatory_authorizations.signatory_name",
+    "details": null,
+    "timestamp": "2026-03-17T14:44:39.186793"
+  },
+  {
+    "test": "Signature Setup Endpoint",
+    "status": "\u274c FAIL",
+    "message": "No setup tokens available",
+    "details": null,
+    "timestamp": "2026-03-17T14:44:39.190745"
+  },
+  {
+    "test": "Save Signature Endpoint",
+    "status": "\u274c FAIL",
+    "message": "No setup tokens available",
+    "details": null,
+    "timestamp": "2026-03-17T14:44:39.191037"
+  },
+  {
+    "test": "Token Validation Method",
+    "status": "\u2705 PASS",
+    "message": "Method executed without NameError, returned: True",
+    "details": "Token: GQ-_bfdb1F1GG_5sN7NT...",
+    "timestamp": "2026-03-17T14:44:39.195313"
+  },
+  {
+    "test": "Expired Token Handling",
+    "status": "\u274c FAIL",
+    "message": "Test failed: UNIQUE constraint failed: signatory_authorizations.user_id, signatory_authorizations.signatory_name",
+    "details": null,
+    "timestamp": "2026-03-17T14:44:39.207011"
+  },
+  {
+    "test": "Invalid Token Handling",
+    "status": "\u2705 PASS",
+    "message": "Invalid token correctly rejected",
+    "details": "Response: {'error': 'Invalid setup link. Please contact your administrator.'}",
+    "timestamp": "2026-03-17T14:44:41.252125"
+  },
+  {
+    "test": "Signal Workflow",
+    "status": "\u2705 PASS",
+    "message": "Signal created authorization with setup token",
+    "details": "Auth ID: 42, Token: fkV5NWH_v6PhRczjElq0...",
+    "timestamp": "2026-03-17T14:44:46.515303"
+  },
+  {
+    "test": "File Creation Verification",
+    "status": "\u2705 PASS",
+    "message": "Found 18 signature files",
+    "details": "Files: ['cc_amigable_jr_signature.png', 'cc_amigable_jr_signature_nAoaFWS.png', 'db_esmade_jr_signature.png', 'db_esmade_jr_signature_Z2ALDzV.png', 'direct_test_final_signature.png']...",
+    "timestamp": "2026-03-17T14:44:46.516646"
+  },
+  {
+    "test": "Multiple Signatories",
+    "status": "\u2705 PASS",
+    "message": "Created 3 authorizations successfully",
+    "details": "Signatories: ['MULTI TEST 1', 'MULTI TEST 2', 'MULTI TEST 3']",
+    "timestamp": "2026-03-17T14:44:47.240265"
+  },
+  {
+    "test": "Edge Cases",
+    "status": "\u274c FAIL",
+    "message": "Only passed 0/3 edge case tests",
+    "details": null,
+    "timestamp": "2026-03-17T14:44:47.248375"
+  },
+  {
+    "test": "Cleanup",
+    "status": "\u2705 PASS",
+    "message": "Test data cleaned up successfully",
+    "details": null,
+    "timestamp": "2026-03-17T14:44:47.828311"
+  }
+]

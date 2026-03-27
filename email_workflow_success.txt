@@ -1,0 +1,4 @@
+SUCCESS: Email workflow completed for DEMO SIGNATORY at 2026-03-17 07:20:40.457257+00:00
+Authorization ID: 60
+Setup Token: Ui6DT-2Vqsq18MszSeR5FD2k9-PUxYvswBoEfrZdT2A
+Email: demo@example.com
