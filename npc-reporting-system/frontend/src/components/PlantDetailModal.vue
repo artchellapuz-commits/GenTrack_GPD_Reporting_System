@@ -8,7 +8,7 @@
             <i class="pi pi-arrow-left"></i>
           </button>
           <div class="plant-info">
-            <h2>{{ plant.name }}</h2>
+            <h2>{{ simplifyPlantName(plant.name) }}</h2>
             <p>{{ plant.location }} • {{ plant.capacity_mw }} MW</p>
           </div>
         </div>
@@ -470,6 +470,11 @@ export default {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
+    },
+
+    simplifyPlantName(name) {
+      if (!name) return '';
+      return name.replace(/ Hydroelectric Power Plant/gi, '');
     },
   },
   beforeUnmount() {
