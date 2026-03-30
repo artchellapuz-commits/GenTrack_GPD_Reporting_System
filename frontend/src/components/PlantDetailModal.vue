@@ -8,7 +8,7 @@
             <i class="pi pi-arrow-left"></i>
           </button>
           <div class="plant-info">
-            <h2>{{ plant.name }}</h2>
+            <h2>{{ simplifyPlantName(plant.name) }}</h2>
             <p>{{ plant.location }} • {{ plant.capacity_mw }} MW</p>
           </div>
         </div>
@@ -329,12 +329,26 @@ export default {
             animation: false,
             plugins: {
               legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                      label += new Intl.NumberFormat('en-US').format(context.parsed.y) + ' kWh';
+                    }
+                    return label;
+                  }
+                }
+              }
             },
             scales: {
               y: {
                 beginAtZero: true,
                 ticks: {
-                  callback: (value) => value.toLocaleString(),
+                  callback: (value) => new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(value),
                 },
               },
             },
@@ -372,6 +386,20 @@ export default {
             animation: false,
             plugins: {
               legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                      label += context.parsed.y.toFixed(2) + '%';
+                    }
+                    return label;
+                  }
+                }
+              }
             },
             scales: {
               y: {
@@ -415,12 +443,26 @@ export default {
             animation: false,
             plugins: {
               legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    let label = context.dataset.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                      label += new Intl.NumberFormat('en-US').format(context.parsed.y) + ' kWh';
+                    }
+                    return label;
+                  }
+                }
+              }
             },
             scales: {
               y: {
                 beginAtZero: true,
                 ticks: {
-                  callback: (value) => value.toLocaleString(),
+                  callback: (value) => new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(value),
                 },
               },
             },
@@ -470,6 +512,11 @@ export default {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       });
+    },
+
+    simplifyPlantName(name) {
+      if (!name) return '';
+      return name.replace(/ Hydroelectric Power Plant/gi, '');
     },
   },
   beforeUnmount() {

@@ -95,37 +95,68 @@
       <div class="z-main-content">
         <!-- Left Column: Charts -->
         <div class="z-charts-column">
-          <!-- Middle Row: Line Chart + Pie Chart -->
-          <div class="z-middle-row">
-            <div class="card glass-card z-line-chart animate-slide-up" style="animation-delay: 0.5s">
-              <div class="card-header">
-                <h3 class="card-title"><i class="pi pi-chart-line"></i> Generation Trend</h3>
+          <!-- Trends Row 1: Monthly Generation Trend -->
+          <div class="z-trend-row">
+            <div class="card glass-card full-width animate-slide-up" style="animation-delay: 0.5s">
+              <div class="card-header flex justify-between items-center">
+                <h3 class="card-title"><i class="pi pi-chart-line"></i> Monthly Generation Trend</h3>
+                <div class="flex gap-2">
+                  <select v-model="sortBy" @change="sortPlants" class="trend-select">
+                    <option value="name">Sort by: Name</option>
+                    <option value="generation">Sort by: Generation</option>
+                    <option value="capacityFactor">Sort by: Capacity Factor</option>
+                    <option value="availability">Sort by: Availability</option>
+                  </select>
+                  <select v-model="trendSelectedPlant" @change="fetchMonthlyTrendData" class="trend-select">
+                    <option v-for="plant in plantsData" :key="plant.code" :value="plant.code">{{ simplifyPlantName(plant.name) }}</option>
+                  </select>
+                  <select v-model="trendSelectedYear" @change="fetchMonthlyTrendData" class="trend-select">
+                    <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+                  </select>
+                </div>
               </div>
               <div class="card-body chart-container">
-                <LineChart v-if="plantsData.length" :data="generationTrendData" :options="lineChartOptions" />
+                <BarChart v-if="plantsData.length" :data="generationTrendData" :options="barChartOptions" />
                 <div v-else class="empty-chart">No data available</div>
               </div>
             </div>
-            
+          </div>
+
+          <!-- Trends Row 2: Monthly Availability Trend -->
+          <div class="z-trend-row mt-4">
+            <div class="card glass-card full-width animate-slide-up" style="animation-delay: 0.7s">
+              <div class="card-header flex justify-between items-center">
+                <h3 class="card-title"><i class="pi pi-chart-bar"></i> Monthly Availability Trend</h3>
+                <div class="flex gap-2">
+                  <select v-model="sortBy" @change="sortPlants" class="trend-select">
+                    <option value="name">Sort by: Name</option>
+                    <option value="generation">Sort by: Generation</option>
+                    <option value="capacityFactor">Sort by: Capacity Factor</option>
+                    <option value="availability">Sort by: Availability</option>
+                  </select>
+                  <select v-model="trendSelectedPlant" @change="fetchMonthlyTrendData" class="trend-select">
+                    <option v-for="plant in plantsData" :key="plant.code" :value="plant.code">{{ simplifyPlantName(plant.name) }}</option>
+                  </select>
+                  <select v-model="trendSelectedYear" @change="fetchMonthlyTrendData" class="trend-select">
+                    <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
+                  </select>
+                </div>
+              </div>
+              <div class="card-body chart-container">
+                <BarChart v-if="plantsData.length" :data="availabilityTrendData" :options="barChartOptionsPercent" />
+                <div v-else class="empty-chart">No data available</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pie Charts Row -->
+          <div class="z-pie-row mt-4">
             <div class="card glass-card z-pie-chart animate-slide-up" style="animation-delay: 0.6s">
               <div class="card-header">
                 <h3 class="card-title"><i class="pi pi-chart-pie"></i> Plant Capacity</h3>
               </div>
               <div class="card-body chart-container">
                 <PieChart v-if="plantsData.length" :data="plantCapacityData" :options="pieChartOptions" />
-                <div v-else class="empty-chart">No data available</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bottom Row: Line Chart + Pie Chart -->
-          <div class="z-bottom-row">
-            <div class="card glass-card z-line-chart animate-slide-up" style="animation-delay: 0.7s">
-              <div class="card-header">
-                <h3 class="card-title"><i class="pi pi-chart-bar"></i> Availability Factor Trend</h3>
-              </div>
-              <div class="card-body chart-container">
-                <LineChart v-if="plantsData.length" :data="availabilityTrendData" :options="lineChartOptions" />
                 <div v-else class="empty-chart">No data available</div>
               </div>
             </div>
@@ -190,7 +221,7 @@
                       <td class="font-medium">
                         <div class="flex items-center gap-2">
                           <i v-if="isFavorite(plant.code)" class="pi pi-star-fill text-yellow-400 text-sm"></i>
-                          {{ plant.name }} ({{ plant.code }})
+                          {{ simplifyPlantName(plant.name) }} ({{ plant.code }})
                         </div>
                       </td>
                       <td>{{ formatNumber(plant.generation) }}</td>
@@ -243,7 +274,7 @@
               <div class="plant-list">
                 <label v-for="plant in plantsData" :key="plant.code" class="checkbox-label">
                   <input type="checkbox" :value="plant.code" v-model="selectedPlantsFilter" @change="applyFilters" />
-                  {{ plant.name }}
+                  {{ simplifyPlantName(plant.name) }}
                 </label>
               </div>
             </div>
@@ -346,7 +377,7 @@
               :key="plant.code"
               class="comparison-column data-column"
             >
-              <div class="plant-name">{{ plant.name }}</div>
+              <div class="plant-name">{{ simplifyPlantName(plant.name) }}</div>
               <div class="plant-code-badge">{{ plant.code }}</div>
               <div class="metric-value">{{ getPlantCapacity(plant.code) }}</div>
               <div class="metric-value highlight">{{ formatNumber(plant.generation) }}</div>
@@ -482,7 +513,7 @@ import {
   ArcElement,
   Filler
 } from 'chart.js';
-import { Line, Pie } from 'vue-chartjs';
+import { Line, Pie, Bar } from 'vue-chartjs';
 
 ChartJS.register(
   CategoryScale,
@@ -503,7 +534,8 @@ export default {
     PlantDetailModal,
     AppLayout,
     LineChart: Line,
-    PieChart: Pie
+    PieChart: Pie,
+    BarChart: Bar
   },
   data() {
     return {
@@ -534,49 +566,208 @@ export default {
       showComparisonModal: false,
       exportingPlant: null,
       
+      // Monthly Trend State
+      trendSelectedPlant: null,
+      trendSelectedYear: new Date().getFullYear(),
+      trendMonthlyData: Array(12).fill(0),
+      trendMonthlyAvailabilityData: Array(12).fill(0),
+      
       // Chart Options
-      lineChartOptions: {
+      barChartOptions: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 1200,
+          easing: 'easeOutQuart'
+        },
+        hover: {
+          mode: 'index',
+          intersect: false
+        },
         plugins: {
           legend: {
-            position: 'bottom',
+            display: false
           },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#1e293b',
+            bodyColor: '#475569',
+            borderColor: '#e2e8f0',
+            borderWidth: 1,
+            padding: 12,
+            boxPadding: 6,
+            usePointStyle: true,
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('en-US').format(context.parsed.y) + ' kWh';
+                }
+                return label;
+              }
+            }
+          }
         },
         scales: {
           y: {
-            beginAtZero: true
+            beginAtZero: true,
+            border: { display: false },
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 11, family: "'Inter', sans-serif" },
+              callback: function(value) {
+                return new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(value);
+              }
+            },
+            grid: {
+              color: 'rgba(226, 232, 240, 0.6)',
+              drawTicks: false
+            }
+          },
+          x: {
+            border: { display: false },
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 11, family: "'Inter', sans-serif" }
+            },
+            grid: {
+              display: false
+            }
           }
         }
       },
+      barChartOptionsPercent: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 1200,
+          easing: 'easeOutQuart'
+        },
+        hover: {
+          mode: 'index',
+          intersect: false
+        },
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#1e293b',
+            bodyColor: '#475569',
+            borderColor: '#e2e8f0',
+            borderWidth: 1,
+            padding: 12,
+            boxPadding: 6,
+            usePointStyle: true,
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += context.parsed.y.toFixed(2) + '%';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            border: { display: false },
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 11, family: "'Inter', sans-serif" },
+              callback: function(value) {
+                return value + '%';
+              }
+            },
+            grid: {
+              color: 'rgba(226, 232, 240, 0.6)',
+              drawTicks: false
+            }
+          },
+          x: {
+            border: { display: false },
+            ticks: {
+              color: '#94a3b8',
+              font: { size: 11, family: "'Inter', sans-serif" }
+            },
+            grid: {
+              display: false
+            }
+          }
+        }
+      },
+      lineChartOptions: {
       pieChartOptions: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
           legend: {
             position: 'right',
+            labels: {
+              usePointStyle: true,
+              padding: 20
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed !== null) {
+                  if (context.dataset.label === 'Capacity (MW)') {
+                    label += new Intl.NumberFormat('en-US').format(context.parsed) + ' MW';
+                  } else {
+                    label += new Intl.NumberFormat('en-US').format(context.parsed) + ' kWh';
+                  }
+                }
+                return label;
+              }
+            }
           }
         }
       }
     };
   },
   computed: {
+    availableYears() {
+      const currentYear = new Date().getFullYear();
+      return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
+    },
     generationTrendData() {
-      const labels = this.filteredPlants.map(p => p.name.replace(/ Hydroelectric Power Plant/gi, ''));
-      const data = this.filteredPlants.map(p => p.generation);
+      const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       
       return {
         labels,
         datasets: [
           {
             label: 'Generation (kWh)',
-            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            backgroundColor: (context) => {
+              const chart = context.chart;
+              const {ctx, chartArea} = chart;
+              if (!chartArea) return null;
+              const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+              gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+              gradient.addColorStop(1, 'rgba(59, 130, 246, 0.9)');
+              return gradient;
+            },
+            hoverBackgroundColor: 'rgba(59, 130, 246, 1)',
             borderColor: '#3b82f6',
-            pointBackgroundColor: '#3b82f6',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true,
-            data
+            borderWidth: 0,
+            borderRadius: 6,
+            barThickness: 24,
+            data: this.trendMonthlyData
           }
         ]
       };
@@ -594,27 +785,37 @@ export default {
           {
             label: 'Capacity (MW)',
             backgroundColor: backgroundColors.slice(0, labels.length),
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            hoverOffset: 4,
             data
           }
         ]
       };
     },
     availabilityTrendData() {
-      const labels = this.filteredPlants.map(p => p.name.replace(/ Hydroelectric Power Plant/gi, ''));
-      const data = this.filteredPlants.map(p => p.availability);
+      const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       
       return {
         labels,
         datasets: [
           {
             label: 'Availability (%)',
-            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            backgroundColor: (context) => {
+              const chart = context.chart;
+              const {ctx, chartArea} = chart;
+              if (!chartArea) return null;
+              const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+              gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+              gradient.addColorStop(1, 'rgba(16, 185, 129, 0.9)');
+              return gradient;
+            },
+            hoverBackgroundColor: 'rgba(16, 185, 129, 1)',
             borderColor: '#10b981',
-            pointBackgroundColor: '#10b981',
-            borderWidth: 2,
-            tension: 0.4,
-            fill: true,
-            data
+            borderWidth: 0,
+            borderRadius: 6,
+            barThickness: 24,
+            data: this.trendMonthlyAvailabilityData
           }
         ]
       };
@@ -632,6 +833,9 @@ export default {
           {
             label: 'Generation Output',
             backgroundColor: backgroundColors.slice(0, labels.length),
+            borderColor: '#ffffff',
+            borderWidth: 2,
+            hoverOffset: 4,
             data
           }
         ]
@@ -659,11 +863,66 @@ export default {
         // Load recent uploads
         await this.loadRecentUploads();
         
+        // Load monthly trend data
+        await this.fetchMonthlyTrendData();
+        
         this.lastUpdated = new Date();
       } catch (error) {
         console.error('Error loading dashboard:', error);
       } finally {
         this.loading = false;
+      }
+    },
+    
+    async fetchMonthlyTrendData() {
+      if (!this.trendSelectedPlant) {
+        if (this.plantsData.length > 0) {
+          this.trendSelectedPlant = this.plantsData[0].code;
+        } else {
+          return;
+        }
+      }
+      
+      try {
+        const year = this.trendSelectedYear;
+        const startDate = `${year}-01-01`;
+        const endDate = `${year}-12-31`;
+        
+        // Fetch reports for the selected plant and year
+        const response = await api.getGenerationReports({
+          plant_code: this.trendSelectedPlant,
+          start_date: startDate,
+          end_date: endDate,
+          page_size: 1000 // Get enough records to cover the whole year
+        });
+        
+        const reports = response.data.results || response.data;
+        
+        // Aggregate by month
+        const monthlyGenData = Array(12).fill(0);
+        const monthlyAvailSum = Array(12).fill(0);
+        const monthlyAvailCount = Array(12).fill(0);
+        
+        reports.forEach(report => {
+          const date = new Date(report.report_date);
+          const month = date.getMonth(); // 0 = Jan, 11 = Dec
+          
+          // Sum generation
+          monthlyGenData[month] += parseFloat(report.generation_kwh || 0);
+          
+          // Track availability factor for averaging
+          if (report.availability_factor !== undefined && report.availability_factor !== null) {
+            monthlyAvailSum[month] += parseFloat(report.availability_factor);
+            monthlyAvailCount[month]++;
+          }
+        });
+        
+        this.trendMonthlyData = monthlyGenData;
+        this.trendMonthlyAvailabilityData = monthlyAvailSum.map((sum, i) => 
+          monthlyAvailCount[i] > 0 ? sum / monthlyAvailCount[i] : 0
+        );
+      } catch (error) {
+        console.error('Error fetching monthly trend data:', error);
       }
     },
     
@@ -843,6 +1102,11 @@ export default {
         maximumFractionDigits: 2,
       });
     },
+
+    simplifyPlantName(name) {
+      if (!name) return '';
+      return name.replace(/ Hydroelectric Power Plant/gi, '');
+    },
     
     formatDate(dateString) {
       const date = new Date(dateString);
@@ -915,7 +1179,7 @@ export default {
     },
     
     sortPlants() {
-      this.filteredPlants.sort((a, b) => {
+      const sortFn = (a, b) => {
         let aVal = a[this.sortBy];
         let bVal = b[this.sortBy];
         
@@ -929,7 +1193,10 @@ export default {
         } else {
           return aVal < bVal ? 1 : -1;
         }
-      });
+      };
+
+      this.filteredPlants.sort(sortFn);
+      this.plantsData.sort(sortFn);
     },
     
     toggleSortOrder() {
@@ -1143,7 +1410,11 @@ export default {
   gap: 1.5rem;
 }
 
-.z-middle-row, .z-bottom-row {
+.z-trend-row {
+  width: 100%;
+}
+
+.z-pie-row {
   display: flex;
   gap: 1.5rem;
 }
@@ -1169,6 +1440,22 @@ export default {
 .empty-chart {
   color: #94a3b8;
   font-style: italic;
+}
+
+.trend-select {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background-color: white;
+  font-size: 0.875rem;
+  color: #475569;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.trend-select:focus {
+  border-color: #3b82f6;
 }
 
 .z-filters-column {
