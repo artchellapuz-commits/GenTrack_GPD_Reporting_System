@@ -515,6 +515,8 @@ import {
 } from 'chart.js';
 import { Line, Pie, Bar } from 'vue-chartjs';
 
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -525,7 +527,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ChartDataLabels
 );
 
 export default {
@@ -585,6 +588,9 @@ export default {
           intersect: false,
         },
         plugins: {
+          datalabels: {
+            display: false
+          },
           legend: {
             display: false
           },
@@ -651,6 +657,9 @@ export default {
           intersect: false,
         },
         plugins: {
+          datalabels: {
+            display: false
+          },
           legend: {
             display: false
           },
@@ -710,6 +719,9 @@ export default {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+          datalabels: {
+            display: false
+          },
           legend: {
             position: 'bottom',
           },
@@ -743,6 +755,9 @@ export default {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+          datalabels: {
+            display: false
+          },
           legend: {
             position: 'bottom',
           },
@@ -785,6 +800,22 @@ export default {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+          datalabels: {
+            color: '#fff',
+            font: {
+              weight: 'bold',
+              size: 11
+            },
+            formatter: (value, ctx) => {
+              let sum = 0;
+              let dataArr = ctx.chart.data.datasets[0].data;
+              dataArr.map(data => {
+                sum += data;
+              });
+              let percentage = (value * 100 / sum).toFixed(1) + "%";
+              return percentage;
+            }
+          },
           legend: {
             position: 'right',
           }

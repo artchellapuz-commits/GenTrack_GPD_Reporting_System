@@ -515,6 +515,8 @@ import {
 } from 'chart.js';
 import { Line, Pie, Bar } from 'vue-chartjs';
 
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -525,7 +527,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
+  ChartDataLabels
 );
 
 export default {
@@ -585,6 +588,9 @@ export default {
           intersect: false
         },
         plugins: {
+          datalabels: {
+            display: false
+          },
           legend: {
             display: false
           },
@@ -651,6 +657,9 @@ export default {
           intersect: false
         },
         plugins: {
+          datalabels: {
+            display: false
+          },
           legend: {
             display: false
           },
@@ -707,10 +716,107 @@ export default {
         }
       },
       lineChartOptions: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          datalabels: {
+            display: false
+          },
+          legend: {
+            position: 'bottom',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('en-US').format(context.parsed.y) + ' kWh';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return new Intl.NumberFormat('en-US', { notation: 'compact', compactDisplay: 'short' }).format(value);
+              }
+            }
+          }
+        }
+      },
+      lineChartOptionsPercent: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          datalabels: {
+            display: false
+          },
+          legend: {
+            position: 'bottom',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += context.parsed.y.toFixed(2) + '%';
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            ticks: {
+              callback: function(value) {
+                return value + '%';
+              }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)',
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      },
       pieChartOptions: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+          datalabels: {
+            color: '#fff',
+            font: {
+              weight: 'bold',
+              size: 11,
+              family: "'Inter', sans-serif"
+            },
+            formatter: (value, ctx) => {
+              let sum = 0;
+              let dataArr = ctx.chart.data.datasets[0].data;
+              dataArr.map(data => {
+                sum += data;
+              });
+              let percentage = (value * 100 / sum).toFixed(1) + "%";
+              return percentage;
+            }
+          },
           legend: {
             position: 'right',
             labels: {
