@@ -99,8 +99,22 @@
           <div class="z-trend-row">
             <div class="card glass-card full-width animate-slide-up" style="animation-delay: 0.5s">
               <div class="card-header flex justify-between items-center">
-                <h3 class="card-title"><i class="pi pi-chart-line"></i> Monthly Generation Trend</h3>
+                <h3 class="card-title"><i class="pi pi-chart-line"></i> Generation Performance Trend</h3>
                 <div class="flex gap-2">
+                  <div v-if="isTargetSet" class="legend-indicator flex items-center gap-2 mr-4">
+                    <span class="flex items-center gap-1"><span class="dot-bar"></span> Actual</span>
+                    <span class="flex items-center gap-1"><span class="dot-line"></span> Target</span>
+                  </div>
+                  <div class="view-mode-toggle mr-2">
+                    <button 
+                      @click="openTargetModal" 
+                      class="set-target-btn"
+                      title="Set Target Capacity Factor"
+                    >
+                      <i class="pi pi-cog"></i>
+                      <span>Set Target</span>
+                    </button>
+                  </div>
                   <select v-model="sortBy" @change="sortPlants" class="trend-select">
                     <option value="name">Sort by: Name</option>
                     <option value="generation">Sort by: Generation</option>
@@ -122,12 +136,76 @@
             </div>
           </div>
 
+          <!-- Trends Row 1.5: Actual vs Target Comparison -->
+          <div v-if="isTargetSet" class="z-trend-row mt-4">
+            <div class="card glass-card full-width animate-slide-up" style="animation-delay: 0.6s">
+              <div class="card-header flex justify-between items-center">
+                <h3 class="card-title"><i class="pi pi-chart-bar"></i> Total Actual vs Target</h3>
+              </div>
+              <div class="card-body">
+                <div v-if="plantsData.length" class="professional-bar-chart">
+                  <!-- Target Row -->
+                  <div class="chart-row">
+                    <div class="row-header">
+                      <div class="indicator-dot target-dot"></div>
+                      <span class="row-label">TARGET</span>
+                    </div>
+                    <div class="chart-area">
+                      <div class="bar-background">
+                        <div 
+                          class="bar-fill target-fill" 
+                          :style="{ width: targetBarWidth + '%' }"
+                        ></div>
+                      </div>
+                      <div class="value-display target-value">{{ formatNumber(totalTarget) }}</div>
+                    </div>
+                  </div>
+                  
+                  <!-- Actual Row -->
+                  <div class="chart-row">
+                    <div class="row-header">
+                      <div class="indicator-dot actual-dot"></div>
+                      <span class="row-label">ACTUAL</span>
+                    </div>
+                    <div class="chart-area">
+                      <div class="bar-background">
+                        <div 
+                          class="bar-fill actual-fill" 
+                          :style="{ width: actualBarWidth + '%' }"
+                        ></div>
+                      </div>
+                      <div class="value-display actual-value">{{ formatNumber(totalActual) }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="empty-chart">No data available</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Trends Row 2: Monthly Availability Trend -->
           <div class="z-trend-row mt-4">
             <div class="card glass-card full-width animate-slide-up" style="animation-delay: 0.7s">
               <div class="card-header flex justify-between items-center">
-                <h3 class="card-title"><i class="pi pi-chart-bar"></i> Monthly Availability Trend</h3>
+                <h3 class="card-title">
+                  <i class="pi pi-chart-bar"></i> 
+                  {{ availabilityViewMode === 'monthly' ? 'Monthly' : 'Daily' }} Availability Trend
+                </h3>
                 <div class="flex gap-2">
+                  <div class="view-mode-toggle mr-2">
+                    <button 
+                      @click="availabilityViewMode = 'monthly'" 
+                      :class="['toggle-btn', { active: availabilityViewMode === 'monthly' }]"
+                    >
+                      Monthly
+                    </button>
+                    <button 
+                      @click="availabilityViewMode = 'daily'" 
+                      :class="['toggle-btn', { active: availabilityViewMode === 'daily' }]"
+                    >
+                      Daily
+                    </button>
+                  </div>
                   <select v-model="sortBy" @change="sortPlants" class="trend-select">
                     <option value="name">Sort by: Name</option>
                     <option value="generation">Sort by: Generation</option>
@@ -342,6 +420,48 @@
         </div>
       </div>
 
+    <!-- Set Target Modal -->
+    <div v-if="showTargetModal" class="modal-overlay" @click="showTargetModal = false">
+      <div class="target-modal" @click.stop>
+        <div class="modal-header">
+          <div class="modal-title">
+            <i class="pi pi-cog"></i>
+            <span>Set Performance Target</span>
+          </div>
+          <button @click="showTargetModal = false" class="btn-close-modal">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="target-form-group">
+            <label for="targetCF">Target Capacity Factor (%)</label>
+            <div class="input-with-unit">
+              <input 
+                id="targetCF"
+                type="number" 
+                v-model.number="tempTargetCapacityFactor" 
+                class="target-input" 
+                min="0" 
+                max="100" 
+                step="0.1"
+                placeholder="85"
+              />
+              <span class="input-unit">%</span>
+            </div>
+            <p class="input-help">This target affects the Generation Performance Trend and the Actual vs Target Comparison charts.</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button @click="showTargetModal = false" class="btn-cancel">
+            Cancel
+          </button>
+          <button @click="saveTarget" class="btn-apply-target">
+            Apply Target
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Plant Detail Modal -->
     <PlantDetailModal
       :isOpen="showModal"
@@ -500,6 +620,8 @@ import pdfExporter from '../utils/pdfExport';
 import favoritesManager from '../utils/favorites';
 import keyboardShortcuts from '../utils/keyboardShortcuts';
 
+import { isAdmin, isManagerOrAbove } from '../utils/auth';
+
 import {
   Chart as ChartJS,
   Title,
@@ -565,6 +687,12 @@ export default {
       refreshInterval: null,
       lastUpdated: null,
       comparisonMode: false,
+      isAdminUser: false,
+      isManagerOrAboveUser: false,
+      showTargetModal: false,
+      isTargetSet: false,
+      tempTargetCapacityFactor: 85,
+      targetCapacityFactor: 85, // Default 85% Target CF
       selectedForComparison: [],
       showComparisonModal: false,
       exportingPlant: null,
@@ -574,6 +702,10 @@ export default {
       trendSelectedYear: new Date().getFullYear(),
       trendMonthlyData: Array(12).fill(0),
       trendMonthlyAvailabilityData: Array(12).fill(0),
+      trendMonthlyTargetData: Array(12).fill(0),
+      availabilityViewMode: 'monthly',
+      trendDailyLabels: [],
+      trendDailyAvailabilityData: [],
       
       // Chart Options
       barChartOptions: {
@@ -592,7 +724,30 @@ export default {
             display: false
           },
           legend: {
-            display: false
+            display: true,
+            position: 'top',
+            align: 'end',
+            labels: {
+              usePointStyle: true,
+              font: {
+                size: 12,
+                weight: '500'
+              },
+              color: '#374151',
+              padding: 15,
+              generateLabels: function(chart) {
+                const datasets = chart.data.datasets;
+                return datasets.map((dataset, index) => ({
+                  text: dataset.label,
+                  fillStyle: dataset.type === 'line' ? dataset.borderColor : dataset.backgroundColor,
+                  strokeStyle: dataset.type === 'line' ? dataset.borderColor : dataset.borderColor,
+                  lineWidth: dataset.type === 'line' ? 3 : 1,
+                  pointStyle: dataset.type === 'line' ? 'line' : 'rect',
+                  hidden: !chart.isDatasetVisible(index),
+                  datasetIndex: index
+                }));
+              }
+            }
           },
           tooltip: {
             backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -610,7 +765,11 @@ export default {
                   label += ': ';
                 }
                 if (context.parsed.y !== null) {
-                  label += new Intl.NumberFormat('en-US').format(context.parsed.y) + ' kWh';
+                  if (label.toLowerCase().includes('generation')) {
+                    label += new Intl.NumberFormat('en-US').format(context.parsed.y) + ' kWh';
+                  } else {
+                    label += new Intl.NumberFormat('en-US').format(context.parsed.y);
+                  }
                 }
                 return label;
               }
@@ -649,8 +808,15 @@ export default {
         responsive: true,
         maintainAspectRatio: false,
         animation: {
-          duration: 1000,
-          easing: 'easeOutQuart'
+          duration: 1500, // Increase duration for a slower animation
+          easing: 'easeOutQuart', // Smooth easing out
+          delay: (context) => {
+            let delay = 0;
+            if (context.type === 'data' && context.mode === 'default') {
+              delay = context.dataIndex * 50; // Stagger animation for each bar
+            }
+            return delay;
+          }
         },
         interaction: {
           mode: 'index',
@@ -831,19 +997,55 @@ export default {
     generationTrendData() {
       const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       
+      const datasets = [
+        {
+          type: 'bar',
+          label: 'Actual Generation (kWh)',
+          backgroundColor: 'rgba(59, 130, 246, 0.8)',
+          borderColor: '#3b82f6',
+          borderWidth: 1,
+          borderRadius: 4,
+          data: this.trendMonthlyData,
+          order: 2
+        }
+      ];
+
+      if (this.isTargetSet) {
+        datasets.push({
+          type: 'line',
+          label: `Target Generation (${this.targetCapacityFactor}% CF)`,
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245, 158, 11, 0.1)',
+          borderWidth: 3,
+          borderDash: [5, 5],
+          pointRadius: 4,
+          pointBackgroundColor: '#f59e0b',
+          tension: 0.4,
+          data: this.trendMonthlyTargetData,
+          order: 1
+        });
+      }
+
       return {
         labels,
-        datasets: [
-          {
-            label: 'Generation (kWh)',
-            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-            borderColor: '#3b82f6',
-            borderWidth: 1,
-            borderRadius: 4,
-            data: this.trendMonthlyData
-          }
-        ]
+        datasets
       };
+    },
+    totalTarget() {
+      return this.trendMonthlyTargetData.reduce((sum, val) => sum + val, 0);
+    },
+    totalActual() {
+      return this.trendMonthlyData.reduce((sum, val) => sum + val, 0);
+    },
+    maxChartValue() {
+      const max = Math.max(this.totalTarget, this.totalActual);
+      return max > 0 ? max * 1.35 : 1; // Add 35% padding so text labels fit inside container
+    },
+    targetBarWidth() {
+      return (this.totalTarget / this.maxChartValue) * 100;
+    },
+    actualBarWidth() {
+      return (this.totalActual / this.maxChartValue) * 100;
     },
     plantCapacityData() {
       const labels = this.filteredPlants.map(p => p.name.replace(/ Hydroelectric Power Plant/gi, ''));
@@ -867,7 +1069,9 @@ export default {
       };
     },
     availabilityTrendData() {
-      const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const isMonthly = this.availabilityViewMode === 'monthly';
+      const labels = isMonthly ? ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] : this.trendDailyLabels;
+      const data = isMonthly ? this.trendMonthlyAvailabilityData : this.trendDailyAvailabilityData;
       
       return {
         labels,
@@ -878,7 +1082,7 @@ export default {
             borderColor: '#10b981',
             borderWidth: 1,
             borderRadius: 4,
-            data: this.trendMonthlyAvailabilityData
+            data: data
           }
         ]
       };
@@ -901,6 +1105,10 @@ export default {
         ]
       };
     }
+  },
+  created() {
+    this.isAdminUser = isAdmin();
+    this.isManagerOrAboveUser = isManagerOrAbove();
   },
   mounted() {
     this.loadDashboardData();
@@ -963,6 +1171,17 @@ export default {
         const monthlyAvailSum = Array(12).fill(0);
         const monthlyAvailCount = Array(12).fill(0);
         
+        // Target generation: Accurate calculation based on exact days in each month and target capacity factor
+        const plantCapacity = this.getPlantCapacity(this.trendSelectedPlant);
+        const monthlyTargetData = Array(12).fill(0).map((_, month) => {
+          const daysInMonth = new Date(year, month + 1, 0).getDate(); // Get exact days for the specific month/year
+          return plantCapacity * 1000 * 24 * daysInMonth * (this.targetCapacityFactor / 100); 
+        });
+        this.trendMonthlyTargetData = monthlyTargetData;
+
+        // Daily data for availability
+        const dailyAvailMap = {};
+        
         reports.forEach(report => {
           const date = new Date(report.report_date);
           const month = date.getMonth(); // 0 = Jan, 11 = Dec
@@ -974,6 +1193,14 @@ export default {
           if (report.availability_factor !== undefined && report.availability_factor !== null) {
             monthlyAvailSum[month] += parseFloat(report.availability_factor);
             monthlyAvailCount[month]++;
+            
+            // Daily tracking
+            const dateStr = report.report_date;
+            if (!dailyAvailMap[dateStr]) {
+              dailyAvailMap[dateStr] = { sum: 0, count: 0 };
+            }
+            dailyAvailMap[dateStr].sum += parseFloat(report.availability_factor);
+            dailyAvailMap[dateStr].count++;
           }
         });
         
@@ -981,6 +1208,14 @@ export default {
         this.trendMonthlyAvailabilityData = monthlyAvailSum.map((sum, i) => 
           monthlyAvailCount[i] > 0 ? sum / monthlyAvailCount[i] : 0
         );
+
+        // Process daily availability
+        const sortedDates = Object.keys(dailyAvailMap).sort();
+        this.trendDailyLabels = sortedDates.map(d => {
+          const date = new Date(d);
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+        this.trendDailyAvailabilityData = sortedDates.map(d => dailyAvailMap[d].sum / dailyAvailMap[d].count);
       } catch (error) {
         console.error('Error fetching monthly trend data:', error);
       }
@@ -988,6 +1223,19 @@ export default {
     
     refreshData() {
       this.loadDashboardData();
+    },
+    
+    openTargetModal() {
+      this.tempTargetCapacityFactor = this.targetCapacityFactor;
+      this.showTargetModal = true;
+    },
+    
+    saveTarget() {
+      this.targetCapacityFactor = this.tempTargetCapacityFactor;
+      this.isTargetSet = true;
+      this.fetchMonthlyTrendData();
+      this.showTargetModal = false;
+      this.$toast.success(`Target Capacity Factor updated to ${this.targetCapacityFactor}%`);
     },
     
     toggleAutoRefresh() {
@@ -1503,19 +1751,21 @@ export default {
 }
 
 .trend-select {
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
   background-color: white;
   font-size: 0.875rem;
-  color: #475569;
+  color: #374151;
   cursor: pointer;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
+  min-width: 120px;
 }
 
 .trend-select:focus {
   border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .z-filters-column {
@@ -1806,6 +2056,448 @@ export default {
   cursor: not-allowed;
   transform: none;
   box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Professional Horizontal Bar Chart Styles */
+.professional-bar-chart {
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+}
+
+.chart-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0;
+}
+
+.chart-row:last-child {
+  margin-bottom: 0;
+}
+
+.row-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.indicator-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.target-dot {
+  background: linear-gradient(135deg, #8b9dc3 0%, #6b7280 100%);
+}
+
+.actual-dot {
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+}
+
+.row-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.chart-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+}
+
+.bar-background {
+  flex: 1;
+  height: 28px;
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid #e5e7eb;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 13px;
+  transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  min-width: 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.target-fill {
+  background: linear-gradient(135deg, #8b9dc3 0%, #6b7280 100%);
+}
+
+.actual-fill {
+  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+}
+
+.bar-fill::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  animation: slideShimmer 3s infinite;
+}
+
+@keyframes slideShimmer {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+
+.value-display {
+  min-width: 140px;
+  text-align: right;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: white;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+}
+
+.target-value {
+  color: #6b7280;
+  border-color: #e5e7eb;
+}
+
+.actual-value {
+  color: #3b82f6;
+  border-color: #dbeafe;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+}
+
+.value-display:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Performance indicator */
+.chart-row:nth-child(2) .value-display::after {
+  content: '';
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid #3b82f6;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .professional-bar-chart {
+    padding: 1rem;
+  }
+  
+  .chart-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  
+  .row-header {
+    min-width: auto;
+    justify-content: center;
+    padding-bottom: 0.25rem;
+  }
+  
+  .chart-area {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .value-display {
+    text-align: center;
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .professional-bar-chart {
+    padding: 0.75rem;
+  }
+  
+  .bar-background {
+    height: 24px;
+  }
+  
+  .value-display {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.5rem;
+  }
+  
+  .row-label {
+    font-size: 0.75rem;
+  }
+}
+
+/* Set Target Button Style */
+.set-target-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.set-target-btn:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
+.set-target-btn i {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.glass-button-sm {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.glass-button-sm:hover {
+  background: white;
+  border-color: #3b82f6;
+  color: #3b82f6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
+}
+
+/* Target Modal Specific Styles */
+.target-modal {
+  max-width: 500px;
+  width: 90%;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.modal-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.modal-title i {
+  color: #6b7280;
+  font-size: 1.125rem;
+}
+
+.btn-close-modal {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+.btn-close-modal:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.target-form-group {
+  margin-bottom: 1.5rem;
+}
+
+.target-form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.input-with-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.target-input {
+  width: 100%;
+  padding: 0.875rem 3rem 0.875rem 1rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.target-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.input-unit {
+  position: absolute;
+  right: 1rem;
+  color: #9ca3af;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.input-help {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.btn-cancel {
+  padding: 0.625rem 1.25rem;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-apply-target {
+  padding: 0.625rem 1.25rem;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-apply-target:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.dot-bar {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background-color: #3b82f6;
+}
+
+.dot-line {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  background-color: #f59e0b;
 }
 
 .btn-auto-refresh.active {
@@ -2589,21 +3281,6 @@ export default {
 }
 
 /* Comparison Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
-  animation: fadeIn 0.2s ease;
-}
-
 .comparison-modal {
   background: white;
   border-radius: 16px;
@@ -3389,5 +4066,90 @@ export default {
   font-weight: 500;
   font-size: 1.1rem;
   letter-spacing: 0.5px;
+}
+
+/* Legend and Toggle Styles */
+.legend-indicator {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.dot-bar {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  background: #3b82f6;
+  border-radius: 2px;
+}
+
+.dot-line {
+  display: inline-block;
+  width: 16px;
+  height: 3px;
+  background: #f59e0b;
+  border-radius: 1px;
+}
+
+.view-mode-toggle {
+  display: flex;
+  background: rgba(226, 232, 240, 0.5); /* subtle gray background */
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.toggle-btn {
+  outline: none;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.toggle-btn:hover {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.toggle-btn.active {
+  background-color: #10b981; /* Emerald green */
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-btn.active:hover {
+  color: white;
+  background-color: #059669;
+}
+
+.target-input-container {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 2px 8px;
+  height: 32px;
+}
+
+.target-input-container input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 40px;
+  color: #1e293b;
+  font-weight: 600;
+  -moz-appearance: textfield;
+}
+
+.target-input-container input::-webkit-outer-spin-button,
+.target-input-container input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 </style>

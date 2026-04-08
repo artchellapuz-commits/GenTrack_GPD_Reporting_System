@@ -197,7 +197,7 @@
                 Are you sure you want to permanently delete <strong>"{{ fileToDelete.original_filename }}"</strong>?
               </p>
               <div class="warning-box">
-                <strong><i class="pi pi-info-circle"></i> Warning:</strong> This action cannot be undone. All associated generation records will be permanently removed from the database.
+                <strong><i class="pi pi-info-circle"></i> Warning:</strong> This action cannot be undone. The file and all associated generation records will be permanently removed from the database and storage.
               </div>
             </div>
             
@@ -306,10 +306,16 @@ export default {
       try {
         const response = await api.getArchivedFiles();
         const data = response.data?.results || response.data || [];
-        if (data.length === 0) throw new Error("Empty data, fallback to mock");
         archivedFiles.value = data;
+        
+        // If no real data, fall back to mock data for demo purposes
+        if (data.length === 0) {
+          console.warn('No archived files found, using mock data for demo');
+          archivedFiles.value = generateMockData();
+        }
       } catch (error) {
-        console.warn('Using mock archived data');
+        console.error('Failed to load archived files:', error);
+        console.warn('Using mock archived data due to API error');
         archivedFiles.value = generateMockData();
       } finally {
         selectedFiles.value = [];
@@ -400,9 +406,8 @@ export default {
         showToast('success', 'Restored', `${file.original_filename} restored successfully.`);
         archivedFiles.value = archivedFiles.value.filter(f => f.id !== file.id);
       } catch (error) {
-        // Mock fallback for UI purposes
-        showToast('success', 'Restored', `${file.original_filename} restored successfully.`);
-        archivedFiles.value = archivedFiles.value.filter(f => f.id !== file.id);
+        console.error('Restore error:', error);
+        showToast('error', 'Error', `Failed to restore file: ${error.response?.data?.error || error.message}`);
       } finally {
         restoring.value = null;
       }
@@ -412,15 +417,34 @@ export default {
       isProcessingBulk.value = true;
       try {
         let count = 0;
+        let errors = [];
+        
         for (const id of selectedFiles.value) {
-          // await api.restoreArchivedFile(id);
-          count++;
+          try {
+            await api.restoreArchivedFile(id);
+            count++;
+          } catch (error) {
+            console.error(`Failed to restore file ${id}:`, error);
+            errors.push(`File ID ${id}: ${error.response?.data?.error || error.message}`);
+          }
         }
-        archivedFiles.value = archivedFiles.value.filter(f => !selectedFiles.value.includes(f.id));
-        showToast('success', 'Bulk Restored', `${count} files restored successfully.`);
+        
+        // Remove successfully restored files from the list
+        const restoredIds = selectedFiles.value.slice(0, count);
+        archivedFiles.value = archivedFiles.value.filter(f => !restoredIds.includes(f.id));
+        
+        if (count > 0) {
+          showToast('success', 'Bulk Restored', `${count} files restored successfully.`);
+        }
+        
+        if (errors.length > 0) {
+          showToast('error', 'Partial Failure', `${errors.length} files failed to restore. Check console for details.`);
+        }
+        
         clearSelection();
-      } catch (e) {
-        showToast('error', 'Error', 'Failed to restore some files.');
+      } catch (error) {
+        console.error('Bulk restore error:', error);
+        showToast('error', 'Error', 'Failed to restore files.');
       } finally {
         isProcessingBulk.value = false;
       }
@@ -440,12 +464,13 @@ export default {
     const deleteFile = async () => {
       deleting.value = fileToDelete.value.id;
       try {
-        // await api.deleteUploadedFile(fileToDelete.value.id);
+        await api.deleteUploadedFile(fileToDelete.value.id);
         archivedFiles.value = archivedFiles.value.filter(f => f.id !== fileToDelete.value.id);
-        showToast('success', 'Deleted', 'File permanently deleted.');
+        showToast('success', 'Deleted', `${fileToDelete.value.original_filename} permanently deleted from database.`);
         deleteDialog.value = false;
       } catch (error) {
-        showToast('error', 'Error', 'Failed to delete file.');
+        console.error('Delete error:', error);
+        showToast('error', 'Error', `Failed to delete file: ${error.response?.data?.error || error.message}`);
       } finally {
         deleting.value = null;
         fileToDelete.value = null;
@@ -456,16 +481,35 @@ export default {
       isProcessingBulk.value = true;
       try {
         let count = 0;
+        let errors = [];
+        
         for (const id of selectedFiles.value) {
-          // await api.deleteUploadedFile(id);
-          count++;
+          try {
+            await api.deleteUploadedFile(id);
+            count++;
+          } catch (error) {
+            console.error(`Failed to delete file ${id}:`, error);
+            errors.push(`File ID ${id}: ${error.response?.data?.error || error.message}`);
+          }
         }
-        archivedFiles.value = archivedFiles.value.filter(f => !selectedFiles.value.includes(f.id));
-        showToast('success', 'Bulk Deleted', `${count} files permanently deleted.`);
+        
+        // Remove successfully deleted files from the list
+        const deletedIds = selectedFiles.value.slice(0, count);
+        archivedFiles.value = archivedFiles.value.filter(f => !deletedIds.includes(f.id));
+        
+        if (count > 0) {
+          showToast('success', 'Bulk Deleted', `${count} files permanently deleted from database.`);
+        }
+        
+        if (errors.length > 0) {
+          showToast('error', 'Partial Failure', `${errors.length} files failed to delete. Check console for details.`);
+        }
+        
         deleteDialog.value = false;
         clearSelection();
       } catch (error) {
-        showToast('error', 'Error', 'Failed to delete some files.');
+        console.error('Bulk delete error:', error);
+        showToast('error', 'Error', 'Failed to delete files from database.');
       } finally {
         isProcessingBulk.value = false;
       }
