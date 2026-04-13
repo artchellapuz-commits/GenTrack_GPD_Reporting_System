@@ -1587,13 +1587,13 @@ class PSRExporter:
         
         # Storage data
         storage_data = [
-            ['Lake Lanao', '701.20', 'Normal'],
-            ['Agus 2 Forebay', '637.30', ''],
-            ['Agus 4 Forebay', '358.50', ''],
-            ['Agus 5 Forebay', '242.80', ''],
-            ['Agus 6 Forebay', '199.80', ''],
-            ['Agus 7 Forebay', '34.60', ''],
-            ['Pulangi IV Reservoir', '283.50', ''],
+            ['Lake Lanao', '', ''],
+            ['Agus 2 Forebay', '', ''],
+            ['Agus 4 Forebay', '', ''],
+            ['Agus 5 Forebay', '', ''],
+            ['Agus 6 Forebay', '', ''],
+            ['Agus 7 Forebay', '', ''],
+            ['Pulangi IV Reservoir', '', ''],
         ]
         
         for row_data in storage_data:
@@ -2026,46 +2026,46 @@ class PSRExporter:
         gate_elevation_data = [
             # Lake Lanao
             {
-                'gates': ['0.100', '0.100'],
-                'gate_details': ['(G1-0.10 m,', 'G2-0.10 m)'],
-                'elevation': '701.190'
+                'gates': ['', ''],
+                'gate_details': ['', ''],
+                'elevation': ''
             },
             # Agus 2
             {
-                'gates': ['0.000', '0.000'],
-                'gate_details': ['(G1-0.00m,', 'G2-0.00 m)'],
-                'elevation': '637.800',
-                'note': 'Mr. Dennis'
+                'gates': ['', ''],
+                'gate_details': ['', ''],
+                'elevation': '',
+                'note': ''
             },
             # Agus 4
             {
-                'gates': ['0.500', '0.000'],
-                'gate_details': ['(G1-0.05m,', 'G2-0.00 m)'],
-                'elevation': '358.800'
+                'gates': ['', ''],
+                'gate_details': ['', ''],
+                'elevation': ''
             },
             # Agus 5
             {
-                'gates': ['0.550', '0.000', '0.100'],
-                'gate_details': ['(G1-0.05m,', 'G2-0.00 m,', 'G3-0.10 m)'],
-                'elevation': '243.300'
+                'gates': ['', '', ''],
+                'gate_details': ['', '', ''],
+                'elevation': ''
             },
             # Agus 6
             {
-                'gates': ['0.200', '0.200', '0.200', '0.000'],
-                'gate_details': ['(G1-0.20m,', 'G2-0.20 m,', 'G3-0.20 m,', 'G4-0.00 m)'],
-                'elevation': '199.800'
+                'gates': ['', '', '', ''],
+                'gate_details': ['', '', '', ''],
+                'elevation': ''
             },
             # Agus 7
             {
-                'gates': ['0.000', '0.000', '0.000'],
-                'gate_details': ['(G1-0.00m,', 'G2-0.00 m,', 'G3-0.00 m)'],
-                'elevation': '34.100'
+                'gates': ['', '', ''],
+                'gate_details': ['', '', ''],
+                'elevation': ''
             },
             # Pulangi IV
             {
-                'gates': ['0.000', '0.000', '0.000', '0.000', '0.000', '0.000', '0.100', '0.000'],
-                'gate_details': ['(G1-0.00m,', 'G2-0.00 m,', 'G3-0.00 m,', 'G4-0.00 m,', 'G5-0.00 m,', 'G6-0.00', 'm)', '(G1-0.10 m,', 'G2-0.00 m)'],
-                'elevation': '285.450'
+                'gates': ['', '', '', '', '', '', '', ''],
+                'gate_details': ['', '', '', '', '', '', '', '', ''],
+                'elevation': ''
             }
         ]
         

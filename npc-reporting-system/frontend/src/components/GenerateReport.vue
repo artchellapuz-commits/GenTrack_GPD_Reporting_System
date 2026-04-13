@@ -357,314 +357,73 @@
               </tr>
             </thead>
             <tbody>
-              <!-- AGUS 1 -->
-              <tr class="plant-name-row">
-                <td class="excel-td plant-name-italic">AGUS 1</td>
-                <td class="excel-td number-cell">80.0</td>
-                <td class="excel-td number-cell">70.0</td>
-                <td class="excel-td number-cell" rowspan="3">136 CMS @<br>60 HW</td>
-                <td class="excel-td number-cell">60.00</td>
-                <td class="excel-td remarks-cell">Lake Lanao Elevation is 701.19 m.a.s.l. (G1- 0.10 m, G2- 0.10 m)</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 1</td>
-                <td class="excel-td number-cell">40.0</td>
-                <td class="excel-td number-cell">35.0</td>
-                <td class="excel-td number-cell">30.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 2</td>
-                <td class="excel-td number-cell">40.0</td>
-                <td class="excel-td number-cell">35.0</td>
-                <td class="excel-td number-cell">30.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
+              <!-- Dynamic Plant Rows -->
+              <template v-for="(plant, index) in reportPreview.plants_data" :key="plant.code">
+                <!-- If this is the first non-AGUS plant (like Pulangi IV), insert TOTAL AGUS before it. -->
+                <tr v-if="plant.code === 'PULANGI4' && reportPreview.plants_data.some(p => p.code.startsWith('AGUS'))" class="total-agus-row">
+                  <td class="excel-td total-label-cell">TOTAL AGUS</td>
+                  <td class="excel-td total-number-cell">{{ formatNumber(agusTotals.capacity) }}</td>
+                  <td class="excel-td total-number-cell">{{ formatNumber(agusTotals.nominated) }}</td>
+                  <td class="excel-td total-number-cell">{{ formatNumber(agusTotals.actual) }} MW</td>
+                  <td class="excel-td total-number-cell">{{ formatNumber(agusTotals.variance) }}</td>
+                  <td class="excel-td total-number-cell"></td>
+                </tr>
 
-              <!-- AGUS 2 -->
-              <tr class="plant-name-row">
-                <td class="excel-td plant-name-italic">AGUS 2</td>
-                <td class="excel-td number-cell">180.0</td>
-                <td class="excel-td number-cell">165.0</td>
-                <td class="excel-td number-cell" rowspan="4">123 MW</td>
-                <td class="excel-td number-cell">120.00</td>
-                <td class="excel-td remarks-cell">Forebay Elevation is 637.8 m.a.s.l. (G1- 0.00m, G2- 0.00 m)</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 1</td>
-                <td class="excel-td number-cell">60.0</td>
-                <td class="excel-td number-cell">55.0</td>
-                <td class="excel-td number-cell">40.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 2</td>
-                <td class="excel-td number-cell">60.0</td>
-                <td class="excel-td number-cell">55.0</td>
-                <td class="excel-td number-cell">40.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 3</td>
-                <td class="excel-td number-cell">60.0</td>
-                <td class="excel-td number-cell">55.0</td>
-                <td class="excel-td number-cell">40.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
+                <tr class="plant-name-row">
+                  <td class="excel-td plant-name-italic">{{ plant.name }}</td>
+                  <td class="excel-td number-cell">{{ formatNumber(plant.plant_totals.capacity) }}</td>
+                  <td class="excel-td number-cell">{{ formatNumber(plant.plant_totals.nominated) }}</td>
+                  <td class="excel-td number-cell" :rowspan="plant.units.length + 1">
+                    <span v-if="plant.code === 'AGUS1'">136 CMS @<br>60 HW</span>
+                    <span v-else>{{ formatNumber(plant.plant_totals.actual) }} MW</span>
+                  </td>
+                  <td class="excel-td number-cell">{{ formatNumber(plant.plant_totals.variance) }}</td>
+                  <td class="excel-td remarks-cell">{{ getPlantLevelRemarks(plant.code) }}</td>
+                </tr>
+                <tr v-for="unit in plant.units" :key="`${plant.code}-${unit.number}`" class="unit-row">
+                  <td class="excel-td unit-label">{{ unit.label }}</td>
+                  <td class="excel-td number-cell">{{ formatNumber(unit.capacity) }}</td>
+                  <td class="excel-td number-cell">{{ formatNumber(unit.nominated) }}</td>
+                  <td class="excel-td number-cell" :class="{'red-text': unit.variance === 0}">{{ formatNumber(unit.variance) }}</td>
+                  <td class="excel-td remarks-cell">{{ unit.remarks }}</td>
+                </tr>
+              </template>
 
-              <!-- AGUS 4 -->
-              <tr class="plant-name-row">
-                <td class="excel-td plant-name-italic">AGUS 4</td>
-                <td class="excel-td number-cell">158.1</td>
-                <td class="excel-td number-cell">105.4</td>
-                <td class="excel-td number-cell" rowspan="4">105 MW</td>
-                <td class="excel-td number-cell">96.00</td>
-                <td class="excel-td remarks-cell">Forebay Elevation is 358.8 m.a.s.l. (G1- 0.50m, G2- 0.00 m)</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 1</td>
-                <td class="excel-td number-cell">52.7</td>
-                <td class="excel-td number-cell">0.0</td>
-                <td class="excel-td number-cell red-text">0.00</td>
-                <td class="excel-td remarks-cell">Extended GOMP (28 Dec. 2025 - 21 Feb. 2026).</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 2</td>
-                <td class="excel-td number-cell">52.7</td>
-                <td class="excel-td number-cell">52.7</td>
-                <td class="excel-td number-cell">48.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 3</td>
-                <td class="excel-td number-cell">52.7</td>
-                <td class="excel-td number-cell">52.7</td>
-                <td class="excel-td number-cell">48.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-
-              <!-- AGUS 5 -->
-              <tr class="plant-name-row">
-                <td class="excel-td plant-name-italic">AGUS 5</td>
-                <td class="excel-td number-cell">55.0</td>
-                <td class="excel-td number-cell">53.0</td>
-                <td class="excel-td number-cell" rowspan="3">40 MW</td>
-                <td class="excel-td number-cell">39.08</td>
-                <td class="excel-td remarks-cell">Forebay Elevation is 243.3 m.a.s.l. (G1- 0.55m, G2- 0.00 m, G3- 0.10 m)</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 1</td>
-                <td class="excel-td number-cell">27.5</td>
-                <td class="excel-td number-cell">25.50</td>
-                <td class="excel-td number-cell">19.50</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 2</td>
-                <td class="excel-td number-cell">27.5</td>
-                <td class="excel-td number-cell">27.50</td>
-                <td class="excel-td number-cell">19.58</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-
-              <!-- AGUS 6 -->
-              <tr class="plant-name-row">
-                <td class="excel-td plant-name-italic">AGUS 6</td>
-                <td class="excel-td number-cell">219.0</td>
-                <td class="excel-td number-cell">144.8</td>
-                <td class="excel-td number-cell" rowspan="6">184 MW</td>
-                <td class="excel-td number-cell">144.80</td>
-                <td class="excel-td remarks-cell">Forebay Elevation is 199.8 m.a.s.l. (G1- 0.20m, G2- 0.20 m, G3- 0.20 m, G4- 0.00 m)</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 1</td>
-                <td class="excel-td number-cell">34.5</td>
-                <td class="excel-td number-cell">34.5</td>
-                <td class="excel-td number-cell">34.50</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 2</td>
-                <td class="excel-td number-cell">34.5</td>
-                <td class="excel-td number-cell">34.5</td>
-                <td class="excel-td number-cell">34.50</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 3</td>
-                <td class="excel-td number-cell">50.0</td>
-                <td class="excel-td number-cell">0.0</td>
-                <td class="excel-td number-cell red-text">0.00</td>
-                <td class="excel-td remarks-cell">Extended GOMP (31 Dec. 2025- 13 Feb. 2026).</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 4</td>
-                <td class="excel-td number-cell">50.0</td>
-                <td class="excel-td number-cell">32.0</td>
-                <td class="excel-td number-cell">32.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Limited to 32 MW due to gen. rotor pole & stator core temp./cooling issues.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 5</td>
-                <td class="excel-td number-cell">50.0</td>
-                <td class="excel-td number-cell">43.8</td>
-                <td class="excel-td number-cell">43.80</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-
-              <!-- AGUS 7 -->
-              <tr class="plant-name-row">
-                <td class="excel-td plant-name-italic">AGUS 7</td>
-                <td class="excel-td number-cell">54.0</td>
-                <td class="excel-td number-cell">48.1</td>
-                <td class="excel-td number-cell" rowspan="3">35 MW</td>
-                <td class="excel-td number-cell">40.00</td>
-                <td class="excel-td remarks-cell">Forebay Elevation is 34.1 m.a.s.l. (G1- 0.00m, G2- 0.00 m, G3- 0.00 m)</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 1</td>
-                <td class="excel-td number-cell">27.0</td>
-                <td class="excel-td number-cell">26.14</td>
-                <td class="excel-td number-cell">20.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 2</td>
-                <td class="excel-td number-cell">27.0</td>
-                <td class="excel-td number-cell">22.00</td>
-                <td class="excel-td number-cell">20.00</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-
-              <!-- TOTAL AGUS -->
-              <tr class="total-agus-row">
+              <!-- TOTAL AGUS (If no Pulangi IV is present, but Agus plants exist) -->
+              <tr v-if="!reportPreview.plants_data.some(p => p.code === 'PULANGI4') && reportPreview.plants_data.some(p => p.code.startsWith('AGUS'))" class="total-agus-row">
                 <td class="excel-td total-label-cell">TOTAL AGUS</td>
-                <td class="excel-td total-number-cell">746.1</td>
-                <td class="excel-td total-number-cell">586.3</td>
-                <td class="excel-td total-number-cell">547 MW</td>
-                <td class="excel-td total-number-cell">499.88</td>
+                <td class="excel-td total-number-cell">{{ formatNumber(agusTotals.capacity) }}</td>
+                <td class="excel-td total-number-cell">{{ formatNumber(agusTotals.nominated) }}</td>
+                <td class="excel-td total-number-cell">{{ formatNumber(agusTotals.actual) }} MW</td>
+                <td class="excel-td total-number-cell">{{ formatNumber(agusTotals.variance) }}</td>
                 <td class="excel-td total-number-cell"></td>
-              </tr>
-
-              <!-- PULANGI IV -->
-              <tr class="plant-name-row">
-                <td class="excel-td plant-name-italic">PULANGI IV</td>
-                <td class="excel-td number-cell">255.0</td>
-                <td class="excel-td number-cell">225.0</td>
-                <td class="excel-td number-cell" rowspan="4">100 MW</td>
-                <td class="excel-td number-cell">135.61</td>
-                <td class="excel-td remarks-cell">Reservoir Elevation is 285.45 m.a.s.l. (G1- 0.00m, G2- 0.00 m, G3- 0.00 m, G4- 0.00 m, G5- 0.00 m, G6- 0.00 m). Bottom Sluice Gate: (G1- 0.10m, G2- 0.00 m)</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 1</td>
-                <td class="excel-td number-cell">85.0</td>
-                <td class="excel-td number-cell">75.0</td>
-                <td class="excel-td number-cell">57.75</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 2</td>
-                <td class="excel-td number-cell">85.0</td>
-                <td class="excel-td number-cell">75.0</td>
-                <td class="excel-td number-cell">57.26</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
-              </tr>
-              <tr class="unit-row">
-                <td class="excel-td unit-label">unit 3</td>
-                <td class="excel-td number-cell">85.0</td>
-                <td class="excel-td number-cell">75.0</td>
-                <td class="excel-td number-cell">20.60</td>
-                <td class="excel-td remarks-cell">OPERATIONAL. Maximized with respect to ave. outflow.</td>
               </tr>
 
               <!-- TOTAL HYDRO -->
               <tr class="grand-total-row">
                 <td class="excel-td grand-total-label">TOTAL HYDRO</td>
-                <td class="excel-td grand-total-number">1,001.1</td>
-                <td class="excel-td grand-total-number">811.3</td>
-                <td class="excel-td grand-total-number">647 MW</td>
-                <td class="excel-td grand-total-number">635.49</td>
+                <td class="excel-td grand-total-number">{{ formatNumber(reportPreview.totals.total_capacity) }}</td>
+                <td class="excel-td grand-total-number">{{ formatNumber(reportPreview.totals.total_nominated) }}</td>
+                <td class="excel-td grand-total-number">{{ formatNumber(reportPreview.totals.total_actual) }} MW</td>
+                <td class="excel-td grand-total-number">{{ formatNumber(reportPreview.totals.total_variance) }}</td>
                 <td class="excel-td grand-total-number"></td>
               </tr>
 
               <!-- Forecasted Load Row (Yellow Background) -->
-              <tr class="forecasted-load-row">
+              <tr class="forecasted-load-row" v-if="reportPreview.forecasted_load">
                 <td colspan="6" class="excel-td forecasted-load-cell">
-                  Agus-Pulangi Forecasted Load @ 6pm, {{ reportPreview.forecasted_load.date }}: Agus = {{ reportPreview.forecasted_load.agus_load }} MW & Pulangui IV = {{ reportPreview.forecasted_load.pulangi_load }} MW, Total Load: {{ reportPreview.forecasted_load.total_load }} MW
+                  Agus-Pulangi Forecasted Load @ 6pm, {{ reportPreview.forecasted_load.date }}: Agus = {{ formatNumber(reportPreview.forecasted_load.agus_load) }} MW & Pulangui IV = {{ formatNumber(reportPreview.forecasted_load.pulangi_load) }} MW, Total Load: {{ formatNumber(reportPreview.forecasted_load.total_load) }} MW
                 </td>
               </tr>
 
-              <!-- IPP Rows -->
-              <tr class="ipp-row">
-                <td class="excel-td">MCFPP (STEAG), unit 1</td>
-                <td class="excel-td number-cell">116.0</td>
-                <td class="excel-td number-cell">105.0</td>
-                <td class="excel-td number-cell">105.00</td>
-                <td class="excel-td number-cell">61.50</td>
-                <td class="excel-td remarks-cell">Normal Operation</td>
-              </tr>
-              <tr class="ipp-row">
-                <td class="excel-td">MCFPP (STEAG), unit 2</td>
-                <td class="excel-td number-cell">116.0</td>
-                <td class="excel-td number-cell">105.0</td>
-                <td class="excel-td number-cell">105.00</td>
-                <td class="excel-td number-cell">62.60</td>
-                <td class="excel-td remarks-cell">Normal Operation</td>
-              </tr>
-
+              <!-- IPP Rows (Hidden as no real data available yet) -->
               <!-- TOTAL IPP -->
-              <tr class="total-ipp-row">
-                <td class="excel-td total-label-cell">TOTAL IPP</td>
-                <td class="excel-td total-number-cell">232.00</td>
-                <td class="excel-td total-number-cell">210.00</td>
-                <td class="excel-td total-number-cell">210.00</td>
-                <td class="excel-td total-number-cell">124.10</td>
-                <td class="excel-td total-number-cell"></td>
-              </tr>
-
               <!-- TOTAL NPC-PSALM -->
-              <tr class="total-npc-psalm-row">
-                <td class="excel-td total-npc-label">TOTAL NPC-PSALM</td>
-                <td class="excel-td total-npc-number">1,233.10</td>
-                <td class="excel-td total-npc-number">1,021.3</td>
-                <td class="excel-td total-npc-number">857.00</td>
-                <td class="excel-td total-npc-number">759.59</td>
-                <td class="excel-td total-npc-number"></td>
-              </tr>
             </tbody>
           </table>
         </div>
 
-        <!-- Charts Section -->
-        <div class="excel-section charts-section">
-          <div class="charts-container">
-            <!-- NPC-PSALM Capacity Mix Pie Chart -->
-            <div class="chart-box">
-              <h4 class="chart-title">NPC-PSALM Capacity Mix</h4>
-              <div class="chart-wrapper">
-                <Pie :data="capacityMixData" :options="pieChartOptions" />
-              </div>
-              <div class="chart-legend">
-                <span class="legend-item">
-                  <span class="legend-color" style="background: #4472C4;"></span>
-                  Hydro
-                </span>
-                <span class="legend-item">
-                  <span class="legend-color" style="background: #ED7D31;"></span>
-                  Coal Fired Thermal
-                </span>
-              </div>
-            </div>
-
-            <!-- MinGen Forecasted Load Share Bar Chart -->
-            <div class="chart-box">
-              <h4 class="chart-title">MinGen Forecasted Load Share (MW), @6pm Today</h4>
-              <div class="chart-wrapper">
-                <Bar :data="loadShareData" :options="barChartOptions" />
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- Charts Section (Removed mockups) -->
 
         <!-- Notes Section -->
         <div class="excel-section notes-section">
@@ -819,691 +578,8 @@
         </div>
         </div> <!-- Close main-content-left -->
 
-        <!-- Middle Content (Center Column) -->
-        <div class="middle-content-center">
-          <div class="middle-summary-table">
-            <table class="center-summary-table">
-              <tbody>
-                <tr>
-                  <td class="center-summary-cell">60.0</td>
-                  <td class="center-summary-cell">136.0</td>
-                </tr>
-                <tr>
-                  <td class="center-summary-cell">123.0</td>
-                  <td class="center-summary-cell">647.0</td>
-                </tr>
-                <tr>
-                  <td class="center-summary-cell">105.0</td>
-                  <td class="center-summary-cell">647.0</td>
-                </tr>
-                <tr>
-                  <td class="center-summary-cell">40.0</td>
-                  <td class="center-summary-cell">647.0</td>
-                </tr>
-                <tr>
-                  <td class="center-summary-cell">184.0</td>
-                  <td class="center-summary-cell">647.0</td>
-                </tr>
-                <tr>
-                  <td class="center-summary-cell">35.0</td>
-                  <td class="center-summary-cell">647.0</td>
-                </tr>
-                <tr class="center-total-row">
-                  <td class="center-total-cell">547.0</td>
-                  <td class="center-total-cell">3,371.0</td>
-                </tr>
-                <tr>
-                  <td class="center-summary-cell">100.0</td>
-                  <td class="center-summary-cell">647.0</td>
-                </tr>
-                <tr class="center-final-row">
-                  <td class="center-final-cell">647.0</td>
-                  <td class="center-final-cell"></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <!-- Middle Content and Right Side Content mockups removed to ensure only real data is displayed -->
 
-        <!-- Right Side Content -->
-        <div class="right-side-content">
-          <!-- Gate Operations & Elevation Table -->
-          <div class="gate-operations-table">
-            <table class="gate-table">
-              <thead>
-                <tr class="gate-header-row">
-                  <th class="gate-th">GATE#1</th>
-                  <th class="gate-th">GATE#2</th>
-                  <th class="gate-th">GATE#3</th>
-                  <th class="gate-th">GATE#4</th>
-                  <th class="gate-th">GATE#5</th>
-                  <th class="gate-th">GATE#6</th>
-                  <th class="gate-th elevation-header">ELEVATION</th>
-                  <th class="gate-th remarks-header">REMARKS</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- AGUS 1 -->
-                <tr class="gate-data-row">
-                  <td class="gate-cell">0.100</td>
-                  <td class="gate-cell">0.100</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell elevation-value">701.190</td>
-                  <td class="gate-cell">-</td>
-                </tr>
-                <tr class="gate-note-row">
-                  <td class="gate-note-cell">G1: 0.10 m</td>
-                  <td class="gate-note-cell">G2: 0.10 m</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                </tr>
-
-                <!-- AGUS 2 -->
-                <tr class="gate-data-row">
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell elevation-value">637.800</td>
-                  <td class="gate-cell">-</td>
-                </tr>
-                <tr class="gate-note-row">
-                  <td class="gate-note-cell">G1: 0.00 m</td>
-                  <td class="gate-note-cell">G2: 0.00 m</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                </tr>
-
-                <!-- AGUS 4 -->
-                <tr class="gate-data-row">
-                  <td class="gate-cell">0.500</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell elevation-value">358.800</td>
-                  <td class="gate-cell">-</td>
-                </tr>
-                <tr class="gate-note-row">
-                  <td class="gate-note-cell">G1: 0.50 m</td>
-                  <td class="gate-note-cell">G2: 0.00 m</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">Dependable Capacity = Pmax</td>
-                </tr>
-
-                <!-- AGUS 5 -->
-                <tr class="gate-data-row">
-                  <td class="gate-cell">0.550</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">0.100</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell elevation-value">243.300</td>
-                  <td class="gate-cell">-</td>
-                </tr>
-                <tr class="gate-note-row">
-                  <td class="gate-note-cell">G1: 0.55 m</td>
-                  <td class="gate-note-cell">G2: 0.00 m</td>
-                  <td class="gate-note-cell">G3: 0.10 m</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                </tr>
-
-                <!-- AGUS 6 -->
-                <tr class="gate-data-row">
-                  <td class="gate-cell">0.200</td>
-                  <td class="gate-cell">0.200</td>
-                  <td class="gate-cell">0.200</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell elevation-value">199.800</td>
-                  <td class="gate-cell">-</td>
-                </tr>
-                <tr class="gate-note-row">
-                  <td class="gate-note-cell">G1: 0.20 m</td>
-                  <td class="gate-note-cell">G2: 0.20 m</td>
-                  <td class="gate-note-cell">G3: 0.20 m</td>
-                  <td class="gate-note-cell">G4: 0.00 m</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                </tr>
-
-                <!-- AGUS 7 -->
-                <tr class="gate-data-row">
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell">-</td>
-                  <td class="gate-cell elevation-value">34.100</td>
-                  <td class="gate-cell">-</td>
-                </tr>
-                <tr class="gate-note-row">
-                  <td class="gate-note-cell">G1: 0.00 m</td>
-                  <td class="gate-note-cell">G2: 0.00 m</td>
-                  <td class="gate-note-cell">G3: 0.00 m</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                </tr>
-
-                <!-- PULANGI IV -->
-                <tr class="gate-data-row">
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell">0.000</td>
-                  <td class="gate-cell elevation-value">285.450</td>
-                  <td class="gate-cell">-</td>
-                </tr>
-                <tr class="gate-note-row">
-                  <td class="gate-note-cell">G1: 0.00 m</td>
-                  <td class="gate-note-cell">G2: 0.00 m</td>
-                  <td class="gate-note-cell">G3: 0.00 m</td>
-                  <td class="gate-note-cell">G4: 0.00 m</td>
-                  <td class="gate-note-cell">G5: 0.00 m</td>
-                  <td class="gate-note-cell">G6: 0.00 m</td>
-                  <td class="gate-note-cell">-</td>
-                  <td class="gate-note-cell">-</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Chart Section Below Gate Table -->
-          <div class="gate-chart-section">
-            <div class="chart-container">
-              <div class="chart-wrapper">
-                <Bar :data="gateChartData" :options="gateChartOptions" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Full Pondage Storage Section Below Chart -->
-          <div class="pondage-storage-section" style="margin-top: 30px; margin-bottom: 20px; font-family: Arial, sans-serif; font-size: 11px; color: #000; width: 100%;">
-            <!-- Title -->
-            <div style="text-align: center; font-weight: bold; margin-bottom: 10px; font-size: 13px;">
-              PONDAGE STORAGE OF MinGen HEP
-            </div>
-            
-            <!-- Table Container -->
-            <div style="display: flex; justify-content: flex-start; margin-bottom: 15px;">
-              <table style="border-collapse: collapse; border: 2px solid #000; text-align: right; margin-left: 10%;">
-                <thead>
-                  <tr>
-                    <th style="border: 1px solid #000; padding: 4px; background: #fff;"></th>
-                    <th style="border: 1px solid #000; padding: 4px; background: #fff;"></th>
-                    <th style="border: 1px solid #000; padding: 4px; border-bottom: none; text-align: center;">MIN</th>
-                    <th style="border: 1px solid #000; padding: 4px; border-bottom: none; text-align: center;">MAX</th>
-                    <th style="border: none; padding: 4px; padding-left: 15px; text-align: left;" colspan="2">Usable Volume of pondage area (MCM)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td style="border: 1px solid #000; border-right: 2px solid #000; padding: 4px 8px; background: #ffff00; color: #0000ff; font-weight: bold; text-align: left;">Agus 1 Elevation</td>
-                    <td style="border: 1px solid #000; padding: 4px 12px; color: red;">0.000</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-right: none;">698.15</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-left: none;">702.00</td>
-                    <td style="border: none; padding: 4px 15px; padding-left: 30px; text-align: right; border-right: 2px solid #000;">1,327.97</td>
-                    <td style="border: none;"></td>
-                  </tr>
-                  <tr>
-                    <td style="border: 1px solid #000; border-right: 2px solid #000; padding: 4px 8px; background: #ffff00; color: #0000ff; font-weight: bold; text-align: left;">Agus 2 Elevation</td>
-                    <td style="border: 1px solid #000; padding: 4px 12px; color: red;">0.000</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-right: none;">635.00</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-left: none;">637.00</td>
-                    <td style="border: none; padding: 4px 15px; padding-left: 30px; text-align: right; border-right: 2px solid #000;">12.98</td>
-                    <td style="border: none;"></td>
-                  </tr>
-                  <tr>
-                    <td style="border: 1px solid #000; border-right: 2px solid #000; padding: 4px 8px; background: #ffff00; color: #0000ff; font-weight: bold; text-align: left;">Agus 4 Elevation</td>
-                    <td style="border: 1px solid #000; padding: 4px 12px; color: red;">0.000</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-right: none;">357.00</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-left: none;">360.50</td>
-                    <td style="border: none; padding: 4px 15px; padding-left: 30px; text-align: right; border-right: 2px solid #000;">11.70</td>
-                    <td style="border: none; text-align: left; padding-left: 10px; font-weight: bold; white-space: nowrap;">Lake Lanao Elevation is 0.000 m.a.s.l (MLRD Total Gate Opening: 0.00 m)</td>
-                  </tr>
-                  <tr>
-                    <td style="border: 1px solid #000; border-right: 2px solid #000; padding: 4px 8px; background: #ffff00; color: #0000ff; font-weight: bold; text-align: left;">Agus 5 Elevation</td>
-                    <td style="border: 1px solid #000; padding: 4px 12px; color: red;">0.000</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-right: none;">242.00</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-left: none;">243.50</td>
-                    <td style="border: none; padding: 4px 15px; padding-left: 30px; text-align: right; border-right: 2px solid #000;">3.81</td>
-                    <td style="border: none;"></td>
-                  </tr>
-                  <tr>
-                    <td style="border: 1px solid #000; border-right: 2px solid #000; padding: 4px 8px; background: #ffff00; color: #0000ff; font-weight: bold; text-align: left;">Agus 6 Elevation</td>
-                    <td style="border: 1px solid #000; padding: 4px 12px; color: red;">0.000</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-right: none;">200.00</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-left: none;">202.10</td>
-                    <td style="border: none; padding: 4px 15px; padding-left: 30px; text-align: right; border-right: 2px solid #000;">0.25</td>
-                    <td style="border: none;"></td>
-                  </tr>
-                  <tr>
-                    <td style="border: 1px solid #000; border-right: 2px solid #000; padding: 4px 8px; background: #ffff00; color: #0000ff; font-weight: bold; text-align: left;">Agus 7 Elevation</td>
-                    <td style="border: 1px solid #000; padding: 4px 12px; color: red;">0.000</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-right: none;">33.00</td>
-                    <td style="border: 1px solid #000; padding: 4px 8px; border-left: none;">35.40</td>
-                    <td style="border: none; padding: 4px 15px; padding-left: 30px; text-align: right; border-right: 2px solid #000;">4.85</td>
-                    <td style="border: none;"></td>
-                  </tr>
-                  <tr>
-                    <td style="border: 1px solid #000; border-right: 2px solid #000; border-bottom: 2px solid #000; padding: 4px 8px; background: #ffff00; color: #0000ff; font-weight: bold; text-align: left;">Pulangi 4 Elevation</td>
-                    <td style="border: 1px solid #000; border-bottom: 2px solid #000; padding: 4px 12px; color: red;">0.000</td>
-                    <td style="border: 1px solid #000; border-bottom: 2px solid #000; padding: 4px 8px; border-right: none;">278.00</td>
-                    <td style="border: 1px solid #000; border-bottom: 2px solid #000; padding: 4px 8px; border-left: none;">285.50</td>
-                    <td style="border: none; border-bottom: 2px solid #000; padding: 4px 15px; padding-left: 30px; text-align: right; border-right: 2px solid #000;">22.64</td>
-                    <td style="border: none;"></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Elevations List -->
-            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: 500; margin-left: 6%;">
-              <div style="line-height: 1.8;">
-                <div><span style="color: blue;">AGUS 1</span> Lake Lanao Elevation is 0 m.a.s.l.</div>
-                <div><span style="color: blue;">Pulangi 4</span> Reservoir Level is 0 m.a.s.l.</div>
-                <div><span style="color: blue;">Agus 7</span> Forebay Elevation is 0 m.a.s.l.</div>
-                <div><span style="color: blue;">Agus 6</span> Forebay Elevation is 0 m.a.s.l.</div>
-                <div><span style="color: blue;">Agus 5</span> Forebay Elevation is 0 m.a.s.l.</div>
-                <div><span style="color: blue;">Agus 4</span> Forebay Elevation is 0 m.a.s.l.</div>
-                <div><span style="color: blue;">Agus 2</span> Forebay Elevation is 0 m.a.s.l.</div>
-              </div>
-              <div style="text-align: left; padding-top: 55px; margin-right: 15%;">
-                <div style="font-weight: bold; margin-bottom: 6px;">Forebay Elevation is 0.00 m.a.s.l (SPILLAGE as of <span v-if="reportDate">{{ new Date(reportDate).toLocaleDateString('en-US') }}</span><span v-else>6/13/19</span>: 0.0200 MCM)</div>
-                <div>Forebay Elevation is 0.000 m.a.s.l</div>
-              </div>
-            </div>
-
-            <!-- Note and Conversion Rates -->
-            <div style="display: flex; justify-content: space-between; margin-bottom: 40px; margin-left: 6%;">
-              <!-- Note Block -->
-              <div style="display: flex; flex: 1;">
-                <div style="font-weight: bold; margin-right: 5px;">Note:</div>
-                <div style="line-height: 1.6;">
-                  <div style="margin-bottom: 10px;"><span style="color: blue; font-weight: bold;">MLRD</span> means Marawi Lake Regulation Dam</div>
-                  <div style="margin-bottom: 15px;"><span style="color: blue; font-weight: 500;">Pulangi IV</span> must not be load from 40MW to 60 MW due to hunting of turbine generators.</div>
-                  <div>Lake Lanao Maximum Allowable Level is <span style="color: blue;">702.0 masl</span></div>
-                  <div style="margin-top: 15px;">Lake Lanao Maximum Operating Level is <span style="color: blue;">701.65 masl</span></div>
-                  <div>Lake Lanao Minimum Operating Level is <span style="color: blue;">699.15 masl</span></div>
-                  <div style="margin-bottom: 15px; background-color: yellow; padding: 5px 10px; display: inline-block;">Lake Lanao Minimum Allowable Level is <span style="color: blue;">698.15 masl</span></div>
-                  <div>
-                    MCM = Millions per Cubic Meter
-                  </div>
-                  <div style="margin-top: 10px; background-color: yellow; padding: 5px 10px; display: inline-flex; align-items: center;">
-                    <span style="margin-right: 20px;"> </span>
-                    <span style="border: 2px solid blue; width: 60px; height: 16px; margin-right: 20px; display: inline-block;"></span>
-                    <span style="font-weight: bold; line-height: 1;">Lake Lanao Elevation is 0.000 m.a.s.l (SPILLAGE: 0.0200 MCM)</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Conversion Rates Block -->
-              <div style="margin-right: 10%; text-align: right;">
-                <table style="border-collapse: collapse; border: none; font-size: 11px; text-align: right;">
-                  <thead>
-                    <tr>
-                      <th colspan="4" style="text-align: center; font-weight: bold; padding-bottom: 8px;">CONVERSION RATE RIPARIAN FLOW</th>
-                    </tr>
-                    <tr>
-                      <th style="padding: 4px 10px;"></th>
-                      <th style="padding: 4px 10px; font-weight: bold;">CMS/MW</th>
-                      <th style="padding: 4px 10px; font-weight: bold;">CMS</th>
-                      <th style="padding: 4px 10px; font-weight: normal;">eg. Ave.Cap</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style="padding: 4px 10px; text-align: left;">AGUS 1</td>
-                      <td style="padding: 4px 10px;">1.984</td>
-                      <td style="padding: 4px 10px;">10</td>
-                      <td style="padding: 4px 10px;">10.16</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 4px 10px; text-align: left; padding-top: 8px;">AGUS 2</td>
-                      <td style="padding: 4px 10px; padding-top: 8px;">1.078</td>
-                      <td style="padding: 4px 10px; padding-top: 8px;">3.5</td>
-                      <td style="padding: 4px 10px;"></td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 4px 10px; text-align: left;">AGUS 4</td>
-                      <td style="padding: 4px 10px;">1.078</td>
-                      <td style="padding: 4px 10px;">0.25</td>
-                      <td style="padding: 4px 10px;"></td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 4px 10px; text-align: left;">AGUS 5</td>
-                      <td style="padding: 4px 10px;">3.03</td>
-                      <td style="padding: 4px 10px;">10</td>
-                      <td style="padding: 4px 10px;"></td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 4px 10px; text-align: left; padding-top: 15px;">AGUS 6</td>
-                      <td style="padding: 4px 10px; padding-top: 15px;">0.736</td>
-                      <td style="padding: 4px 10px; padding-top: 15px;">0.44</td>
-                      <td style="padding: 4px 10px;"></td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 4px 10px; text-align: left;">AGUS 7</td>
-                      <td style="padding: 4px 10px;">3.79</td>
-                      <td style="padding: 4px 10px;">3.33</td>
-                      <td style="padding: 4px 10px;"></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            <!-- MLRD GATES OPENING and SPILLAGE Input Blocks -->
-          <div style="display: flex; justify-content: flex-start; margin-bottom: 20px; font-family: Arial, sans-serif; font-size: 11px;">
-            <div style="width: 5%;"></div>
-            <!-- MLRD GATES OPENING -->
-            <div style="margin-right: 40px; margin-top: 20px;">
-              <div style="font-weight: bold; margin-bottom: 5px; font-size: 12px; margin-left: 20px;">MLRD GATES OPENING</div>
-              <div style="border: 1px solid #000; padding: 10px; width: 180px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                  <span>Gate 1 opening:</span>
-                  <span style="color: yellow; font-weight: bold;">0</span>
-                </div>
-                <div style="display: flex; justify-content: space-between;">
-                  <span>Gate 2 opening:</span>
-                  <span style="color: yellow; font-weight: bold;">0.05</span>
-                </div>
-              </div>
-              <div style="text-align: right; width: 180px; font-weight: bold; margin-top: 5px;">
-                0.05
-              </div>
-            </div>
-
-            <!-- SPILLAGE (MCM) INPUT 2 -->
-            <div>
-              <div style="font-weight: bold; color: red; margin-bottom: 5px; font-size: 12px;">SPILLAGE (MCM) INPUT 2</div>
-              <div style="border: 1px solid #000; padding: 10px 20px; width: 330px; display: flex;">
-                <div style="flex: 1;">
-                  <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="color: blue;">AGUS 1</span>
-                    <span style="color: yellow; font-weight: bold;">0</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="color: blue;">Agus 2</span>
-                    <span style="color: yellow; font-weight: bold;">0</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="color: blue;">Agus 4</span>
-                    <span style="color: yellow; font-weight: bold;">0.02</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between;">
-                    <span style="color: blue;">Agus 5</span>
-                    <span style="color: yellow; font-weight: bold;">0.864</span>
-                  </div>
-                </div>
-                <div style="width: 40px;"></div>
-                <div style="flex: 1;">
-                  <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="color: blue;">Agus 6</span>
-                    <span style="color: yellow; font-weight: bold;">1.15</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span style="color: blue;">Agus 7</span>
-                    <span style="color: yellow; font-weight: bold;">0</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between;">
-                    <span style="color: blue;">Pulangi</span>
-                    <span style="color: yellow; font-weight: bold;">0</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-            
-          </div>
-
-          <!-- Workflow Diagram Section -->
-          <div class="workflow-diagram-section">
-            <div class="workflow-header">
-              <span class="workflow-input-label">INPUT From JMM-DCM/CPN today Thursday, 12 March 2026</span>
-            </div>
-            
-            <div class="workflow-steps">
-              <div class="workflow-step">
-                <div class="workflow-box step1">
-                  <div class="step-text">Copy & paste the data for plant generation from AGUS-PULANGI Plant operation</div>
-                </div>
-                <div class="workflow-arrow">→</div>
-              </div>
-              
-              <div class="workflow-step">
-                <div class="workflow-box step2">
-                  <div class="step-text">Update data in 2nd GenTask worksheet using NGCP's System Generation Data & edit the Dependable Capacity (e.g. GOMP, etc.)</div>
-                </div>
-                <div class="workflow-arrow">→</div>
-              </div>
-              
-              <div class="workflow-step">
-                <div class="workflow-box step3">
-                  <div class="step-text">Update recent info in INPUT.xlsx 1. Receiving worksheets are: 2. Paste data from: 3. Update the Dependable Capacity (Dependable Item list)</div>
-                </div>
-                <div class="workflow-arrow">→</div>
-              </div>
-              
-              <div class="workflow-step">
-                <div class="workflow-box step4">
-                  <div class="step-text">Update worksheets data at PSR-PSALM's 1. "GenStart" - request the actual sys 2. "AGUS" - Agus Actual System 3. "PULANGI" - Pulangi System assess at...</div>
-                </div>
-                <div class="workflow-arrow">→</div>
-              </div>
-              
-              <div class="workflow-step">
-                <div class="workflow-box step5">
-                  <div class="step-text">1. Copy & paste the data for Ave. Available Capacity (MW) for the current day and day-ahead 2. Copy & paste the report of ALL AGUS 3. Copy & paste the report of PULANGI for the Agus-Pulangi Plant operation</div>
-                </div>
-                <div class="workflow-arrow">→</div>
-              </div>
-              
-              <div class="workflow-step">
-                <div class="workflow-box step6">
-                  <div class="step-text">PRINT REPORT from "Report" worksheet in "Report Revised Final PSALM PSR.xlsx"</div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="workflow-input-section">
-              <div class="input-label">INPUT 1</div>
-              <div class="input-box">
-                <span class="input-text">Total load is IHEM peak: </span>
-                <span class="input-value">650.80 MW</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Data Tables Section -->
-          <div class="data-tables-section">
-            <!-- Top Row Tables -->
-            <div class="tables-row">
-              <!-- Left Table: Agus-Pulangi Load Share -->
-              <div class="data-table-container">
-                <div class="table-header">Agus-Pulangi Load Share @ 6 PM today</div>
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th></th>
-                      <th>Load</th>
-                      <th>#DIV/0!</th>
-                      <th>0.00</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>AGUS 1</td><td>60.0</td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>AGUS 2</td><td>120.0</td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>AGUS 4</td><td>96.0</td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>AGUS 5</td><td>40.0</td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>AGUS 6</td><td>144.8</td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>AGUS 7</td><td>40.0</td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>PULANGI IV</td><td>150.0</td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>Other Shares</td><td>650.8</td><td>#DIV/0!</td><td></td></tr>
-                    <tr><td>Agus only</td><td>500.8</td><td></td><td>0.00</td></tr>
-                    <tr><td>Agus + Pulangi</td><td></td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>STEAG 1</td><td>105.00</td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>MAGFP1</td><td>0.00</td><td>#DIV/0!</td><td>0.00</td></tr>
-                    <tr><td>MAGFP2</td><td>0.00</td><td>#DIV/0!</td><td>0.00</td></tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Right Table: Rated Dependable Capacity -->
-              <div class="data-table-container">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th></th>
-                      <th>Rated</th>
-                      <th>Dependable C.</th>
-                      <th>0800H Load</th>
-                      <th>Pmin</th>
-                      <th>Pmax</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>AGUS 1</td><td>80.0</td><td>70.0</td><td>136 CMS @ 60</td><td>u1 &u2=12</td><td>u1=25 & u2=30</td></tr>
-                    <tr><td>AGUS 2</td><td>180.0</td><td>165.0</td><td>123 MW</td><td>u1,u2,&u3=10</td><td>u1,u2,&u3=40</td></tr>
-                    <tr><td>AGUS 4</td><td>158.1</td><td>105.4</td><td>105 MW</td><td>u1=20, u2=30 & u3=20</td><td>u1,u2,&u3=52.7</td></tr>
-                    <tr><td>AGUS 5</td><td>55.0</td><td>53.0</td><td>40 MW</td><td>u1 & u2=10</td><td>u1 & u2=27.5</td></tr>
-                    <tr><td>AGUS 6</td><td>219.0</td><td>144.8</td><td>184 MW</td><td>u3, u4 & u5=10</td><td>u3=15, u4 =25 & u5 = 42</td></tr>
-                    <tr><td>AGUS 7</td><td>54.0</td><td>48.1</td><td>35 MW</td><td>u1=6 & u2=10</td><td>u1=26; u2=20</td></tr>
-                    <tr><td>PULANGI IV</td><td>255.0</td><td>225.0</td><td>100 MW</td><td>u1,u2,&u3=10</td><td>u1,u2,&u3=75</td></tr>
-                    <tr><td>STEAG1</td><td>116.0</td><td>105.0</td><td>105.0</td><td></td><td></td></tr>
-                    <tr><td>STEAG 2</td><td>116.0</td><td>105.0</td><td>105.0</td><td></td><td></td></tr>
-                    <tr><td>MAGFP1</td><td>0.0</td><td>0.0</td><td>0.0</td><td></td><td></td></tr>
-                    <tr><td>MAGFP2</td><td>0.0</td><td>0.0</td><td>0.0</td><td></td><td></td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- Bottom Row Tables -->
-            <div class="tables-row">
-              <!-- Left Bottom Tables -->
-              <div class="left-bottom-tables">
-                <!-- Colight Table -->
-                <div class="small-table-container">
-                  <table class="data-table small">
-                    <tbody>
-                      <tr><td>Colight</td><td>#REF!</td><td>#REF!</td></tr>
-                      <tr><td>NGCP Forecasted System Peak</td><td>0.00</td><td></td></tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <!-- Agus/Pulangi Table -->
-                <div class="small-table-container">
-                  <table class="data-table small">
-                    <tbody>
-                      <tr><td>Agus</td><td>✓</td><td>#DIV/0!</td></tr>
-                      <tr><td>Pulangi IV</td><td>✓</td><td>#DIV/0!</td></tr>
-                      <tr><td>Agus & Pulangi</td><td>✓</td><td>#DIV/0!</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <!-- Hydro/Geothermal Table -->
-                <div class="small-table-container">
-                  <table class="data-table small">
-                    <tbody>
-                      <tr><td>Hydro</td><td>1,001.10</td><td>81.19%</td></tr>
-                      <tr><td>Geothermal</td><td>0.00</td><td>0.00%</td></tr>
-                      <tr><td>Hydro</td><td>1,001.10</td><td>81.19%</td></tr>
-                      <tr><td>Coal Fired Thermal</td><td>232.00</td><td>18.81%</td></tr>
-                      <tr><td></td><td>1,233.10</td><td>100.00%</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <!-- Right Bottom Tables -->
-              <div class="right-bottom-tables">
-                <!-- MAGFP2 Table -->
-                <div class="small-table-container">
-                  <table class="data-table small">
-                    <tbody>
-                      <tr><td>MAGFP2</td><td>0.00</td><td>0.00</td><td>0.00</td></tr>
-                      <tr><td>AGUS 7</td><td>54.00</td><td>48.14</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>AGUS 5</td><td>55.00</td><td>53.00</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>AGUS 4</td><td>158.10</td><td>105.40</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>AGUS 2</td><td>180.00</td><td>165.00</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>AGUS 1</td><td>80.00</td><td>70.00</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>Total</td><td>527.10</td><td>441.54</td><td>0.00</td><td>0.0%</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <!-- Plant List -->
-                <!-- Removed plant list section -->
-
-                <!-- Yesterday's Peak Table -->
-                <div class="small-table-container">
-                  <div class="table-header">Rated Dependable C.Yesterday's Pe %</div>
-                  <table class="data-table small">
-                    <tbody>
-                      <tr><td>AGUS 1</td><td>80.00</td><td>70.00</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>AGUS 2</td><td>180.00</td><td>165.00</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>AGUS 4</td><td>158.10</td><td>105.40</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>AGUS 5</td><td>55.00</td><td>53.00</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>AGUS 6</td><td>#REF!</td><td>#REF!</td><td>#REF!</td><td>#REF!</td></tr>
-                      <tr><td>AGUS 7</td><td>54.00</td><td>48.14</td><td>0.00</td><td>0.0%</td></tr>
-                      <tr><td>PULANGI IV</td><td>#REF!</td><td>#REF!</td><td>#REF!</td><td>#REF!</td></tr>
-                    </tbody>
-                  </table>
-                  <div class="table-number">14.67</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Additional Chart Section -->
-          <div class="additional-chart-section">
-            <div class="chart-note">
-              Agus 2 HEP is limited to 40 MW/per unit due to water constraint and as per Environmental Compliance Certificate "that Agus 2 shall not be operated at full capacity..." This is to prevent risk of flooding at lakeshores areas and Balo-i plains.
-            </div>
-            
-            <div class="additional-chart-container">
-              <div class="chart-wrapper">
-                <Bar :data="additionalChartData" :options="additionalChartOptions" />
-              </div>
-            </div>
-          </div>
-
-        </div> <!-- Close right-side-content -->
         </div> <!-- Close preview-content-wrapper -->
             </div> <!-- Close excel-document -->
           </div> <!-- Close preview-content-container -->
@@ -2108,6 +1184,10 @@ export default {
         if (newDate) {
           this.loadReportSignatures();
         }
+        // Reset report state when date changes
+        this.reportGenerated = false;
+        this.showPreview = false;
+        this.reportPreview = null;
         this.saveStateToSession();
       },
       immediate: false
@@ -2115,6 +1195,10 @@ export default {
     
     selectedPlants: {
       handler() {
+        // Reset report state when selected plants change
+        this.reportGenerated = false;
+        this.showPreview = false;
+        this.reportPreview = null;
         this.saveStateToSession();
       },
       deep: true
@@ -2165,6 +1249,27 @@ export default {
       // Require both report date and plants to be loaded
       return this.reportDate && this.selectedPlants && this.selectedPlants.length > 0;
     },
+    agusTotals() {
+      if (!this.reportPreview || !this.reportPreview.plants_data) return { capacity: 0, nominated: 0, actual: 0, variance: 0 };
+      const agusPlants = this.reportPreview.plants_data.filter(p => p.code.startsWith('AGUS'));
+      return agusPlants.reduce((acc, plant) => {
+        acc.capacity += plant.plant_totals.capacity || 0;
+        acc.nominated += plant.plant_totals.nominated || 0;
+        acc.actual += plant.plant_totals.actual || 0;
+        acc.variance += plant.plant_totals.variance || 0;
+        return acc;
+      }, { capacity: 0, nominated: 0, actual: 0, variance: 0 });
+    },
+    ippTotals() {
+      if (!this.reportPreview || !this.reportPreview.ipp_data) return { capacity: 0, nominated: 0, actual: 0, variance: 0 };
+      return this.reportPreview.ipp_data.reduce((acc, ipp) => {
+        acc.capacity += ipp.capacity || 0;
+        acc.nominated += ipp.nominated || 0;
+        acc.actual += ipp.actual || 0;
+        acc.variance += ipp.variance || 0;
+        return acc;
+      }, { capacity: 0, nominated: 0, actual: 0, variance: 0 });
+    },
     hasSignature() {
       if (this.signatureMode === 'draw') {
         return this.hasDrawnOnCanvas && this.$refs.signatureCanvas && !this.isCanvasEmpty();
@@ -2203,6 +1308,35 @@ export default {
     }
   },
   methods: {
+    getPlantLevelRemarks(plantCode) {
+      if (!this.reportPreview || !this.reportPreview.gate_elevation_data) return '';
+      
+      const gateData = this.reportPreview.gate_elevation_data;
+      
+      if (plantCode === 'AGUS1') {
+        const data = gateData.find(g => g.plant === 'Lake Lanao');
+        if (data) return `Lake Lanao Elevation is ${data.elevation} m.a.s.l. (G1- ${data.gates[0]} m, G2- ${data.gates[1]} m)`;
+      } else if (plantCode === 'AGUS2') {
+        const data = gateData.find(g => g.plant === 'Agus 2');
+        if (data) return `Forebay Elevation is ${data.elevation} m.a.s.l. (G1- ${data.gates[0]}m, G2- ${data.gates[1]} m)`;
+      } else if (plantCode === 'AGUS4') {
+        const data = gateData.find(g => g.plant === 'Agus 4');
+        if (data) return `Forebay Elevation is ${data.elevation} m.a.s.l. (G1- ${data.gates[0]}m, G2- ${data.gates[1]} m)`;
+      } else if (plantCode === 'AGUS5') {
+        const data = gateData.find(g => g.plant === 'Agus 5');
+        if (data) return `Forebay Elevation is ${data.elevation} m.a.s.l. (G1- ${data.gates[0]}m, G2- ${data.gates[1]} m, G3- ${data.gates[2]} m)`;
+      } else if (plantCode === 'AGUS6') {
+        const data = gateData.find(g => g.plant === 'Agus 6');
+        if (data) return `Forebay Elevation is ${data.elevation} m.a.s.l. (G1- ${data.gates[0]}m, G2- ${data.gates[1]} m, G3- ${data.gates[2]} m, G4- ${data.gates[3]} m)`;
+      } else if (plantCode === 'AGUS7') {
+        const data = gateData.find(g => g.plant === 'Agus 7');
+        if (data) return `Forebay Elevation is ${data.elevation} m.a.s.l. (G1- ${data.gates[0]}m, G2- ${data.gates[1]} m, G3- ${data.gates[2]} m)`;
+      } else if (plantCode === 'PULANGI4') {
+        const data = gateData.find(g => g.plant === 'Pulangi IV');
+        if (data) return `Reservoir Elevation is ${data.elevation} m.a.s.l. (G1- ${data.gates[0]}m, G2- ${data.gates[1]} m, G3- ${data.gates[2]} m, G4- ${data.gates[3]} m, G5- ${data.gates[4]} m, G6- ${data.gates[5]} m).`;
+      }
+      return '';
+    },
     // Preview interaction methods
     zoomIn() {
       if (this.zoomLevel < 2) {
@@ -2235,9 +1369,6 @@ export default {
       const state = {
         reportDate: this.reportDate,
         selectedPlants: this.selectedPlants,
-        reportGenerated: this.reportGenerated,
-        showPreview: this.showPreview,
-        reportPreview: this.reportPreview,
       };
       sessionStorage.setItem('generateReportState', JSON.stringify(state));
     },
@@ -2247,11 +1378,16 @@ export default {
       if (savedState) {
         try {
           const state = JSON.parse(savedState);
-          if (state.reportDate) this.reportDate = state.reportDate;
+          if (state.reportDate) {
+            // Only restore date if it's not already set
+            if (!this.reportDate) this.reportDate = state.reportDate;
+          }
           if (state.selectedPlants && state.selectedPlants.length) this.selectedPlants = state.selectedPlants;
-          this.reportGenerated = state.reportGenerated || false;
-          this.showPreview = state.showPreview || false;
-          this.reportPreview = state.reportPreview || null;
+          
+          // Always start fresh for report generation state
+          this.reportGenerated = false;
+          this.showPreview = false;
+          this.reportPreview = null;
         } catch (e) {
           console.error('Error restoring state from session storage', e);
         }
@@ -2834,7 +1970,7 @@ export default {
           } else if (data.error) {
             errorMsg = data.error;
             if (errorMsg.includes('No data found')) {
-              errorMsg += '. Please upload Excel files first in the Upload Excel Reports page.';
+              errorMsg = `No data found for the selected date (${this.reportDate}). The Excel files you uploaded might contain data for different dates. Please check the dates in your uploaded files or select a different report date.`;
             }
           } else {
             errorMsg = `Validation error: ${JSON.stringify(data)}`;

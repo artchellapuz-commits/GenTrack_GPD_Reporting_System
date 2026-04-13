@@ -2834,7 +2834,7 @@ export default {
           } else if (data.error) {
             errorMsg = data.error;
             if (errorMsg.includes('No data found')) {
-              errorMsg += '. Please upload Excel files first in the Upload Excel Reports page.';
+              errorMsg = `No data found for the selected date (${this.reportDate}). The Excel files you uploaded might contain data for different dates. Please check the dates in your uploaded files or select a different report date.`;
             }
           } else {
             errorMsg = `Validation error: ${JSON.stringify(data)}`;
