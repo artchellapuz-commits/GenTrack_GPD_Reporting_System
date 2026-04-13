@@ -70,10 +70,13 @@
       </div>
     </div>
 
-    <!-- Loading State -->
+    <!-- Loading State with Skeleton -->
     <div v-if="loading" class="loading-state">
-      <i class="pi pi-spin pi-spinner"></i>
-      <p>Loading reports...</p>
+      <!-- Skeleton for Summary Stats -->
+      <SkeletonLoader type="stats" />
+      
+      <!-- Skeleton for Table -->
+      <SkeletonLoader type="table" />
     </div>
 
     <!-- Reports Table -->
@@ -172,6 +175,7 @@
 import api from '../services/api';
 import AppLayout from './AppLayout.vue';
 import AdvancedFilter from './AdvancedFilter.vue';
+import SkeletonLoader from './SkeletonLoader.vue';
 import Paginator from 'primevue/paginator';
 
 export default {
@@ -179,6 +183,7 @@ export default {
   components: {
     AppLayout,
     AdvancedFilter,
+    SkeletonLoader,
     Paginator,
   },
   data() {

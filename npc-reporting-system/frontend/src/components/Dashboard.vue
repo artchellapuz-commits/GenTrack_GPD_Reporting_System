@@ -37,10 +37,21 @@
       </div>
     </div>
 
-    <!-- Loading State -->
+    <!-- Loading State with Skeleton -->
     <div v-if="loading" class="loading-state fade-in">
-      <div class="loader-spinner"></div>
-      <p>Loading dashboard data...</p>
+      <!-- Skeleton for Stats Cards -->
+      <SkeletonLoader type="stats" />
+      
+      <!-- Skeleton for Charts -->
+      <div class="skeleton-charts-layout">
+        <div class="skeleton-charts-column">
+          <SkeletonLoader type="chart" />
+          <SkeletonLoader type="chart" />
+        </div>
+        <div class="skeleton-plants-column">
+          <SkeletonLoader type="plants" />
+        </div>
+      </div>
     </div>
 
     <!-- Dashboard Content -->
@@ -608,6 +619,7 @@
 import api from '../services/api';
 import PlantDetailModal from './PlantDetailModal.vue';
 import AppLayout from './AppLayout.vue';
+import SkeletonLoader from './SkeletonLoader.vue';
 import { 
   exportPlantToCSV, 
   exportComparisonToCSV, 
@@ -658,6 +670,7 @@ export default {
   components: {
     PlantDetailModal,
     AppLayout,
+    SkeletonLoader,
     LineChart: Line,
     PieChart: Pie,
     BarChart: Bar
@@ -4151,5 +4164,47 @@ export default {
 .target-input-container input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* Skeleton Layout Styles */
+.skeleton-charts-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.skeleton-charts-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.skeleton-plants-column {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1200px) {
+  .skeleton-charts-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Enhanced loading state */
+.loading-state {
+  padding: 20px;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
