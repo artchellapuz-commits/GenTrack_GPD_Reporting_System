@@ -180,7 +180,7 @@ export default {
     this.checkCurrentRoute();
   },
   watch: {
-    '$route'(to) {
+    '$route'() {
       this.checkCurrentRoute();
       // Reload user info when route changes to ensure admin status is current
       this.loadUserInfo();

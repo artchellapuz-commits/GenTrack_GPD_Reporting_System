@@ -417,7 +417,7 @@ export default {
     }
   },
   watch: {
-    '$route'(to) {
+    '$route'() {
       this.checkCurrentRoute();
     }
   },

@@ -797,7 +797,7 @@ export default {
     }
   },
   methods: {
-    generateParticleStyle(index) {
+    generateParticleStyle() {
       const size = Math.random() * 6 + 2;
       const left = Math.random() * 100;
       const top = Math.random() * 100;

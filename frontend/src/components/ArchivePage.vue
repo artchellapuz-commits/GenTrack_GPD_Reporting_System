@@ -412,8 +412,9 @@ export default {
       isProcessingBulk.value = true;
       try {
         let count = 0;
-        for (const id of selectedFiles.value) {
-          // await api.restoreArchivedFile(id);
+        // eslint-disable-next-line no-unused-vars
+        for (const _id of selectedFiles.value) {
+          // await api.restoreArchivedFile(_id);
           count++;
         }
         archivedFiles.value = archivedFiles.value.filter(f => !selectedFiles.value.includes(f.id));
@@ -456,8 +457,9 @@ export default {
       isProcessingBulk.value = true;
       try {
         let count = 0;
-        for (const id of selectedFiles.value) {
-          // await api.deleteUploadedFile(id);
+        // eslint-disable-next-line no-unused-vars
+        for (const _id of selectedFiles.value) {
+          // await api.deleteUploadedFile(_id);
           count++;
         }
         archivedFiles.value = archivedFiles.value.filter(f => !selectedFiles.value.includes(f.id));

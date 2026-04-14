@@ -263,21 +263,24 @@ export default {
           this.localFilters.startDate = this.formatDate(today);
           this.localFilters.endDate = this.formatDate(today);
           break;
-        case 'week':
+        case 'week': {
           const weekStart = new Date(year, month, date - today.getDay());
           this.localFilters.startDate = this.formatDate(weekStart);
           this.localFilters.endDate = this.formatDate(today);
           break;
-        case 'month':
+        }
+        case 'month': {
           const monthStart = new Date(year, month, 1);
           this.localFilters.startDate = this.formatDate(monthStart);
           this.localFilters.endDate = this.formatDate(today);
           break;
-        case 'year':
+        }
+        case 'year': {
           const yearStart = new Date(year, 0, 1);
           this.localFilters.startDate = this.formatDate(yearStart);
           this.localFilters.endDate = this.formatDate(today);
           break;
+        }
       }
     },
     formatDate(date) {

@@ -550,11 +550,11 @@ export default {
       this.validateAndSetFile(file);
     },
     
-    handleDragOver(event) {
+    handleDragOver() {
       this.isDragging = true;
     },
     
-    handleDragLeave(event) {
+    handleDragLeave() {
       this.isDragging = false;
     },
     

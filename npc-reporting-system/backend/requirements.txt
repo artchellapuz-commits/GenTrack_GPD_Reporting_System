@@ -18,3 +18,6 @@ requests>=2.31.0
 # Signature Security Dependencies
 cryptography>=41.0.0  # For encryption and digital signatures
 pyotp>=2.9.0  # For 2FA/OTP generation
+gunicorn
+psycopg2-binary
+dj-database-url

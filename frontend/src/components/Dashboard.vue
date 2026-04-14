@@ -579,7 +579,6 @@ import {
 } from '../utils/exportUtils';
 import pdfExporter from '../utils/pdfExport';
 import favoritesManager from '../utils/favorites';
-import keyboardShortcuts from '../utils/keyboardShortcuts';
 
 import { isAdmin, isManagerOrAbove } from '../utils/auth';
 
@@ -596,7 +595,7 @@ import {
   ArcElement,
   Filler
 } from 'chart.js';
-import { Line, Pie, Bar } from 'vue-chartjs';
+import { Pie, Bar } from 'vue-chartjs';
 
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
@@ -619,7 +618,6 @@ export default {
   components: {
     PlantDetailModal,
     AppLayout,
-    LineChart: Line,
     PieChart: Pie,
     BarChart: Bar
   },

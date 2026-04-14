@@ -3162,7 +3162,7 @@ export default {
 
     // Helper method to export preview content to Excel
     _exportPreviewToExcel(ws, mainTable, rightSideContent, startRow, styles) {
-      const { DARK_TEAL, YELLOW, LIGHT_BLUE, BLUE_FILL, GREY_HDR, WHITE,
+      const { DARK_TEAL, YELLOW, GREY_HDR, WHITE,
               mkFill, thinBorder, safeMerge, sv } = styles;
       
       let r = startRow;
@@ -3281,8 +3281,8 @@ export default {
             let finalValue = cellValue;
             let numFmt = null;
             
-            if (/^\d+(\.\d+)?$/.test(cellValue.replace(/[^\d\.]/g, ''))) {
-              const numValue = parseFloat(cellValue.replace(/[^\d\.\-]/g, ''));
+            if (/^\d+(\.\d+)?$/.test(cellValue.replace(/[^\d.]/g, ''))) {
+              const numValue = parseFloat(cellValue.replace(/[^\d.-]/g, ''));
               if (!isNaN(numValue)) {
                 finalValue = numValue;
                 if (cellValue.includes('.')) {
@@ -3404,7 +3404,7 @@ export default {
         sigs.forEach((sig, i) => {
           const c1 = i * Math.floor(30 / total) + 1;
           const c2 = (i + 1) * Math.floor(30 / total);
-          if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) {} }
+          if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) { console.warn(e); } }
           sv(ws, r, c1, sig.name, { font: { bold: true, size: 11, underline: true }, alignment: { horizontal: 'center', vertical: 'middle' } });
         });
         r++;
@@ -3412,7 +3412,7 @@ export default {
         sigs.forEach((sig, i) => {
           const c1 = i * Math.floor(30 / total) + 1;
           const c2 = (i + 1) * Math.floor(30 / total);
-          if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) {} }
+          if (c1 < c2) { try { ws.mergeCells(r, c1, r, c2); } catch(e) { console.warn(e); } }
           sv(ws, r, c1, sig.title, { font: { size: 10 }, alignment: { horizontal: 'center', vertical: 'middle' } });
         });
         r++;
