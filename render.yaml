@@ -17,8 +17,3 @@ services:
         value: "npc-reporting-backend.onrender.com"
       - key: EMAIL_BACKEND
         value: "django.core.mail.backends.console.EmailBackend"
-
-databases:
-  - name: npc-reporting-db
-    plan: free
-    databaseName: npc_reporting_db
