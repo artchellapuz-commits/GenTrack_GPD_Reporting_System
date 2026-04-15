@@ -15,13 +15,10 @@ services:
         value: "False"
       - key: ALLOWED_HOSTS
         value: "npc-reporting-backend.onrender.com"
-      - key: DATABASE_URL
-        fromDatabase:
-          name: npc-reporting-db
-          property: connectionString
       - key: EMAIL_BACKEND
         value: "django.core.mail.backends.console.EmailBackend"
 
 databases:
   - name: npc-reporting-db
     plan: free
+    databaseName: npc_reporting_db
