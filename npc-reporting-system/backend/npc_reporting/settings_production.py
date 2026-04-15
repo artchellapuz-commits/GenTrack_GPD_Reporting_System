@@ -136,28 +136,27 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://127.0.0.1:8081",
     "https://npc-reporting-frontend.netlify.app",
-    "https://gentrack-gpd.netlify.app",  # Add your specific domain directly
+    "https://gentrack-gpd.netlify.app",
 ]
 
 if not DEBUG:
     frontend_url = os.getenv('FRONTEND_URL')
     if frontend_url:
-        # Support both with and without trailing slash
-        origin = frontend_url.rstrip('/')
+        # Clean the URL to ensure no trailing slash
+        origin = frontend_url.strip().rstrip('/')
         if origin not in CORS_ALLOWED_ORIGINS:
             CORS_ALLOWED_ORIGINS.append(origin)
+    
+    # Ensure all origins in CORS_ALLOWED_ORIGINS are clean
+    CORS_ALLOWED_ORIGINS = [url.rstrip('/') for url in CORS_ALLOWED_ORIGINS]
         
-    # More permissive for production debugging
-    CSRF_TRUSTED_ORIGINS = [
-        "https://gentrack-gpd.netlify.app",
-        "https://npc-reporting-backend.onrender.com",
-    ]
-    if frontend_url:
-        CSRF_TRUSTED_ORIGINS.append(frontend_url.rstrip('/'))
+    # Django 4.0+ CSRF settings
+    CSRF_TRUSTED_ORIGINS = [url.rstrip('/') for url in CORS_ALLOWED_ORIGINS]
+    CSRF_TRUSTED_ORIGINS.append("https://npc-reporting-backend.onrender.com")
 
-# Secure Proxy Settings (Required for Render/Heroku/Vercel)
+# Secure Proxy Settings
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = False # Let Render handle this to avoid double-redirect issues
+SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
