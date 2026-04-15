@@ -72,7 +72,7 @@
                 @click="showPassword = !showPassword"
                 :disabled="loading"
               >
-                <i :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+                <i :class="[showPassword ? 'pi pi-eye-slash' : 'pi pi-eye', 'w-fit']"></i>
               </button>
             </div>
           </div>
@@ -657,6 +657,9 @@ export default {
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
+  width: auto; /* Ensure it only takes needed space */
+  height: auto;
+  min-width: unset;
 }
 
 .toggle-password:hover {
