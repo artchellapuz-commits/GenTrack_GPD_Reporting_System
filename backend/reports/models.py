@@ -583,7 +583,7 @@ class AuditLog(models.Model):
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     location = models.CharField(max_length=200, blank=True, help_text="Approximate location based on IP")
-    session_key = models.CharField(max_length=40, blank=True, help_text="Session identifier")
+    session_key = models.CharField(max_length=40, blank=True, null=True, help_text="Session identifier")
     
     # Additional context
     url_path = models.CharField(max_length=500, blank=True, help_text="URL path accessed")
