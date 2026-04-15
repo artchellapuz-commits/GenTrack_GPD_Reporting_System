@@ -38,29 +38,43 @@ class AnalyticsService:
         }
     
     def get_plant_comparison(self, start_date=None, end_date=None):
-        """Compare performance across all plants"""
+        """Compare performance across all plants using a single query"""
         if not end_date:
             end_date = timezone.now().date()
         if not start_date:
             start_date = end_date - timedelta(days=30)
         
+        # Optimized: Single aggregation query for all plants
+        stats_query = GenerationReport.objects.filter(
+            report_date__range=[start_date, end_date]
+        ).values('plant_id').annotate(
+            total_generation=Sum('generation_kwh'),
+            avg_capacity_factor=Avg('capacity_factor'),
+            avg_availability=Avg('availability_factor'),
+            max_capacity_factor=Max('capacity_factor'),
+            min_capacity_factor=Min('capacity_factor'),
+            total_operating_hours=Sum('operating_hours'),
+            total_forced_outage=Sum('forced_outage_hours'),
+            report_count=Count('id')
+        )
+        
+        # Create a lookup map for stats
+        stats_map = {s['plant_id']: s for s in stats_query}
+        
         plants = Plant.objects.filter(is_active=True)
         comparison = []
         
         for plant in plants:
-            stats = GenerationReport.objects.filter(
-                plant=plant,
-                report_date__range=[start_date, end_date]
-            ).aggregate(
-                total_generation=Sum('generation_kwh'),
-                avg_capacity_factor=Avg('capacity_factor'),
-                avg_availability=Avg('availability_factor'),
-                max_capacity_factor=Max('capacity_factor'),
-                min_capacity_factor=Min('capacity_factor'),
-                total_operating_hours=Sum('operating_hours'),
-                total_forced_outage=Sum('forced_outage_hours'),
-                report_count=Count('id')
-            )
+            stats = stats_map.get(plant.id, {
+                'total_generation': 0,
+                'avg_capacity_factor': 0,
+                'avg_availability': 0,
+                'max_capacity_factor': 0,
+                'min_capacity_factor': 0,
+                'total_operating_hours': 0,
+                'total_forced_outage': 0,
+                'report_count': 0
+            })
             
             comparison.append({
                 'plant_id': plant.id,
@@ -78,7 +92,6 @@ class AnalyticsService:
                 'performance_score': self._calculate_performance_score(stats)
             })
         
-        # Sort by performance score
         comparison.sort(key=lambda x: x['performance_score'], reverse=True)
         
         return {

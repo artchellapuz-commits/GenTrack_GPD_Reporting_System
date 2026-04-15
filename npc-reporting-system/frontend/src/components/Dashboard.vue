@@ -1135,23 +1135,44 @@ export default {
     async loadDashboardData() {
       this.loading = true;
       try {
-        // Load overall statistics
-        await this.loadOverallStats();
-        
-        // Load per-plant statistics
-        await this.loadPlantsStats();
-        
-        // Load recent uploads
-        await this.loadRecentUploads();
-        
-        // Load monthly trend data
-        await this.fetchMonthlyTrendData();
+        // Load all dashboard data concurrently to speed up loading
+        await Promise.all([
+          this.loadOverallStats(),
+          this.loadPlantsStatsOptimized(),
+          this.loadRecentUploads(),
+          this.fetchMonthlyTrendData()
+        ]);
         
         this.lastUpdated = new Date();
       } catch (error) {
         console.error('Error loading dashboard:', error);
       } finally {
         this.loading = false;
+      }
+    },
+
+    async loadPlantsStatsOptimized() {
+      try {
+        // Use the plant comparison endpoint which is already optimized to return all plant data in one call
+        const response = await api.getPlantComparison();
+        const comparisonData = response.data.plants || [];
+        
+        const plantsWithStats = comparisonData.map(p => ({
+          code: p.plant_code,
+          name: p.plant_name,
+          generation: p.total_generation_mwh * 1000, // Convert back to kWh for consistency
+          capacityFactor: p.avg_capacity_factor,
+          availability: p.avg_availability,
+          hasData: p.days_reported > 0
+        }));
+
+        this.plantsData = plantsWithStats;
+        this.filteredPlants = [...plantsWithStats];
+        this.sortPlants();
+      } catch (error) {
+        console.error('Error loading optimized plant stats:', error);
+        // Fallback to old method if optimized one fails
+        await this.loadPlantsStats();
       }
     },
     

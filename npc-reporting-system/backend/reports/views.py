@@ -369,6 +369,9 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
 class GenerationReportViewSet(mixins.ListModelMixin,
                               mixins.RetrieveModelMixin,
                               viewsets.GenericViewSet):
@@ -409,6 +412,7 @@ class GenerationReportViewSet(mixins.ListModelMixin,
         
         return queryset
     
+    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     @action(detail=False, methods=['get'])
     def summary(self, request):
         """Get aggregated summary statistics"""
