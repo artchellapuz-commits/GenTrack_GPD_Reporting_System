@@ -186,10 +186,6 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
-        },
         'simple': {
             'format': '{levelname} {message}',
             'style': '{',
@@ -198,29 +194,22 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs' / 'app.log',
-            'maxBytes': 1024 * 1024 * 10,
-            'backupCount': 5,
-            'formatter': 'verbose',
+            'formatter': 'simple',
         },
     },
     'root': {
-        'handlers': ['console', 'file'],
-        'level': 'INFO',
+        'handlers': ['console'],
+        'level': 'ERROR',  # Only log errors in production
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'handlers': ['console'],
+            'level': 'ERROR',
             'propagate': False,
         },
         'reports': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'handlers': ['console'],
+            'level': 'ERROR',
             'propagate': False,
         },
     },

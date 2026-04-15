@@ -22,5 +22,11 @@ module.exports = defineConfig({
       }
     }
   },
-  publicPath: process.env.NODE_ENV === 'production' ? '/' : '/'
+  publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
+  configureWebpack: config => {
+    if (process.env.NODE_ENV === 'production') {
+      // Remove console logs in production
+      config.optimization.minimizer[0].options.terserOptions.compress.drop_console = true
+    }
+  }
 })
