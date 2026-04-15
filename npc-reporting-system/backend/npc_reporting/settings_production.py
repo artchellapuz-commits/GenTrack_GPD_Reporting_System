@@ -246,7 +246,7 @@ SIGNATURE_NOTIFY_ON_SIGNATURE = os.getenv('SIGNATURE_NOTIFY_ON_SIGNATURE', 'True
 SIGNATURE_NOTIFY_ON_SUSPICIOUS = os.getenv('SIGNATURE_NOTIFY_ON_SUSPICIOUS', 'True') == 'True'
 
 LOGGING['loggers']['signature_audit'] = {
-    'handlers': ['file'],
+    'handlers': ['console'],
     'level': 'INFO',
     'propagate': False,
 }
