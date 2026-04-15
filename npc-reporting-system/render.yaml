@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: npc-reporting-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt && python manage.py migrate --settings=npc_reporting.settings_production && python manage.py collectstatic --noinput --settings=npc_reporting.settings_production
+    startCommand: gunicorn npc_reporting.wsgi:application --bind 0.0.0.0:$PORT
+    healthCheckPath: /api/
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: "npc_reporting.settings_production"
+      - key: ALLOWED_HOSTS
+        value: "npc-reporting-backend.onrender.com"
+      - key: EMAIL_BACKEND
+        value: "django.core.mail.backends.console.EmailBackend"
