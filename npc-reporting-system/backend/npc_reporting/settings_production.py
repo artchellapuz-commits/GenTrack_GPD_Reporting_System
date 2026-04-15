@@ -27,6 +27,17 @@ INSTALLED_APPS = [
     'reports',
 ]
 
+# Cache Configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
+# Default cache timeout
+CACHE_MIDDLEWARE_SECONDS = 60 * 15  # 15 minutes
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',

@@ -11,8 +11,8 @@ from .views_signature import DocumentViewSet, SignatureRequestViewSet, DigitalSi
 from .auth_views import AuthViewSet, UserViewSet, PasswordResetRequestViewSet
 from .views_scheduled import ScheduledReportViewSet, ReportExecutionViewSet
 from .views_analytics import (
-    performance_trends, plant_comparison, predictive_insights,
-    anomaly_detection, efficiency_analysis, water_nomination_analysis
+    PerformanceTrendsView, PlantComparisonView, PredictiveInsightsView,
+    AnomalyDetectionView, EfficiencyAnalysisView, WaterNominationAnalysisView
 )
 from .signature_views import signature_setup_no_auth, save_signature_no_auth
 
@@ -46,12 +46,12 @@ router.register(r'report-executions', ReportExecutionViewSet, basename='reportex
 urlpatterns = [
     path('', include(router.urls)),
     # Analytics endpoints
-    path('analytics/trends/', performance_trends, name='analytics-trends'),
-    path('analytics/comparison/', plant_comparison, name='analytics-comparison'),
-    path('analytics/predictions/', predictive_insights, name='analytics-predictions'),
-    path('analytics/anomalies/', anomaly_detection, name='analytics-anomalies'),
-    path('analytics/efficiency/', efficiency_analysis, name='analytics-efficiency'),
-    path('analytics/water-nomination/', water_nomination_analysis, name='analytics-water-nomination'),
+    path('analytics/trends/', PerformanceTrendsView.as_view(), name='analytics-trends'),
+    path('analytics/comparison/', PlantComparisonView.as_view(), name='analytics-comparison'),
+    path('analytics/predictions/', PredictiveInsightsView.as_view(), name='analytics-predictions'),
+    path('analytics/anomalies/', AnomalyDetectionView.as_view(), name='analytics-anomalies'),
+    path('analytics/efficiency/', EfficiencyAnalysisView.as_view(), name='analytics-efficiency'),
+    path('analytics/water-nomination/', WaterNominationAnalysisView.as_view(), name='analytics-water-nomination'),
     # Signature setup endpoints (no authentication required)
     path('signature-setup/<str:token>/', signature_setup_no_auth, name='signature-setup-no-auth'),
     path('save-signature/<str:token>/', save_signature_no_auth, name='save-signature-no-auth'),
