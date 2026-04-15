@@ -1,10 +1,18 @@
 [build]
-  base = "npc-reporting-system/frontend"
-  command = "npm run build"
-  publish = "dist"
+  command = "cd frontend && npm run build"
+  publish = "frontend/dist"
 
-# Redirects to handle Vue Router's history mode
+[build.environment]
+  NODE_VERSION = "18"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
