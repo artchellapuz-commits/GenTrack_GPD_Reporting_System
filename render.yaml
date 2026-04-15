@@ -7,12 +7,15 @@ services:
     startCommand: gunicorn npc_reporting.wsgi:application --bind 0.0.0.0:$PORT
     healthCheckPath: /api/
     plan: free
-    pythonVersion: "3.11"
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
       - key: SECRET_KEY
         generateValue: true
       - key: DEBUG
         value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: "npc_reporting.settings_production"
       - key: ALLOWED_HOSTS
         value: "npc-reporting-backend.onrender.com"
       - key: EMAIL_BACKEND
