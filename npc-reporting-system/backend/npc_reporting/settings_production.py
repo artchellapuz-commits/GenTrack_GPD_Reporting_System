@@ -142,7 +142,17 @@ if not DEBUG:
     frontend_url = os.getenv('FRONTEND_URL')
     if frontend_url:
         # Support both with and without trailing slash
-        CORS_ALLOWED_ORIGINS.append(frontend_url.rstrip('/'))
+        origin = frontend_url.rstrip('/')
+        CORS_ALLOWED_ORIGINS.append(origin)
+        
+        # Django 4.0+ also requires this for POST requests
+        CSRF_TRUSTED_ORIGINS = [origin]
+
+# Secure Proxy Settings (Required for Render/Heroku/Vercel)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'True') == 'True'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 CORS_ALLOW_CREDENTIALS = True
 
