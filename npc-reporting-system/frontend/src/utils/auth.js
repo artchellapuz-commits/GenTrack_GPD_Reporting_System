@@ -5,7 +5,12 @@
 
 import axios from 'axios';
 
-const API_URL = process.env.VUE_APP_API_URL || 'http://localhost:8000/api';
+let API_URL = process.env.VUE_APP_API_URL || 'http://localhost:8000/api';
+
+// Force production URL if running on Netlify domain
+if (window.location.hostname.includes('netlify.app')) {
+  API_URL = 'https://npc-reporting-backend.onrender.com/api';
+}
 
 /**
  * Get access token from localStorage
