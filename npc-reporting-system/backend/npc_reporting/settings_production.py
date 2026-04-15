@@ -139,9 +139,10 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 if not DEBUG:
-    CORS_ALLOWED_ORIGINS.extend([
-        os.getenv('FRONTEND_URL', 'https://npc-reporting-frontend.netlify.app'),
-    ])
+    frontend_url = os.getenv('FRONTEND_URL')
+    if frontend_url:
+        # Support both with and without trailing slash
+        CORS_ALLOWED_ORIGINS.append(frontend_url.rstrip('/'))
 
 CORS_ALLOW_CREDENTIALS = True
 
