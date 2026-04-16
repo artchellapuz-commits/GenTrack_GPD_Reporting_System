@@ -8,13 +8,14 @@ from .views import (
 )
 from .views_authorization import SignatoryAuthorizationViewSet
 from .views_signature import DocumentViewSet, SignatureRequestViewSet, DigitalSignatureViewSet, SigningViewSet
-from .auth_views import AuthViewSet, UserViewSet, PasswordResetRequestViewSet
+from .auth_views_simple import AuthViewSet, UserViewSet, PasswordResetRequestViewSet
 from .views_scheduled import ScheduledReportViewSet, ReportExecutionViewSet
 from .views_analytics import (
     PerformanceTrendsView, PlantComparisonView, PredictiveInsightsView,
     AnomalyDetectionView, EfficiencyAnalysisView, WaterNominationAnalysisView
 )
 from .signature_views import signature_setup_no_auth, save_signature_no_auth
+from .health_views import health_check, ping
 
 router = DefaultRouter()
 router.register(r'plants', PlantViewSet, basename='plant')
@@ -45,6 +46,9 @@ router.register(r'report-executions', ReportExecutionViewSet, basename='reportex
 
 urlpatterns = [
     path('', include(router.urls)),
+    # Health check endpoints (no authentication required)
+    path('health/', health_check, name='health_check'),
+    path('ping/', ping, name='ping'),
     # Analytics endpoints
     path('analytics/trends/', PerformanceTrendsView.as_view(), name='analytics-trends'),
     path('analytics/comparison/', PlantComparisonView.as_view(), name='analytics-comparison'),

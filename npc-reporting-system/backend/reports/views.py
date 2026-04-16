@@ -4,6 +4,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.http import FileResponse
 from django.db.models import Sum, Avg, Q
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+from django.core.cache import cache
 from datetime import datetime
 import hashlib
 import os
@@ -33,8 +36,9 @@ from .audit_utils import (
 )
 
 
+@method_decorator(cache_page(60 * 30), name='list')  # Cache for 30 minutes
 class PlantViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Plant.objects.filter(is_active=True)
+    queryset = Plant.objects.filter(is_active=True).select_related().prefetch_related('units')
     serializer_class = PlantSerializer
     permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
     pagination_class = None  # Disable pagination for plants
@@ -372,10 +376,12 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
+@method_decorator(cache_page(60 * 10), name='list')  # Cache for 10 minutes
+@method_decorator(cache_page(60 * 15), name='summary')  # Cache for 15 minutes
 class GenerationReportViewSet(mixins.ListModelMixin,
                               mixins.RetrieveModelMixin,
                               viewsets.GenericViewSet):
-    queryset = GenerationReport.objects.all().select_related('plant', 'unit', 'uploaded_file')
+    queryset = GenerationReport.objects.select_related('plant', 'unit', 'uploaded_file').prefetch_related('plant__units')
     permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
     
     def get_serializer_class(self):
@@ -384,6 +390,13 @@ class GenerationReportViewSet(mixins.ListModelMixin,
         return GenerationReportSerializer
     
     def get_queryset(self):
+        # Use cache for expensive queries
+        cache_key = f"generation_reports_{hash(str(self.request.query_params))}"
+        cached_result = cache.get(cache_key)
+        
+        if cached_result is not None:
+            return cached_result
+        
         queryset = super().get_queryset()
         
         # Filter by plant - handle both plant_code and plant_code[] formats
@@ -409,6 +422,9 @@ class GenerationReportViewSet(mixins.ListModelMixin,
         unit_id = self.request.query_params.get('unit_id')
         if unit_id:
             queryset = queryset.filter(unit_id=unit_id)
+        
+        # Cache the queryset for 5 minutes
+        cache.set(cache_key, queryset, 300)
         
         return queryset
     

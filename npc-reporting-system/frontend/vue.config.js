@@ -25,8 +25,38 @@ module.exports = defineConfig({
   publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
   configureWebpack: config => {
     if (process.env.NODE_ENV === 'production') {
-      // Remove console logs in production
-      config.optimization.minimizer[0].options.terserOptions.compress.drop_console = true
+      // Performance optimizations for production
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+            },
+            common: {
+              name: 'common',
+              minChunks: 2,
+              chunks: 'all',
+              enforce: true
+            }
+          }
+        }
+      }
+      
+      // Only configure terser if it exists
+      if (config.optimization.minimizer && config.optimization.minimizer[0]) {
+        const terserPlugin = config.optimization.minimizer[0];
+        if (terserPlugin.options && terserPlugin.options.terserOptions) {
+          terserPlugin.options.terserOptions.compress = {
+            ...terserPlugin.options.terserOptions.compress,
+            drop_console: true,
+            drop_debugger: true
+          }
+        }
+      }
     }
   }
 })

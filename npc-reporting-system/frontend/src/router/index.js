@@ -1,18 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import LandingPage from '../components/LandingPage.vue';
-import Dashboard from '../components/Dashboard.vue';
-import UploadExcel from '../components/UploadExcel.vue';
-import ViewReports from '../components/ViewReports.vue';
-import GenerateReport from '../components/GenerateReport.vue';
-import WaterNomination from '../components/WaterNomination.vue';
-import ApprovalQueue from '../components/ApprovalQueue.vue';
-import AuditLogs from '../components/AuditLogs.vue';
-import UserManagement from '../components/UserManagement.vue';
-import PasswordResetRequests from '../components/PasswordResetRequests.vue';
-import DebugUser from '../components/DebugUser.vue';
-import LoginPage from '../components/Login.vue';
-import RegisterPage from '../components/Register.vue';
 import { isAuthenticated } from '../utils/auth';
+
+// Performance: Lazy load components for better initial load time
+const LandingPage = () => import('../components/LandingPage.vue');
+const Dashboard = () => import('../components/Dashboard.vue');
+const UploadExcel = () => import('../components/UploadExcel.vue');
+const ViewReports = () => import('../components/ViewReports.vue');
+const GenerateReport = () => import('../components/GenerateReport.vue');
+const WaterNomination = () => import('../components/WaterNomination.vue');
+const ApprovalQueue = () => import('../components/ApprovalQueue.vue');
+const AuditLogs = () => import('../components/AuditLogs.vue');
+const UserManagement = () => import('../components/UserManagement.vue');
+const PasswordResetRequests = () => import('../components/PasswordResetRequests.vue');
+const DebugUser = () => import('../components/DebugUser.vue');
+const LoginPage = () => import('../components/Login.vue');
+const RegisterPage = () => import('../components/Register.vue');
 
 const routes = [
   {
@@ -82,7 +84,10 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
-    meta: { requiresAuth: true }
+    meta: { 
+      requiresAuth: true,
+      preload: true // Performance: Preload critical route
+    }
   },
   {
     path: '/upload',

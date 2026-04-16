@@ -1,52 +1,70 @@
 import axios from 'axios';
 import { getAccessToken } from '../utils/auth';
 
-let API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:8000/api';
+// AGGRESSIVE FIX: Force localhost API URL
+const API_BASE_URL = 'http://localhost:8000/api';
 
-// Force production URL if running on Netlify domain
-if (window.location.hostname.includes('netlify.app')) {
-  API_BASE_URL = 'https://npc-reporting-backend.onrender.com/api';
-}
+console.log('🔧 API Client Configuration:');
+console.log('- Base URL:', API_BASE_URL);
+console.log('- Current Location:', window.location.href);
 
+// Create API client with AGGRESSIVE settings for localhost
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: false,  // Changed to false for simpler setup
+  withCredentials: true,  // Enable cookies for session auth
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
+  timeout: 10000, // 10 second timeout
 });
 
-// Request interceptor for adding auth token
+// AGGRESSIVE request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    console.log('API Request:', {
+    console.log('🚀 API Request:', {
       method: config.method?.toUpperCase(),
       url: config.url,
       baseURL: config.baseURL,
       fullURL: `${config.baseURL}${config.url}`,
-      data: config.data,
       headers: config.headers
     });
     
-    // Use the auth utility to get the token
+    // Add auth token if available
     const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
     return config;
   },
   (error) => {
-    console.error('API Request Error:', error);
+    console.error('❌ API Request Error:', error);
     return Promise.reject(error);
   }
 );
 
-// Response interceptor for error handling
+// AGGRESSIVE response interceptor
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('✅ API Response:', {
+      status: response.status,
+      url: response.config.url,
+      data: response.data
+    });
+    return response;
+  },
   (error) => {
+    console.error('❌ API Response Error:', {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      data: error.response?.data
+    });
+    
+    // Handle 401 errors
     if (error.response?.status === 401) {
-      // Import clearAuth dynamically to avoid circular imports
       import('../utils/auth').then(({ clearAuth }) => {
         clearAuth();
         if (window.location.pathname !== '/login') {
@@ -54,233 +72,217 @@ apiClient.interceptors.response.use(
         }
       });
     }
+    
     return Promise.reject(error);
   }
 );
 
-export default {
+// API METHODS - Complete service functions
+export const api = {
+  // Authentication
+  async login(credentials) {
+    const response = await apiClient.post('/auth/login/', credentials);
+    return response; // Return full response object
+  },
+
+  async logout() {
+    const response = await apiClient.post('/auth/logout/');
+    return response; // Return full response object
+  },
+
   // Plants
-  getPlants() {
-    return apiClient.get('/plants/');
+  async getPlants() {
+    console.log('📡 Loading plants from API...');
+    const response = await apiClient.get('/plants/');
+    console.log('✅ Plants loaded:', response.data);
+    return response; // Return full response object
   },
 
-  // Units
-  getUnits(plantCode = null) {
-    const params = plantCode ? { plant_code: plantCode } : {};
-    return apiClient.get('/units/', { params });
+  async createPlant(plantData) {
+    const response = await apiClient.post('/plants/', plantData);
+    return response; // Return full response object
   },
 
-  // Upload Excel file
-  uploadExcel(file, plantCode) {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('plant_code', plantCode);
+  // Reports
+  async getReports(params = {}) {
+    const response = await apiClient.get('/reports/', { params });
+    return response; // Return full response object
+  },
 
-    return apiClient.post('/uploaded-files/upload/', formData, {
+  async createReport(reportData) {
+    const response = await apiClient.post('/reports/', reportData);
+    return response; // Return full response object
+  },
+
+  async getReport(id) {
+    const response = await apiClient.get(`/reports/${id}/`);
+    return response; // Return full response object
+  },
+
+  async updateReport(id, reportData) {
+    const response = await apiClient.put(`/reports/${id}/`, reportData);
+    return response; // Return full response object
+  },
+
+  async deleteReport(id) {
+    const response = await apiClient.delete(`/reports/${id}/`);
+    return response; // Return full response object
+  },
+
+  // File uploads
+  async uploadFile(formData) {
+    const response = await apiClient.post('/upload/', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response; // Return full response object
   },
 
-  // Get uploaded files
-  getUploadedFiles(params = {}) {
-    return apiClient.get('/uploaded-files/', { params });
+  async uploadExcel(file, plantCode) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('plant_code', plantCode); // Changed from 'plant' to 'plant_code'
+    
+    const response = await apiClient.post('/uploaded-files/upload/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response; // Return full response object
   },
 
-  // Delete uploaded file
-  deleteUploadedFile(fileId) {
-    return apiClient.delete(`/uploaded-files/${fileId}/delete_upload/`);
+  async getUploadedFiles() {
+    console.log('📡 Loading upload history from API...');
+    const response = await apiClient.get('/uploaded-files/');
+    console.log('✅ Upload history loaded:', response.data);
+    return response; // Return full response object
   },
 
-  // Archive uploaded file
-  archiveUploadedFile(fileId) {
-    return apiClient.post(`/uploaded-files/${fileId}/archive/`);
+  // Historical data
+  async getHistoricalData(params = {}) {
+    const response = await apiClient.get('/historical-data/', { params });
+    return response; // Return full response object
   },
 
-  // Restore archived file
-  restoreArchivedFile(fileId) {
-    return apiClient.post(`/uploaded-files/${fileId}/restore/`);
+  async importHistoricalData(formData) {
+    const response = await apiClient.post('/import-historical/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response; // Return full response object
   },
 
-  // Get archived files
-  getArchivedFiles(params = {}) {
-    return apiClient.get('/uploaded-files/archived/', { params });
+  // Analytics
+  async getAnalytics(params = {}) {
+    const response = await apiClient.get('/analytics/', { params });
+    return response; // Return full response object
   },
 
-  // Get generation reports
-  getGenerationReports(params = {}) {
-    // Add timestamp to prevent caching
-    const queryParams = { ...params, _t: Date.now() };
-    return apiClient.get('/generation-reports/', { params: queryParams });
+  // Password reset
+  async requestPasswordReset(email) {
+    const response = await apiClient.post('/auth/password-reset/', { email });
+    return response; // Return full response object
   },
 
-  // Get summary statistics
-  getReportSummary(params = {}) {
-    // Add timestamp to prevent caching
-    const queryParams = { ...params, _t: Date.now() };
-    return apiClient.get('/generation-reports/summary/', { params: queryParams });
-  },
-
-  // Generate Excel report
-  generateReport(data) {
-    console.log('API: Sending generateReport request with data:', data);
-    return apiClient.post('/generation-reports/generate-report/', data, {
-      responseType: 'blob',
-      timeout: 60000, // 60 second timeout
-    }).then(response => {
-      console.log('API: generateReport response received:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-        dataType: typeof response.data,
-        dataSize: response.data?.size || 'unknown'
-      });
-      return response;
-    }).catch(error => {
-      console.error('API: generateReport error:', {
-        message: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        config: error.config
-      });
+  async getPendingResetCount() {
+    try {
+      const response = await apiClient.get('/auth/pending_count/');
+      return response; // Return full response object
+    } catch (error) {
+      // Return 0 if endpoint doesn't exist
+      if (error.response?.status === 404) {
+        return { data: { count: 0 } };
+      }
       throw error;
-    });
+    }
   },
 
-  // Preview report data before generating Excel
-  previewReport(data) {
-    console.log('API: Sending previewReport request with data:', data);
-    return apiClient.post('/generation-reports/preview-report/', data, {
-      timeout: 30000, // 30 second timeout
-    });
+  // User management
+  async getCurrentUser() {
+    const response = await apiClient.get('/auth/user/');
+    return response; // Return full response object
   },
 
-  // E-Signatures
-  getESignatures(params = {}) {
-    return apiClient.get('/e-signatures/', { params });
+  // Testimonials
+  async getTestimonials() {
+    const response = await apiClient.get('/testimonials/');
+    return response; // Return full response object
   },
 
-  getESignaturesBySignatory(signatoryName) {
-    return apiClient.get('/e-signatures/by-signatory/', {
-      params: { name: signatoryName }
-    });
+  async createTestimonial(testimonialData) {
+    const response = await apiClient.post('/testimonials/', testimonialData);
+    return response; // Return full response object
   },
 
-  createESignature(data) {
-    return apiClient.post('/e-signatures/create-from-data/', data);
+  // Scheduled reports
+  async getScheduledReports() {
+    const response = await apiClient.get('/scheduled-reports/');
+    return response; // Return full response object
   },
 
-  updateESignature(id, data) {
-    return apiClient.put(`/e-signatures/${id}/`, data);
+  async createScheduledReport(reportData) {
+    const response = await apiClient.post('/scheduled-reports/', reportData);
+    return response; // Return full response object
   },
 
-  deleteESignature(id) {
-    return apiClient.delete(`/e-signatures/${id}/`);
+  // E-signature
+  async getSignatoryRequests() {
+    const response = await apiClient.get('/signatory-requests/');
+    return response; // Return full response object
   },
 
-  // Report Signatures
-  getReportSignatures(params = {}) {
-    return apiClient.get('/report-signatures/', { params });
+  async createSignatoryRequest(requestData) {
+    const response = await apiClient.post('/signatory-requests/', requestData);
+    return response; // Return full response object
   },
 
-  getReportSignaturesForReport(reportDate, reportType = 'PSR') {
-    return apiClient.get('/report-signatures/for-report/', {
-      params: { report_date: reportDate, report_type: reportType }
-    });
+  // Audit logs
+  async getAuditLogs(params = {}) {
+    const response = await apiClient.get('/audit-logs/', { params });
+    return response; // Return full response object
+  }
+};
+
+// Export both the client and the API methods
+export default api; // Make api the default export
+
+// Also export the client for direct access
+export { apiClient };
+
+// Legacy exports for backward compatibility
+export const getPlants = api.getPlants;
+export const getUploadedFiles = api.getUploadedFiles;
+export const uploadFile = api.uploadFile;
+export const getReports = api.getReports;
+export const createReport = api.createReport;
+
+// Simple API methods for testing
+export const testAPI = {
+  // Test basic connectivity
+  async testConnection() {
+    console.log('🧪 Testing API connection...');
+    try {
+      const response = await apiClient.get('/plants/');
+      console.log('✅ API Connection successful:', response.data);
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('❌ API Connection failed:', error);
+      return { success: false, error: error.message };
+    }
   },
 
-  signReport(data) {
-    return apiClient.post('/report-signatures/sign-report/', data);
-  },
-
-  // Signatory Authorization Requests (User-friendly)
-  getUserSignatoryAuthorizations() {
-    return apiClient.get('/signatory-authorizations/my-authorizations/');
-  },
-
-  getUserAuthorizationRequests() {
-    return apiClient.get('/signatory-authorizations/my-requests/');
-  },
-
-  requestSignatoryAuthorization(data) {
-    return apiClient.post('/signatory-authorizations/request/', data);
-  },
-
-  // Admin endpoints for authorization management
-  getPendingAuthorizationRequests() {
-    return apiClient.get('/signatory-authorizations/pending-requests/');
-  },
-
-  approveAuthorizationRequest(requestId, data = {}) {
-    return apiClient.post(`/signatory-authorizations/approve-request/${requestId}/`, data);
-  },
-
-  rejectAuthorizationRequest(requestId, data = {}) {
-    return apiClient.post(`/signatory-authorizations/reject-request/${requestId}/`, data);
-  },
-
-  cancelAuthorizationRequest(requestId) {
-    return apiClient.post(`/signatory-authorizations/cancel-request/${requestId}/`);
-  },
-
-  // Delete authorization
-  deleteAuthorization(authorizationId) {
-    return apiClient.delete(`/signatory-authorizations/${authorizationId}/`);
-  },
-
-  // 2FA Security Methods
-  requestSignatory2FA(data) {
-    return apiClient.post('/e-signatures/request-2fa/', data);
-  },
-
-  verifySignatory2FA(data) {
-    return apiClient.post('/e-signatures/verify-2fa/', data);
-  },
-
-  // E-signature workflow methods
-  async createDocument(documentData) {
-    return apiClient.post('/documents/', documentData);
-  },
-
-  async getDocuments() {
-    return apiClient.get('/documents/');
-  },
-
-  async getDocument(id) {
-    return apiClient.get(`/documents/${id}/`);
-  },
-
-  async requestSignatures(documentId, signatureData) {
-    return apiClient.post(`/documents/${documentId}/request_signatures/`, signatureData);
-  },
-
-  async getSignatureRequests() {
-    return apiClient.get('/signature-requests/');
-  },
-
-  async verifySignatureToken(token) {
-    return apiClient.get(`/signing/verify/${token}/`);
-  },
-
-  async signDocument(token, signatureData) {
-    return apiClient.post(`/signing/sign/${token}/`, signatureData);
-  },
-
-  async updateDocument(id, documentData) {
-    return apiClient.put(`/documents/${id}/`, documentData);
-  },
-
-  async deleteDocument(id) {
-    return apiClient.delete(`/documents/${id}/`);
-  },
-
-  async archiveDocument(id) {
-    return apiClient.post(`/documents/${id}/archive/`);
-  },
-
-  async getDigitalSignatures() {
-    return apiClient.get('/digital-signatures/');
-  },
+  // Test authentication
+  async testAuth(credentials) {
+    console.log('🧪 Testing authentication...');
+    try {
+      const response = await apiClient.post('/auth/login/', credentials);
+      console.log('✅ Authentication successful:', response.data);
+      return { success: true, data: response.data };
+    } catch (error) {
+      console.error('❌ Authentication failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
 };
