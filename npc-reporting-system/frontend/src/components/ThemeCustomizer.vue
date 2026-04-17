@@ -253,7 +253,7 @@ export default {
         this.applyPreset('Lara');
       }
       
-      if (savedMenuMode) {
+      if (savedMenuMode && ['Static', 'Overlay'].includes(savedMenuMode)) {
         this.selectedMenuMode = savedMenuMode;
       }
       

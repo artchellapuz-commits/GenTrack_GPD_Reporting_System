@@ -8,7 +8,7 @@ from .views import (
 )
 from .views_authorization import SignatoryAuthorizationViewSet
 from .views_signature import DocumentViewSet, SignatureRequestViewSet, DigitalSignatureViewSet, SigningViewSet
-from .auth_views_simple import AuthViewSet, UserViewSet, PasswordResetRequestViewSet
+from .auth_views_fixed import AuthViewSet, UserViewSet, PasswordResetRequestViewSet
 from .views_scheduled import ScheduledReportViewSet, ReportExecutionViewSet
 from .views_analytics import (
     PerformanceTrendsView, PlantComparisonView, PredictiveInsightsView,

@@ -1,10 +1,10 @@
 <template>
-  <div class="layout-wrapper" :class="{ 'layout-static-inactive': !sidebarActive }">
+  <div class="layout-wrapper" :class="layoutClasses">
     <!-- PWA Install Prompt -->
     <PWAInstallPrompt />
     
     <!-- Sidebar -->
-    <div class="layout-sidebar">
+    <div class="layout-sidebar" :class="sidebarClasses">
       <div class="sidebar-header">
         <router-link to="/dashboard" class="logo">
           <!-- Animated SVG Logo for GenTrack -->
@@ -283,8 +283,8 @@
       </div>
     </div>
 
-    <!-- Sidebar Overlay for Mobile -->
-    <div v-if="sidebarActive" class="layout-mask" @click="toggleSidebar"></div>
+    <!-- Sidebar Overlay for Mobile and Overlay Mode -->
+    <div v-if="shouldShowMask" class="layout-mask" @click="toggleSidebar"></div>
 
     <!-- Theme Customizer - Always rendered to prevent ref errors -->
     <ThemeCustomizer 
@@ -340,7 +340,9 @@ export default {
       recentRequests: [],
       currentDate: '',
       currentTime: '',
-      timeInterval: null
+      timeInterval: null,
+      menuMode: 'Static', // Add menu mode state
+      isMobile: false // Track mobile state
     };
   },
   created() {
@@ -369,6 +371,29 @@ export default {
         '/scheduled-reports': 'Automated Reports'
       };
       return titles[route] || 'GPD System';
+    },
+    layoutClasses() {
+      return {
+        'layout-static': this.menuMode === 'Static',
+        'layout-overlay': this.menuMode === 'Overlay',
+        'layout-static-inactive': this.menuMode === 'Static' && !this.sidebarActive,
+        'layout-overlay-active': this.menuMode === 'Overlay' && this.sidebarActive
+      };
+    },
+    sidebarClasses() {
+      return {
+        'layout-sidebar-static': this.menuMode === 'Static',
+        'layout-sidebar-overlay': this.menuMode === 'Overlay'
+      };
+    },
+    shouldShowMask() {
+      // Show mask when sidebar is active and either:
+      // 1. In overlay mode (desktop or mobile)
+      // 2. In static mode on mobile (< 992px)
+      return this.sidebarActive && (
+        this.menuMode === 'Overlay' || 
+        (this.menuMode === 'Static' && this.isMobile)
+      );
     }
   },
   mounted() {
@@ -376,6 +401,7 @@ export default {
     this.checkScreenSize();
     this.checkCurrentRoute();
     this.updateDateTime();
+    this.loadMenuMode(); // Load saved menu mode
     window.addEventListener('resize', this.checkScreenSize);
     document.addEventListener('click', this.handleClickOutside);
     
@@ -506,14 +532,39 @@ export default {
       }
     },
     checkScreenSize() {
-      if (window.innerWidth < 992) {
+      const wasMobile = this.isMobile;
+      this.isMobile = window.innerWidth < 992;
+      
+      if (this.isMobile) {
         this.sidebarActive = false;
       } else {
         this.sidebarActive = true;
       }
+      
+      // If switching from mobile to desktop in overlay mode, ensure sidebar is hidden
+      if (!this.isMobile && wasMobile && this.menuMode === 'Overlay') {
+        this.sidebarActive = false;
+      }
     },
     handleMenuModeChange(mode) {
       console.log('Menu mode changed to:', mode);
+      this.menuMode = mode;
+      localStorage.setItem('menu-mode', mode);
+      
+      // Handle sidebar state based on mode and screen size
+      if (mode === 'Overlay') {
+        // In overlay mode, sidebar should be hidden by default
+        this.sidebarActive = false;
+      } else if (mode === 'Static') {
+        // In static mode, show sidebar on desktop, hide on mobile
+        this.sidebarActive = !this.isMobile;
+      }
+    },
+    loadMenuMode() {
+      const savedMode = localStorage.getItem('menu-mode');
+      if (savedMode && ['Static', 'Overlay'].includes(savedMode)) {
+        this.menuMode = savedMode;
+      }
     },
     handleDarkModeChange(isDark) {
       this.isDarkMode = isDark;
@@ -605,8 +656,12 @@ export default {
   display: flex;
 }
 
-/* Sidebar */
-.layout-sidebar {
+/* Static Layout (Default) */
+.layout-wrapper.layout-static {
+  /* Default static layout */
+}
+
+.layout-wrapper.layout-static .layout-sidebar {
   position: fixed;
   left: 0;
   top: 0;
@@ -619,8 +674,74 @@ export default {
   overflow-x: hidden;
 }
 
-.layout-static-inactive .layout-sidebar {
+.layout-wrapper.layout-static .layout-main-container {
+  flex: 1;
+  margin-left: 250px;
+  transition: margin-left 0.3s;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.layout-wrapper.layout-static .layout-topbar {
+  left: 250px;
+  transition: left 0.3s;
+}
+
+.layout-wrapper.layout-static-inactive .layout-sidebar {
   transform: translateX(-100%);
+}
+
+.layout-wrapper.layout-static-inactive .layout-main-container {
+  margin-left: 0;
+}
+
+.layout-wrapper.layout-static-inactive .layout-topbar {
+  left: 0;
+}
+
+/* Overlay Layout */
+.layout-wrapper.layout-overlay {
+  /* Overlay layout styles */
+}
+
+.layout-wrapper.layout-overlay .layout-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100vh;
+  width: 250px;
+  background: #1e293b;
+  z-index: 1001;
+  transition: transform 0.3s;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transform: translateX(-100%);
+}
+
+.layout-wrapper.layout-overlay .layout-main-container {
+  flex: 1;
+  margin-left: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.layout-wrapper.layout-overlay .layout-topbar {
+  left: 0;
+}
+
+.layout-wrapper.layout-overlay-active .layout-sidebar {
+  transform: translateX(0);
+}
+
+/* Sidebar */
+.layout-sidebar {
+  /* Base sidebar styles moved to layout-specific sections above */
 }
 
 .sidebar-header {
@@ -866,21 +987,9 @@ export default {
   letter-spacing: 0.5px;
 }
 
-/* Main Container */
-.layout-main-container {
-  flex: 1;
-  margin-left: 250px;
-  transition: margin-left 0.3s;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  min-width: 0;
-  max-width: 100%;
-}
+/* Main Container - moved to layout-specific sections above */
 
-.layout-static-inactive .layout-main-container {
-  margin-left: 0;
-}
+/* Top Bar - moved to layout-specific sections above */
 
 /* Top Bar */
 .layout-topbar {
@@ -892,11 +1001,10 @@ export default {
   padding: 0 1.5rem;
   position: fixed;
   top: 0;
-  left: 250px;
   right: 0;
   z-index: 998;
   gap: 1rem;
-  transition: left 0.3s;
+  /* left property is handled by layout-specific styles above */
 }
 
 /* Date/Time Display Styles */
@@ -927,10 +1035,6 @@ export default {
 
 .dark-mode .current-time {
   color: #e2e8f0;
-}
-
-.layout-static-inactive .layout-topbar {
-  left: 0;
 }
 
 .menu-button {
@@ -1276,29 +1380,36 @@ export default {
   height: 100%;
   background: rgba(0, 0, 0, 0.4);
   z-index: 998;
-  display: none;
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
 
 /* Responsive */
 @media (max-width: 991px) {
-  .layout-sidebar {
+  /* Static mode mobile */
+  .layout-wrapper.layout-static .layout-sidebar {
     transform: translateX(-100%);
   }
 
-  .layout-wrapper:not(.layout-static-inactive) .layout-sidebar {
+  .layout-wrapper.layout-static:not(.layout-static-inactive) .layout-sidebar {
     transform: translateX(0);
   }
 
-  .layout-main-container {
+  .layout-wrapper.layout-static .layout-main-container {
     margin-left: 0;
   }
   
-  .layout-topbar {
+  .layout-wrapper.layout-static .layout-topbar {
     left: 0;
   }
 
-  .layout-wrapper:not(.layout-static-inactive) .layout-mask {
-    display: block;
+  /* Overlay mode mobile - same behavior as desktop */
+  .layout-wrapper.layout-overlay .layout-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .layout-wrapper.layout-overlay-active .layout-sidebar {
+    transform: translateX(0);
   }
 }
 
