@@ -133,9 +133,11 @@
                     <option value="availability">Sort by: Availability</option>
                   </select>
                   <select v-model="trendSelectedPlant" @change="fetchMonthlyTrendData" class="trend-select">
+                    <option value="" disabled>Select Plant</option>
                     <option v-for="plant in plantsData" :key="plant.code" :value="plant.code">{{ simplifyPlantName(plant.name) }}</option>
                   </select>
                   <select v-model="trendSelectedYear" @change="fetchMonthlyTrendData" class="trend-select">
+                    <option value="" disabled>Select Year</option>
                     <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
                   </select>
                 </div>
@@ -224,9 +226,11 @@
                     <option value="availability">Sort by: Availability</option>
                   </select>
                   <select v-model="trendSelectedPlant" @change="fetchMonthlyTrendData" class="trend-select">
+                    <option value="" disabled>Select Plant</option>
                     <option v-for="plant in plantsData" :key="plant.code" :value="plant.code">{{ simplifyPlantName(plant.name) }}</option>
                   </select>
                   <select v-model="trendSelectedYear" @change="fetchMonthlyTrendData" class="trend-select">
+                    <option value="" disabled>Select Year</option>
                     <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
                   </select>
                 </div>
@@ -711,8 +715,8 @@ export default {
       exportingPlant: null,
 
       // Monthly Trend State
-      trendSelectedPlant: null,
-      trendSelectedYear: new Date().getFullYear(),
+      trendSelectedPlant: '',  // Empty string to show placeholder
+      trendSelectedYear: '',   // Empty string to show placeholder
       trendMonthlyData: Array(12).fill(0),
       trendMonthlyAvailabilityData: Array(12).fill(0),
       trendMonthlyTargetData: Array(12).fill(0),
@@ -1134,6 +1138,8 @@ export default {
   methods: {
     async loadDashboardData() {
       this.loading = true;
+      console.log('🔄 Loading dashboard data...');
+      
       try {
         // Load all dashboard data concurrently to speed up loading
         await Promise.all([
@@ -1144,8 +1150,10 @@ export default {
         ]);
         
         this.lastUpdated = new Date();
+        console.log('✅ Dashboard data loaded successfully');
       } catch (error) {
-        console.error('Error loading dashboard:', error);
+        console.error('❌ Error loading dashboard:', error);
+        console.error('❌ Error details:', error.response);
       } finally {
         this.loading = false;
       }
@@ -1153,9 +1161,14 @@ export default {
 
     async loadPlantsStatsOptimized() {
       try {
+        console.log('🔄 Loading plants stats from analytics endpoint...');
+        
         // Use the plant comparison endpoint which is already optimized to return all plant data in one call
         const response = await api.getPlantComparison();
+        console.log('📊 Analytics response:', response.data);
+        
         const comparisonData = response.data.plants || [];
+        console.log('📈 Plants data from analytics:', comparisonData);
         
         const plantsWithStats = comparisonData.map(p => ({
           code: p.plant_code,
@@ -1166,23 +1179,34 @@ export default {
           hasData: p.days_reported > 0
         }));
 
+        console.log('✅ Processed plants data:', plantsWithStats);
+        
         this.plantsData = plantsWithStats;
         this.filteredPlants = [...plantsWithStats];
         this.sortPlants();
       } catch (error) {
-        console.error('Error loading optimized plant stats:', error);
+        console.error('❌ Error loading optimized plant stats:', error);
+        console.error('❌ Error response:', error.response);
         // Fallback to old method if optimized one fails
         await this.loadPlantsStats();
       }
     },
     
     async fetchMonthlyTrendData() {
-      if (!this.trendSelectedPlant) {
+      // Don't fetch data if no plant or year is selected (empty string means placeholder is showing)
+      if (!this.trendSelectedPlant || this.trendSelectedPlant === '') {
         if (this.plantsData.length > 0) {
+          // Auto-select first plant only if user hasn't made a selection yet
           this.trendSelectedPlant = this.plantsData[0].code;
         } else {
           return;
         }
+      }
+      
+      // Don't fetch data if no year is selected
+      if (!this.trendSelectedYear || this.trendSelectedYear === '') {
+        // Auto-select current year if not selected
+        this.trendSelectedYear = new Date().getFullYear();
       }
       
       try {
@@ -1339,15 +1363,21 @@ export default {
     
     async loadOverallStats() {
       try {
+        console.log('🔄 Loading overall stats...');
         const response = await api.getReportSummary();
+        console.log('📊 Report summary response:', response.data);
+        
         this.stats = {
           totalGeneration: response.data.total_generation || 0,
           avgCapacityFactor: response.data.avg_capacity_factor || 0,
           avgAvailability: response.data.avg_availability_factor || 0,
           totalOperatingHours: response.data.total_operating_hours || 0,
         };
+        
+        console.log('✅ Processed stats:', this.stats);
       } catch (error) {
-        console.error('Error loading overall stats:', error);
+        console.error('❌ Error loading overall stats:', error);
+        console.error('❌ Error response:', error.response);
       }
     },
     

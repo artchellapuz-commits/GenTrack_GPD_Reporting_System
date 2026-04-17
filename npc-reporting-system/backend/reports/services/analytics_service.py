@@ -39,10 +39,22 @@ class AnalyticsService:
     
     def get_plant_comparison(self, start_date=None, end_date=None):
         """Compare performance across all plants using a single query"""
-        if not end_date:
-            end_date = timezone.now().date()
-        if not start_date:
-            start_date = end_date - timedelta(days=30)
+        
+        # If no date range provided, use all available data
+        if not end_date or not start_date:
+            # Get the date range of available data
+            date_range = GenerationReport.objects.aggregate(
+                min_date=Min('report_date'),
+                max_date=Max('report_date')
+            )
+            
+            if date_range['min_date'] and date_range['max_date']:
+                start_date = date_range['min_date']
+                end_date = date_range['max_date']
+            else:
+                # Fallback to last 30 days if no data
+                end_date = timezone.now().date()
+                start_date = end_date - timedelta(days=30)
         
         # Optimized: Single aggregation query for all plants
         stats_query = GenerationReport.objects.filter(

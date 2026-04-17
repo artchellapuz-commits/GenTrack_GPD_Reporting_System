@@ -229,14 +229,14 @@
     </div>
 
     <!-- Upload History -->
-    <div v-if="uploadHistory.length" class="card glass-card mt-5 glass-fade-in">
+    <div class="card glass-card mt-5 glass-fade-in">
       <div class="card-header">
         <div class="header-content">
           <h3 class="card-title">
             <i class="pi pi-history title-icon"></i>
             Recent Uploads
           </h3>
-          <div class="show-entries">
+          <div v-if="uploadHistory.length > 0" class="show-entries">
             <span>Show:</span>
             <select v-model.number="itemsPerPage" @change="changeItemsPerPage">
               <option :value="10">10</option>
@@ -306,6 +306,15 @@
               </tr>
             </tbody>
           </table>
+          
+          <!-- Empty State -->
+          <div v-if="uploadHistory.length === 0" class="empty-state">
+            <div class="empty-state-content">
+              <i class="pi pi-inbox empty-state-icon"></i>
+              <h4>No Recent Uploads</h4>
+              <p>Upload your first Excel file to see it here.</p>
+            </div>
+          </div>
         </div>
         
         <!-- Pagination -->
@@ -539,10 +548,24 @@ export default {
     },
     async loadUploadHistory() {
       try {
+        console.log('🔄 Loading upload history...');
         const response = await api.getUploadedFiles();
+        console.log('📊 Upload history API response:', response);
+        console.log('📊 Response data:', response.data);
+        
         this.uploadHistory = response.data.results || response.data;
+        console.log('📊 Upload history loaded:', this.uploadHistory);
+        console.log('📊 Upload history length:', this.uploadHistory.length);
+        
+        if (this.uploadHistory.length === 0) {
+          console.log('⚠️ No upload history found');
+        } else {
+          console.log('✅ Upload history loaded successfully');
+        }
       } catch (error) {
-        console.error('Error loading upload history:', error);
+        console.error('❌ Error loading upload history:', error);
+        console.error('❌ Error response:', error.response);
+        console.error('❌ Error message:', error.message);
       }
     },
     handleFileSelect(event) {
@@ -1722,6 +1745,37 @@ td:has(.btn-delete) {
 .action-buttons :deep(.p-button-rounded .p-button-icon) {
   font-size: 1.125rem;
   transition: all 0.25s ease;
+}
+
+/* Empty State Styles */
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.empty-state-content {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  color: #dee2e6;
+  margin-bottom: 16px;
+}
+
+.empty-state h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+  color: #6c757d;
 }
 
 /* Template Download Section */

@@ -109,8 +109,28 @@ export const api = {
     return response; // Return full response object
   },
 
+  async getGenerationReports(params = {}) {
+    const response = await apiClient.get('/generation-reports/', { params });
+    return response; // Return full response object
+  },
+
+  async getReportSummary(params = {}) {
+    const response = await apiClient.get('/generation-reports/summary/', { params });
+    return response; // Return full response object
+  },
+
+  async getPlantComparison(params = {}) {
+    const response = await apiClient.get('/analytics/comparison/', { params });
+    return response; // Return full response object
+  },
+
   async createReport(reportData) {
     const response = await apiClient.post('/reports/', reportData);
+    return response; // Return full response object
+  },
+
+  async generateReport(reportData) {
+    const response = await apiClient.post('/generation-reports/generate_report/', reportData);
     return response; // Return full response object
   },
 
