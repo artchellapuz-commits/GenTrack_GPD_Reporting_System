@@ -847,3 +847,59 @@ INFO 2026-04-21 15:46:03,612 autoreload C:\Users\eladiong\Desktop\OJT Intern_v2\
 INFO 2026-04-21 15:46:07,948 autoreload Watching for file changes with StatReloader
 INFO 2026-04-21 15:46:14,444 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
 INFO 2026-04-21 15:46:14,740 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-21 15:46:44,129 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:46:44,243 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+ERROR 2026-04-21 15:46:55,949 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:46:56,143 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:46:56,144 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:47:14,144 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:47:14,344 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-21 15:47:44,139 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:47:44,240 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+ERROR 2026-04-21 15:47:55,646 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:47:55,741 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:47:55,742 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:48:14,138 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:48:14,240 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
