@@ -1,0 +1,849 @@
+INFO 2026-04-21 15:33:10,247 autoreload Watching for file changes with StatReloader
+INFO 2026-04-21 15:34:15,371 autoreload C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\__init__.py changed, reloading.
+INFO 2026-04-21 15:34:17,417 autoreload Watching for file changes with StatReloader
+INFO 2026-04-21 15:34:31,907 autoreload Watching for file changes with StatReloader
+INFO 2026-04-21 15:34:56,037 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:34:56,729 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+ERROR 2026-04-21 15:34:56,729 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:34:56,908 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:34:56,908 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:34:56,909 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+WARNING 2026-04-21 15:34:56,909 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:35:25,722 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:35:25,725 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:35:25,811 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:35:25,812 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+ERROR 2026-04-21 15:35:55,656 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+INFO 2026-04-21 15:35:55,720 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:35:55,722 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:35:55,798 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:35:55,799 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+WARNING 2026-04-21 15:35:55,864 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:35:55,866 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+ERROR 2026-04-21 15:36:22,115 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:36:22,282 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:36:22,284 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:36:25,719 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:36:25,722 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:36:25,796 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:36:25,797 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+ERROR 2026-04-21 15:36:42,652 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:36:42,734 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:36:42,735 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:36:55,723 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:36:55,731 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:36:55,856 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:36:55,856 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+ERROR 2026-04-21 15:37:12,655 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:37:12,778 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:37:12,779 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:37:25,718 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:37:25,720 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:37:25,822 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:37:25,827 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+ERROR 2026-04-21 15:37:52,847 error_handlers Exception: AuthenticationFailed: No active account found with the given credentials
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 506, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "C:\Users\eladiong\Desktop\OJT Intern_v2\backend\reports\auth_views.py", line 40, in post
+    response = super().post(request, *args, **kwargs)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\views.py", line 46, in post
+    serializer.is_valid(raise_exception=True)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\serializers.py", line 227, in is_valid
+    self._validated_data = self.run_validation(self.initial_data)
+                           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\serializers.py", line 429, in run_validation
+    value = self.validate(value)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\serializers.py", line 73, in validate
+    data = super().validate(attrs)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\serializers.py", line 57, in validate
+    raise exceptions.AuthenticationFailed(
+    ...<2 lines>...
+    )
+rest_framework.exceptions.AuthenticationFailed: No active account found with the given credentials
+WARNING 2026-04-21 15:37:52,901 log Unauthorized: /api/auth/login/
+WARNING 2026-04-21 15:37:52,902 basehttp "POST /api/auth/login/ HTTP/1.1" 401 165
+ERROR 2026-04-21 15:37:55,648 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+INFO 2026-04-21 15:37:55,714 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:37:55,716 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:37:55,793 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:37:55,793 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+WARNING 2026-04-21 15:37:55,829 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:37:55,830 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:38:25,727 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:38:25,729 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:38:25,816 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:38:25,817 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+ERROR 2026-04-21 15:38:55,661 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+INFO 2026-04-21 15:38:55,725 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:38:55,728 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:38:55,786 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:38:55,787 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+WARNING 2026-04-21 15:38:55,810 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:38:55,811 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:39:25,723 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:39:25,726 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:39:25,922 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:39:25,923 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+ERROR 2026-04-21 15:39:55,672 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+INFO 2026-04-21 15:39:55,722 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:39:55,724 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:39:55,805 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:39:55,806 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:39:55,806 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+WARNING 2026-04-21 15:39:55,807 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:40:19,230 basehttp "POST /api/documents/ HTTP/1.1" 201 287
+INFO 2026-04-21 15:40:25,719 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:40:25,721 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:40:25,806 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:40:25,807 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+ERROR 2026-04-21 15:40:55,669 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+INFO 2026-04-21 15:40:55,719 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:40:55,722 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:40:55,777 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:40:55,779 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+WARNING 2026-04-21 15:40:55,811 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:40:55,812 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:41:25,715 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:41:25,718 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:41:25,968 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:41:25,969 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+ERROR 2026-04-21 15:41:28,819 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:41:28,969 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:41:28,970 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:41:31,221 basehttp "OPTIONS /api/documents/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:41:31,532 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:41:31,684 log Unauthorized: /api/documents/
+WARNING 2026-04-21 15:41:31,685 basehttp "POST /api/documents/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:41:42,153 basehttp "OPTIONS /api/auth/login/ HTTP/1.1" 200 0
+ERROR 2026-04-21 15:41:42,774 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:41:42,869 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:41:42,870 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:41:44,049 basehttp "POST /api/auth/login/ HTTP/1.1" 200 765
+INFO 2026-04-21 15:41:44,096 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:44,103 basehttp "OPTIONS /api/analytics/comparison/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:44,462 basehttp "GET /api/analytics/comparison/ HTTP/1.1" 200 2713
+INFO 2026-04-21 15:41:44,472 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-21 15:41:44,495 basehttp "OPTIONS /api/generation-reports/summary/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:44,496 basehttp "OPTIONS /api/uploaded-files/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:44,522 basehttp "OPTIONS /api/monthly-targets/?page_size=100&year=2026 HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:44,830 basehttp "GET /api/uploaded-files/ HTTP/1.1" 200 1499
+INFO 2026-04-21 15:41:44,929 basehttp "GET /api/generation-reports/summary/ HTTP/1.1" 200 182
+WARNING 2026-04-21 15:41:44,999 log Not Found: /api/monthly-targets/
+WARNING 2026-04-21 15:41:45,000 basehttp "GET /api/monthly-targets/?page_size=100&year=2026 HTTP/1.1" 404 56988
+INFO 2026-04-21 15:41:46,050 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:46,062 basehttp "OPTIONS /api/plants/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:46,088 basehttp "OPTIONS /api/signatory-authorizations/my-authorizations/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:46,222 basehttp "GET /api/plants/ HTTP/1.1" 200 1808
+INFO 2026-04-21 15:41:46,281 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-21 15:41:46,489 basehttp "GET /api/signatory-authorizations/my-authorizations/ HTTP/1.1" 200 2
+INFO 2026-04-21 15:41:46,559 basehttp "OPTIONS /api/e-signatures/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:46,679 basehttp "GET /api/e-signatures/ HTTP/1.1" 200 52
+INFO 2026-04-21 15:41:50,510 basehttp "OPTIONS /api/report-signatures/for-report/?report_date=2026-04-21&report_type=psr HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:50,788 basehttp "GET /api/report-signatures/for-report/?report_date=2026-04-21&report_type=psr HTTP/1.1" 200 2
+INFO 2026-04-21 15:41:50,876 basehttp "OPTIONS /api/generation-reports/preview-report/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:51,229 basehttp "POST /api/generation-reports/preview-report/ HTTP/1.1" 200 10259
+INFO 2026-04-21 15:41:51,249 basehttp "OPTIONS /api/report-signatures/for-report/?report_date=2026-04-21&report_type=psr HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:51,559 basehttp "GET /api/report-signatures/for-report/?report_date=2026-04-21&report_type=psr HTTP/1.1" 200 2
+INFO 2026-04-21 15:41:55,909 basehttp "OPTIONS /api/documents/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:56,174 basehttp "POST /api/documents/ HTTP/1.1" 201 374
+INFO 2026-04-21 15:41:58,905 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:58,905 basehttp "OPTIONS /api/documents/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:41:59,137 basehttp "GET /api/documents/ HTTP/1.1" 200 714
+INFO 2026-04-21 15:41:59,185 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+ERROR 2026-04-21 15:42:12,410 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:42:12,560 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:42:12,561 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:42:28,908 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:42:29,047 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+ERROR 2026-04-21 15:42:55,654 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:42:55,790 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:42:55,791 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:42:58,902 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:42:58,995 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-21 15:43:28,905 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:43:29,008 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+ERROR 2026-04-21 15:43:55,671 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:43:55,762 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:43:55,763 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:43:58,905 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:43:59,008 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-21 15:44:28,903 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:44:29,168 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-21 15:44:44,127 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:44:44,138 basehttp "OPTIONS /api/analytics/comparison/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:44:44,399 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-21 15:44:44,457 basehttp "GET /api/analytics/comparison/ HTTP/1.1" 200 2713
+INFO 2026-04-21 15:44:44,473 basehttp "OPTIONS /api/generation-reports/summary/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:44:44,476 basehttp "OPTIONS /api/monthly-targets/?page_size=100&year=2026 HTTP/1.1" 200 0
+INFO 2026-04-21 15:44:44,484 basehttp "OPTIONS /api/uploaded-files/ HTTP/1.1" 200 0
+WARNING 2026-04-21 15:44:44,625 log Not Found: /api/monthly-targets/
+WARNING 2026-04-21 15:44:44,632 basehttp "GET /api/monthly-targets/?page_size=100&year=2026 HTTP/1.1" 404 56988
+INFO 2026-04-21 15:44:44,683 basehttp "GET /api/generation-reports/summary/ HTTP/1.1" 200 182
+INFO 2026-04-21 15:44:44,813 basehttp "GET /api/uploaded-files/ HTTP/1.1" 200 1499
+ERROR 2026-04-21 15:44:55,653 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:44:55,764 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:44:55,765 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:45:14,132 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:45:14,376 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-21 15:45:44,135 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:45:44,292 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+ERROR 2026-04-21 15:45:55,654 error_handlers Exception: InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+Traceback (most recent call last):
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 497, in dispatch
+    self.initial(request, *args, **kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 414, in initial
+    self.perform_authentication(request)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\views.py", line 324, in perform_authentication
+    request.user
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 227, in user
+    self._authenticate()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework\request.py", line 380, in _authenticate
+    user_auth_tuple = authenticator.authenticate(self)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 49, in authenticate
+    validated_token = self.get_validated_token(raw_token)
+  File "C:\Users\eladiong\AppData\Local\Programs\Python\Python314\Lib\site-packages\rest_framework_simplejwt\authentication.py", line 113, in get_validated_token
+    raise InvalidToken(
+    ...<4 lines>...
+    )
+rest_framework_simplejwt.exceptions.InvalidToken: {'detail': ErrorDetail(string='Given token not valid for any token type', code='token_not_valid'), 'code': ErrorDetail(string='token_not_valid', code='token_not_valid'), 'messages': [{'token_class': ErrorDetail(string='AccessToken', code='token_not_valid'), 'token_type': ErrorDetail(string='access', code='token_not_valid'), 'message': ErrorDetail(string='Token is invalid', code='token_not_valid')}]}
+WARNING 2026-04-21 15:45:55,886 log Unauthorized: /api/auth/pending_reset_count/
+WARNING 2026-04-21 15:45:55,887 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
+INFO 2026-04-21 15:46:03,612 autoreload C:\Users\eladiong\Desktop\OJT Intern_v2\backend\reports\views_signature.py changed, reloading.
+INFO 2026-04-21 15:46:07,948 autoreload Watching for file changes with StatReloader
+INFO 2026-04-21 15:46:14,444 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
+INFO 2026-04-21 15:46:14,740 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
