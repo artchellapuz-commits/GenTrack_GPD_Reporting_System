@@ -1254,3 +1254,46 @@ class SignatoryAuthorizationRequest(models.Model):
         self.reviewed_at = timezone.now()
         self.admin_notes = notes
         self.save()
+
+
+class MonthlyTarget(models.Model):
+    """Monthly performance targets for plants"""
+    
+    plant = models.ForeignKey(Plant, on_delete=models.CASCADE, related_name='monthly_targets')
+    month = models.IntegerField(help_text="Month (1-12)")
+    year = models.IntegerField(help_text="Year")
+    target_percentage = models.DecimalField(max_digits=5, decimal_places=2, help_text="Target capacity factor percentage")
+    
+    # Audit fields
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_monthly_targets')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'monthly_targets'
+        unique_together = ['plant', 'year', 'month']
+        ordering = ['-year', '-month', 'plant']
+        indexes = [
+            models.Index(fields=['plant', 'year', 'month']),
+            models.Index(fields=['year', 'month']),
+        ]
+    
+    def __str__(self):
+        return f"{self.plant.code} - {self.year}-{str(self.month).zfill(2)} - {self.target_percentage}%"
+    
+    @classmethod
+    def get_current_target(cls, plant_code, month=None, year=None):
+        """Get current month's target for a plant"""
+        from datetime import datetime
+        
+        if month is None or year is None:
+            now = datetime.now()
+            month = month or now.month
+            year = year or now.year
+        
+        try:
+            plant = Plant.objects.get(code=plant_code)
+            target = cls.objects.get(plant=plant, month=month, year=year)
+            return float(target.target_percentage)
+        except (Plant.DoesNotExist, cls.DoesNotExist):
+            return None

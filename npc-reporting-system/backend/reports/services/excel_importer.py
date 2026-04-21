@@ -415,9 +415,13 @@ class ExcelImporter:
     
     @transaction.atomic
     def _import_data(self, df):
-        """Import validated data into database - accepts ANY data, even incomplete"""
+        """Import validated data into database - uses upload date as report date"""
         records_imported = 0
         skipped_rows = []
+        
+        # Use the upload date as the report date for ALL records
+        report_date = self.uploaded_file.uploaded_at.date()
+        print(f"Using upload date as report date: {report_date}")
         
         # Get all units for this plant
         units = {unit.unit_number: unit for unit in Unit.objects.filter(plant=self.plant)}
@@ -425,13 +429,12 @@ class ExcelImporter:
         # If no data rows at all, create a placeholder record
         if len(df) == 0:
             print("Warning: No data rows found, creating placeholder record")
-            # Create a placeholder record for today with unit 1
-            from datetime import date
+            # Create a placeholder record with upload date
             if 1 in units:
                 GenerationReport.objects.create(
                     plant=self.plant,
                     unit=units[1],
-                    report_date=date.today(),
+                    report_date=report_date,
                     uploaded_file=self.uploaded_file,
                     generation_kwh=0,
                     operating_hours=0,
@@ -446,22 +449,8 @@ class ExcelImporter:
         
         for idx, row in df.iterrows():
             try:
-                # Try to parse date - if missing or invalid, use today's date
-                report_date = None
-                if pd.notna(row.get('date')):
-                    try:
-                        if isinstance(row['date'], pd.Timestamp):
-                            report_date = row['date'].date()
-                        else:
-                            report_date = pd.to_datetime(row['date']).date()
-                    except:
-                        pass
-                
-                if report_date is None:
-                    # Use today's date as fallback
-                    from datetime import date
-                    report_date = date.today()
-                    print(f"Row {idx + 2}: Using today's date as fallback")
+                # Use upload date for ALL records (ignore date column in Excel)
+                # This ensures uploaded files on 4/17 create reports for 4/17
                 
                 # Try to parse unit number - if missing, try to infer or use first available unit
                 unit_number = None
@@ -533,7 +522,7 @@ class ExcelImporter:
                 if pd.notna(row.get('remarks')):
                     remarks = str(row['remarks'])
                 
-                # Check for duplicates
+                # Check for duplicates (same plant, unit, and report date)
                 existing = GenerationReport.objects.filter(
                     plant=self.plant,
                     unit=unit,
@@ -550,6 +539,7 @@ class ExcelImporter:
                     existing.remarks = remarks
                     existing.uploaded_file = self.uploaded_file
                     existing.save()
+                    print(f"Row {idx + 2}: Updated existing record for {report_date}, Unit {unit_number}")
                 else:
                     # Create new record
                     GenerationReport.objects.create(
@@ -564,6 +554,7 @@ class ExcelImporter:
                         scheduled_outage_hours=scheduled_outage_hours,
                         remarks=remarks
                     )
+                    print(f"Row {idx + 2}: Created new record for {report_date}, Unit {unit_number}")
                 
                 records_imported += 1
                 
@@ -583,13 +574,12 @@ class ExcelImporter:
         # If we imported at least 1 record, consider it success
         if records_imported == 0 and len(df) > 0:
             # Create at least one placeholder record so upload doesn't fail
-            from datetime import date
             if units:
                 first_unit = units[list(units.keys())[0]]
                 GenerationReport.objects.create(
                     plant=self.plant,
                     unit=first_unit,
-                    report_date=date.today(),
+                    report_date=report_date,
                     uploaded_file=self.uploaded_file,
                     generation_kwh=0,
                     operating_hours=0,
@@ -601,4 +591,5 @@ class ExcelImporter:
                 records_imported = 1
                 print("Created placeholder record to prevent upload failure")
         
+        print(f"✓ Successfully imported {records_imported} records for date {report_date}")
         return records_imported

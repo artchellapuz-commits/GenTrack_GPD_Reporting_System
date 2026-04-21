@@ -55,6 +55,12 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Suppress 404 errors for pending_count endpoint (non-critical)
+    if (error.config?.url?.includes('/auth/pending_count/') && error.response?.status === 404) {
+      // Silently return default response without logging error
+      return Promise.resolve({ data: { count: 0 } });
+    }
+    
     console.error('❌ API Response Error:', {
       message: error.message,
       status: error.response?.status,
@@ -131,6 +137,11 @@ export const api = {
 
   async generateReport(reportData) {
     const response = await apiClient.post('/generation-reports/generate_report/', reportData);
+    return response; // Return full response object
+  },
+
+  async previewReport(reportData) {
+    const response = await apiClient.post('/generation-reports/preview-report/', reportData);
     return response; // Return full response object
   },
 
@@ -261,6 +272,117 @@ export const api = {
   // Audit logs
   async getAuditLogs(params = {}) {
     const response = await apiClient.get('/audit-logs/', { params });
+    return response; // Return full response object
+  },
+
+  // Monthly targets
+  async getMonthlyTargets(params = {}) {
+    // Ensure we get all targets by setting a large page size
+    const requestParams = { 
+      page_size: 100, // Get all targets in one request
+      ...params 
+    };
+    const response = await apiClient.get('/monthly-targets/', { params: requestParams });
+    return response; // Return full response object
+  },
+
+  async getCurrentMonthlyTarget(plantCode, month, year) {
+    const response = await apiClient.get('/monthly-targets/current/', {
+      params: { 
+        plant_code: plantCode, 
+        month, 
+        year,
+        _t: Date.now() // Cache-busting parameter to force fresh data
+      }
+    });
+    return response; // Return full response object
+  },
+
+  async setMonthlyTarget(targetData) {
+    const response = await apiClient.post('/monthly-targets/set-current/', targetData);
+    return response; // Return full response object
+  },
+
+  async bulkSetTargets(targets) {
+    const response = await apiClient.post('/monthly-targets/bulk-set/', { targets });
+    return response; // Return full response object
+  },
+
+  async createMonthlyTarget(targetData) {
+    const response = await apiClient.post('/monthly-targets/', targetData);
+    return response; // Return full response object
+  },
+
+  async updateMonthlyTarget(id, targetData) {
+    const response = await apiClient.put(`/monthly-targets/${id}/`, targetData);
+    return response; // Return full response object
+  },
+
+  async deleteMonthlyTarget(id) {
+    const response = await apiClient.delete(`/monthly-targets/${id}/`);
+    return response; // Return full response object
+  },
+
+  // E-Signature methods
+  async getUserSignatoryAuthorizations() {
+    const response = await apiClient.get('/signatory-authorizations/my-authorizations/');
+    return response; // Return full response object
+  },
+
+  async getESignatures(params = {}) {
+    const response = await apiClient.get('/e-signatures/', { params });
+    return response; // Return full response object
+  },
+
+  async getESignaturesBySignatory(signatoryName) {
+    const response = await apiClient.get('/e-signatures/by-signatory/', {
+      params: { name: signatoryName }
+    });
+    return response; // Return full response object
+  },
+
+  async getReportSignaturesForReport(reportDate, reportType) {
+    const response = await apiClient.get('/report-signatures/for-report/', {
+      params: { 
+        report_date: reportDate,
+        report_type: reportType
+      }
+    });
+    return response; // Return full response object
+  },
+
+  async createESignature(signatureData) {
+    const response = await apiClient.post('/e-signatures/', signatureData);
+    return response; // Return full response object
+  },
+
+  async createReportSignature(signatureData) {
+    const response = await apiClient.post('/report-signatures/', signatureData);
+    return response; // Return full response object
+  },
+
+  async updateESignature(id, signatureData) {
+    const response = await apiClient.put(`/e-signatures/${id}/`, signatureData);
+    return response; // Return full response object
+  },
+
+  async signReport(signatureData) {
+    const response = await apiClient.post('/report-signatures/sign-report/', signatureData);
+    return response; // Return full response object
+  },
+
+  // Document management
+  async createDocument(formData) {
+    const response = await apiClient.post('/documents/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response; // Return full response object
+  },
+
+  async getDocuments(params = {}) {
+    const response = await apiClient.get('/documents/', { params });
     return response; // Return full response object
   }
 };

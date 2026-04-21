@@ -1287,12 +1287,19 @@ export default {
     this.loadGenerationHistory();
     this.loadCurrentUser();
     this.loadUserAuthorizations();
-    this.loadSavedSignatures(); // Load user's saved signatures
     
-    // Load signatures if we already have a report date
-    if (this.reportDate) {
-      this.loadReportSignatures();
-    }
+    // Only load signatures if user is authenticated
+    // Wait a bit for authentication to complete
+    setTimeout(() => {
+      if (localStorage.getItem('access_token')) {
+        this.loadSavedSignatures(); // Load user's saved signatures
+        
+        // Load signatures if we already have a report date
+        if (this.reportDate) {
+          this.loadReportSignatures();
+        }
+      }
+    }, 500);
     
     // Initialize sticky scrollbar
     this.initStickyScrollbar();
@@ -1968,8 +1975,8 @@ export default {
           } else if (data.detail) {
             errorMsg = `API error: ${data.detail}`;
           } else if (data.error) {
-            errorMsg = data.error;
-            if (errorMsg.includes('No data found')) {
+            errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+            if (typeof errorMsg === 'string' && errorMsg.includes('No data found')) {
               errorMsg = `No data found for the selected date (${this.reportDate}). The Excel files you uploaded might contain data for different dates. Please check the dates in your uploaded files or select a different report date.`;
             }
           } else {
@@ -2112,7 +2119,7 @@ export default {
         formData.append('title', `PSR Report - ${this.reportPreview.header.date_text}`);
         formData.append('document_type', 'PSR');
         formData.append('description', `Plant Status Report generated for ${this.reportPreview.header.date_text}`);
-        formData.append('file', blob, filename);
+        formData.append('file_path', blob, filename); // Changed from 'file' to 'file_path'
         formData.append('status', 'DRAFT');
 
         // Save to backend as a document
@@ -2130,6 +2137,13 @@ export default {
 
       } catch (error) {
         console.error('Error saving report to storage:', error);
+        
+        // Handle permission errors gracefully
+        if (error.response?.status === 403) {
+          toast.error('You do not have permission to save reports to storage. Please contact your administrator.', 6000);
+          return;
+        }
+        
         let errorMsg = 'Failed to save report to storage';
         
         if (error.response?.data) {
@@ -2141,7 +2155,7 @@ export default {
           } else if (data.detail) {
             errorMsg = `API error: ${data.detail}`;
           } else if (data.error) {
-            errorMsg = data.error;
+            errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
           }
         } else if (error.message) {
           errorMsg = error.message;
@@ -2737,6 +2751,13 @@ export default {
         const response = await api.getESignatures();
         this.savedSignatures = response.data.results || response.data;
       } catch (error) {
+        // Silently handle authentication/permission errors
+        if (error.response?.status === 403 || error.response?.status === 401) {
+          console.log('Signatures not accessible - user may not have permission');
+          this.savedSignatures = [];
+          return;
+        }
+        
         console.error('Error loading saved signatures:', error);
         // Fallback to localStorage
         try {
@@ -2793,6 +2814,13 @@ export default {
         
         console.log('Loaded signatures for report:', this.reportDate, this.signatures);
       } catch (error) {
+        // Silently handle authentication/permission errors
+        if (error.response?.status === 403 || error.response?.status === 401) {
+          console.log('Report signatures not accessible - user may not have permission');
+          this.signatures = {};
+          return;
+        }
+        
         console.error('Error loading report signatures:', error);
         // Don't show error toast for missing signatures - it's normal for new reports
         if (error.response?.status !== 404) {

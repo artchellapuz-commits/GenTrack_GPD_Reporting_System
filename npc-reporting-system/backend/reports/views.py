@@ -4,16 +4,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.http import FileResponse
 from django.db.models import Sum, Avg, Q
-from django.views.decorators.cache import cache_page
-from django.utils.decorators import method_decorator
-from django.core.cache import cache
 from datetime import datetime
 import hashlib
 import os
 import tempfile
 import json
 
-from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData, WaterNomination, ActualGeneration, Testimonial, AuditLog, ESignature, ReportSignature
+from .models import Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, HistoricalData, WaterNomination, ActualGeneration, Testimonial, AuditLog, ESignature, ReportSignature, MonthlyTarget
 from .serializers import (
     PlantSerializer, UnitSerializer, UploadedFileSerializer,
     GenerationReportSerializer, GenerationReportListSerializer,
@@ -21,7 +18,7 @@ from .serializers import (
     PlantCapacitySerializer, HistoricalDataSerializer, HistoricalDataUploadSerializer,
     WaterNominationSerializer, ActualGenerationSerializer, NominationVarianceSerializer,
     TestimonialSerializer, AuditLogSerializer, ESignatureSerializer, ReportSignatureSerializer,
-    ESignatureCreateSerializer
+    ESignatureCreateSerializer, MonthlyTargetSerializer
 )
 from .pagination import CustomPageNumberPagination
 from .services.excel_importer import ExcelImporter
@@ -36,9 +33,8 @@ from .audit_utils import (
 )
 
 
-@method_decorator(cache_page(60 * 30), name='list')  # Cache for 30 minutes
 class PlantViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Plant.objects.filter(is_active=True).select_related().prefetch_related('units')
+    queryset = Plant.objects.filter(is_active=True)
     serializer_class = PlantSerializer
     permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
     pagination_class = None  # Disable pagination for plants
@@ -373,15 +369,10 @@ class UploadedFileViewSet(viewsets.ReadOnlyModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
-
-@method_decorator(cache_page(60 * 10), name='list')  # Cache for 10 minutes
-@method_decorator(cache_page(60 * 15), name='summary')  # Cache for 15 minutes
 class GenerationReportViewSet(mixins.ListModelMixin,
                               mixins.RetrieveModelMixin,
                               viewsets.GenericViewSet):
-    queryset = GenerationReport.objects.select_related('plant', 'unit', 'uploaded_file').prefetch_related('plant__units')
+    queryset = GenerationReport.objects.all().select_related('plant', 'unit', 'uploaded_file')
     permission_classes = [AllowAny]  # Allow unauthenticated access for internal system
     
     def get_serializer_class(self):
@@ -390,13 +381,6 @@ class GenerationReportViewSet(mixins.ListModelMixin,
         return GenerationReportSerializer
     
     def get_queryset(self):
-        # Use cache for expensive queries
-        cache_key = f"generation_reports_{hash(str(self.request.query_params))}"
-        cached_result = cache.get(cache_key)
-        
-        if cached_result is not None:
-            return cached_result
-        
         queryset = super().get_queryset()
         
         # Filter by plant - handle both plant_code and plant_code[] formats
@@ -423,12 +407,8 @@ class GenerationReportViewSet(mixins.ListModelMixin,
         if unit_id:
             queryset = queryset.filter(unit_id=unit_id)
         
-        # Cache the queryset for 5 minutes
-        cache.set(cache_key, queryset, 300)
-        
         return queryset
     
-    @method_decorator(cache_page(60 * 15))  # Cache for 15 minutes
     @action(detail=False, methods=['get'])
     def summary(self, request):
         """Get aggregated summary statistics"""
@@ -1844,3 +1824,155 @@ class ReportSignatureViewSet(viewsets.ModelViewSet):
         if x_forwarded_for:
             return x_forwarded_for.split(',')[0].strip()
         return request.META.get('REMOTE_ADDR', '127.0.0.1')
+
+
+class MonthlyTargetViewSet(viewsets.ModelViewSet):
+    queryset = MonthlyTarget.objects.all().select_related('plant')
+    serializer_class = MonthlyTargetSerializer
+    permission_classes = [AllowAny]
+    pagination_class = CustomPageNumberPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        plant_code = self.request.query_params.get('plant_code')
+        year = self.request.query_params.get('year')
+        month = self.request.query_params.get('month')
+
+        if plant_code:
+            queryset = queryset.filter(plant__code=plant_code)
+        if year:
+            queryset = queryset.filter(year=year)
+        if month:
+            queryset = queryset.filter(month=month)
+            
+        return queryset
+
+    @action(detail=False, methods=['get'], url_path='current')
+    def get_current_target(self, request):
+        """Get the current target for a specific plant, month, and year"""
+        plant_code = request.query_params.get('plant_code')
+        month = request.query_params.get('month')
+        year = request.query_params.get('year')
+
+        if not plant_code or not month or not year:
+            return Response(
+                {'error': 'plant_code, month, and year are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            target = MonthlyTarget.objects.get(
+                plant__code=plant_code,
+                month=month,
+                year=year
+            )
+            return Response(self.get_serializer(target).data)
+        except MonthlyTarget.DoesNotExist:
+            return Response(
+                {'error': 'Target not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['post'], url_path='set-current')
+    def set_current_target(self, request):
+        """Set or update the target for a plant, month, and year"""
+        plant_code = request.data.get('plant_code')
+        month = request.data.get('month')
+        year = request.data.get('year')
+        target_percentage = request.data.get('target_percentage')
+
+        if not plant_code or not month or not year or target_percentage is None:
+            return Response(
+                {'error': 'plant_code, month, year, and target_percentage are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            plant = Plant.objects.get(code=plant_code)
+            
+            target, created = MonthlyTarget.objects.update_or_create(
+                plant=plant,
+                month=month,
+                year=year,
+                defaults={'target_percentage': target_percentage}
+            )
+            
+            # Log target set/update
+            AuditLogger.log_user_action(
+                user=request.user if request.user.is_authenticated else None,
+                action='DATA_UPDATE' if not created else 'DATA_CREATE',
+                description=f'{"Updated" if not created else "Set"} monthly target for {plant.name} ({year}-{str(month).zfill(2)}): {target_percentage}%',
+                model_name='MonthlyTarget',
+                object_id=target.id,
+                category='target_management',
+                severity='MEDIUM',
+                request=request
+            )
+            
+            return Response({'success': True, 'target': self.get_serializer(target).data})
+        except Plant.DoesNotExist:
+            return Response({'error': f'Plant {plant_code} not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['post'], url_path='bulk-set')
+    def bulk_set_targets(self, request):
+        """Bulk set or update monthly targets for multiple plants"""
+        targets_data = request.data.get('targets')
+        if not targets_data or not isinstance(targets_data, list):
+            return Response({'error': 'A list of targets is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        from datetime import datetime
+        now = datetime.now()
+        
+        results = []
+        errors = []
+        
+        from django.db import transaction
+        
+        try:
+            with transaction.atomic():
+                for target_item in targets_data:
+                    plant_code = target_item.get('plant_code')
+                    target_percentage = target_item.get('target_percentage')
+                    month = int(target_item.get('month', now.month))
+                    year = int(target_item.get('year', now.year))
+                    
+                    if not plant_code or target_percentage is None:
+                        errors.append({'plant_code': plant_code, 'error': 'Missing required fields'})
+                        continue
+                    
+                    try:
+                        plant = Plant.objects.get(code=plant_code)
+                        target, created = MonthlyTarget.objects.update_or_create(
+                            plant=plant,
+                            month=month,
+                            year=year,
+                            defaults={
+                                'target_percentage': target_percentage,
+                                'created_by': request.user if request.user.is_authenticated else None
+                            }
+                        )
+                        results.append(self.get_serializer(target).data)
+                    except Plant.DoesNotExist:
+                        errors.append({'plant_code': plant_code, 'error': 'Plant not found'})
+            
+            # Log bulk action
+            AuditLogger.log_user_action(
+                user=request.user if request.user.is_authenticated else None,
+                action='DATA_UPDATE',
+                description=f'Bulk updated monthly targets for {len(results)} plants',
+                model_name='MonthlyTarget',
+                category='target_management',
+                severity='MEDIUM',
+                request=request
+            )
+            
+            return Response({
+                'success': True, 
+                'updated_count': len(results),
+                'results': results,
+                'errors': errors
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

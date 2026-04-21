@@ -30,6 +30,10 @@
             <i class="pi pi-clock"></i>
             Auto-refresh {{ autoRefresh ? 'ON' : 'OFF' }}
           </button>
+          <!-- <button @click="debugTargetStatus" class="btn-debug glass-button" style="background: #ef4444;">
+            <i class="pi pi-bug"></i>
+            Debug Targets
+          </button> -->
         </div>
       </div>
       <div class="last-updated" v-if="lastUpdated">
@@ -120,10 +124,10 @@
                     <button 
                       @click="openTargetModal" 
                       class="set-target-btn"
-                      title="Set Target Capacity Factor"
+                      :title="currentTargetText ? `Current target: ${currentTargetText}` : 'Set Target Capacity Factor'"
                     >
                       <i class="pi pi-cog"></i>
-                      <span>Set Target</span>
+                      <span>{{ currentTargetText || 'Set Target' }}</span>
                     </button>
                   </div>
                   <select v-model="sortBy" @change="sortPlants" class="trend-select">
@@ -132,18 +136,22 @@
                     <option value="capacityFactor">Sort by: Capacity Factor</option>
                     <option value="availability">Sort by: Availability</option>
                   </select>
-                  <select v-model="trendSelectedPlant" @change="fetchMonthlyTrendData" class="trend-select">
+                  <select v-model="trendSelectedPlant" @change="handleTrendSelectionChange" class="trend-select">
                     <option value="" disabled>Select Plant</option>
                     <option v-for="plant in plantsData" :key="plant.code" :value="plant.code">{{ simplifyPlantName(plant.name) }}</option>
                   </select>
-                  <select v-model="trendSelectedYear" @change="fetchMonthlyTrendData" class="trend-select">
+                  <select v-model="trendSelectedYear" @change="handleTrendSelectionChange" class="trend-select">
                     <option value="" disabled>Select Year</option>
                     <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
                   </select>
                 </div>
               </div>
               <div class="card-body chart-container">
-                <BarChart v-if="plantsData.length" :data="generationTrendData" :options="barChartOptions" />
+                <div v-if="loadingTrendData" class="loading-chart">
+                  <i class="pi pi-spin pi-spinner"></i>
+                  <span>Updating chart data...</span>
+                </div>
+                <BarChart v-else-if="plantsData.length" :key="chartKey" :data="generationTrendData" :options="barChartOptions" />
                 <div v-else class="empty-chart">No data available</div>
               </div>
             </div>
@@ -434,44 +442,236 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</AppLayout>
 
-    <!-- Set Target Modal -->
-    <div v-if="showTargetModal" class="modal-overlay" @click="showTargetModal = false">
-      <div class="target-modal" @click.stop>
+  <!-- Set Target Modal - Moved outside AppLayout to prevent clipping -->
+  <div v-if="showTargetModal" class="modal-overlay target-modal-overlay" @click="showTargetModal = false">
+      <div class="enhanced-target-modal" @click.stop>
         <div class="modal-header">
           <div class="modal-title">
-            <i class="pi pi-cog"></i>
-            <span>Set Performance Target</span>
+            <div class="title-icon">
+              <i class="pi pi-chart-line"></i>
+            </div>
+            <div class="title-text">
+              <h3>Set Monthly Performance Target</h3>
+              <p>Configure capacity factor targets for optimal performance tracking</p>
+            </div>
           </div>
           <button @click="showTargetModal = false" class="btn-close-modal">
             <i class="pi pi-times"></i>
           </button>
         </div>
+        
         <div class="modal-body">
-          <div class="target-form-group">
-            <label for="targetCF">Target Capacity Factor (%)</label>
-            <div class="input-with-unit">
-              <input 
-                id="targetCF"
-                type="number" 
-                v-model.number="tempTargetCapacityFactor" 
-                class="target-input" 
-                min="0" 
-                max="100" 
-                step="0.1"
-                placeholder="85"
-              />
-              <span class="input-unit">%</span>
+          <!-- Target Type Selection -->
+          <div class="target-type-section">
+            <label class="section-label">
+              <i class="pi pi-sitemap"></i>
+              Target Scope
+            </label>
+            <div class="target-type-options">
+              <div class="target-type-option" :class="{ active: targetType === 'individual' }" @click="targetType = 'individual'">
+                <div class="option-icon">
+                  <i class="pi pi-building"></i>
+                </div>
+                <div class="option-content">
+                  <h4>Individual Plant</h4>
+                  <p>Set target for a specific plant</p>
+                </div>
+                <div class="option-radio">
+                  <i class="pi pi-circle" v-if="targetType !== 'individual'"></i>
+                  <i class="pi pi-check-circle" v-else></i>
+                </div>
+              </div>
+              
+              <div class="target-type-option" :class="{ active: targetType === 'all' }" @click="targetType = 'all'">
+                <div class="option-icon">
+                  <i class="pi pi-globe"></i>
+                </div>
+                <div class="option-content">
+                  <h4>All Plants</h4>
+                  <p>Set same target for all plants</p>
+                </div>
+                <div class="option-radio">
+                  <i class="pi pi-circle" v-if="targetType !== 'all'"></i>
+                  <i class="pi pi-check-circle" v-else></i>
+                </div>
+              </div>
             </div>
-            <p class="input-help">This target affects the Generation Performance Trend and the Actual vs Target Comparison charts.</p>
+          </div>
+
+          <!-- Plant Selection (only for individual) -->
+          <div class="target-form-group" v-if="targetType === 'individual'">
+            <label class="section-label">
+              <i class="pi pi-building"></i>
+              Select Plant
+            </label>
+            <div class="custom-select-wrapper">
+              <select 
+                id="targetPlant"
+                v-model="tempTargetPlant" 
+                @change="loadCurrentTarget"
+                class="enhanced-select"
+              >
+                <option value="" disabled>Choose a plant...</option>
+                <option v-for="plant in plantsData" :key="plant.code" :value="plant.code">
+                  {{ simplifyPlantName(plant.name) }} ({{ plant.code }})
+                </option>
+              </select>
+              <i class="pi pi-chevron-down select-arrow"></i>
+            </div>
+          </div>
+
+          <!-- Selected Plant Data Display (only for individual) -->
+          <div class="selected-plant-data-card animate-fade-in" v-if="targetType === 'individual' && selectedPlantStats">
+            <div class="data-header">
+              <i class="pi pi-chart-bar"></i>
+              <span>Current Performance Data</span>
+            </div>
+            <div class="data-grid">
+              <div class="data-item">
+                <span class="label">Total Generation:</span>
+                <span class="value">{{ formatNumber(selectedPlantStats.generation) }} kWh</span>
+              </div>
+              <div class="data-item">
+                <span class="label">Avg Capacity Factor:</span>
+                <span class="value">{{ formatNumber(selectedPlantStats.capacityFactor) }}%</span>
+              </div>
+              <div class="data-item">
+                <span class="label">Avg Availability:</span>
+                <span class="value">{{ formatNumber(selectedPlantStats.availability) }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Time Period Selection -->
+          <div class="time-period-section">
+            <label class="section-label">
+              <i class="pi pi-calendar"></i>
+              Time Period
+            </label>
+            <div class="time-period-grid">
+              <div class="time-field">
+                <label>Month</label>
+                <div class="custom-select-wrapper">
+                  <select 
+                    id="targetMonth"
+                    v-model.number="tempTargetMonth" 
+                    @change="loadCurrentTarget"
+                    class="enhanced-select"
+                  >
+                    <option v-for="(month, index) in monthNames" :key="index + 1" :value="index + 1">
+                      {{ month }}
+                    </option>
+                  </select>
+                  <i class="pi pi-chevron-down select-arrow"></i>
+                </div>
+              </div>
+              
+              <div class="time-field">
+                <label>Year</label>
+                <div class="custom-select-wrapper">
+                  <select 
+                    id="targetYear"
+                    v-model.number="tempTargetYear" 
+                    @change="loadCurrentTarget"
+                    class="enhanced-select"
+                  >
+                    <option v-for="year in availableYears" :key="year" :value="year">
+                      {{ year }}
+                    </option>
+                  </select>
+                  <i class="pi pi-chevron-down select-arrow"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Target Value -->
+          <div class="target-value-section">
+            <label class="section-label">
+              <i class="pi pi-percentage"></i>
+              Target Capacity Factor
+            </label>
+            <div class="target-input-wrapper">
+              <div class="input-with-unit">
+                <input 
+                  id="targetCF"
+                  type="number" 
+                  v-model.number="tempTargetCapacityFactor" 
+                  class="enhanced-target-input" 
+                  min="0" 
+                  max="100" 
+                  step="0.1"
+                  placeholder="85.0"
+                />
+                <span class="input-unit">%</span>
+              </div>
+              <div class="target-range-indicator">
+                <div class="range-bar">
+                  <div class="range-fill" :style="{ width: Math.min(tempTargetCapacityFactor || 0, 100) + '%' }"></div>
+                </div>
+                <div class="range-labels">
+                  <span>0%</span>
+                  <span>50%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Summary Card -->
+          <div class="target-summary-card" v-if="tempTargetCapacityFactor && tempTargetMonth && tempTargetYear">
+            <div class="summary-header">
+              <i class="pi pi-info-circle"></i>
+              <span>Target Summary</span>
+            </div>
+            <div class="summary-content">
+              <div class="summary-item">
+                <span class="label">Scope:</span>
+                <span class="value">
+                  {{ targetType === 'all' ? 'All Plants' : (tempTargetPlant ? simplifyPlantName(plantsData.find(p => p.code === tempTargetPlant)?.name || '') : 'No plant selected') }}
+                </span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Period:</span>
+                <span class="value">{{ monthNames[tempTargetMonth - 1] }} {{ tempTargetYear }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Target:</span>
+                <span class="value highlight">{{ tempTargetCapacityFactor }}% Capacity Factor</span>
+              </div>
+            </div>
           </div>
         </div>
+        
         <div class="modal-footer">
           <button @click="showTargetModal = false" class="btn-cancel">
+            <i class="pi pi-times"></i>
             Cancel
           </button>
-          <button @click="saveTarget" class="btn-apply-target">
-            Apply Target
+          <button 
+            @click="saveTarget" 
+            class="btn-save-target" 
+            :disabled="isSaveDisabled"
+            :class="{ 'locked': isCurrentMonthLocked && !overrideMode }"
+          >
+            <i class="pi" :class="overrideMode ? 'pi-unlock' : 'pi-check'"></i>
+            {{ overrideMode ? 'Override & Save' : (targetType === 'all' ? 'Set for All Plants' : 'Save Target') }}
+          </button>
+          
+          <!-- Secret Override Button (appears when current month is locked) -->
+          <button 
+            v-if="isCurrentMonthLocked && !overrideMode"
+            @click="enableOverride"
+            @keydown.ctrl.shift="enableOverride"
+            class="btn-override-secret"
+            title="Click while holding Ctrl+Shift to override locked target"
+          >
+            <i class="pi pi-lock"></i>
+            <span class="override-hint">Locked</span>
           </button>
         </div>
       </div>
@@ -613,10 +813,7 @@
           </button>
         </div>
       </div>
-      </div>
     </div>
-    </div>
-  </AppLayout>
 </template>
 
 <script>
@@ -634,7 +831,6 @@ import {
 } from '../utils/exportUtils';
 import pdfExporter from '../utils/pdfExport';
 import favoritesManager from '../utils/favorites';
-import keyboardShortcuts from '../utils/keyboardShortcuts';
 
 import { isAdmin, isManagerOrAbove } from '../utils/auth';
 
@@ -651,7 +847,7 @@ import {
   ArcElement,
   Filler
 } from 'chart.js';
-import { Line, Pie, Bar } from 'vue-chartjs';
+import { Pie, Bar } from 'vue-chartjs';
 
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
@@ -675,7 +871,6 @@ export default {
     PlantDetailModal,
     AppLayout,
     SkeletonLoader,
-    LineChart: Line,
     PieChart: Pie,
     BarChart: Bar
   },
@@ -707,19 +902,28 @@ export default {
       isAdminUser: false,
       isManagerOrAboveUser: false,
       showTargetModal: false,
-      isTargetSet: false,
       tempTargetCapacityFactor: 85,
-      targetCapacityFactor: 85, // Default 85% Target CF
+      tempTargetPlant: '',
+      tempTargetMonth: null,
+      tempTargetYear: null,
+      targetType: 'individual', // 'individual' or 'all'
+      targetCapacityFactor: 85, // Default 85% Target CF (legacy)
+      currentMonthlyTarget: null, // Current month's target for selected plant
+      monthlyTargets: {}, // Cache for monthly targets
+      buttonTargetText: null, // Dedicated reactive property for button text
+      overrideMode: false, // Allow overriding locked targets
       selectedForComparison: [],
       showComparisonModal: false,
       exportingPlant: null,
 
       // Monthly Trend State
-      trendSelectedPlant: '',  // Empty string to show placeholder
+      trendSelectedPlant: 'AGUS1',  // Default to Agus 1
       trendSelectedYear: '',   // Empty string to show placeholder
       trendMonthlyData: Array(12).fill(0),
       trendMonthlyAvailabilityData: Array(12).fill(0),
       trendMonthlyTargetData: Array(12).fill(0),
+      loadingTrendData: false,
+      chartKey: 0,
       availabilityViewMode: 'monthly',
       trendDailyLabels: [],
       trendDailyAvailabilityData: [],
@@ -1007,10 +1211,131 @@ export default {
     };
   },
   computed: {
+    monthNames() {
+      return [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+    },
+    
+    currentTargetText() {
+      // PRIORITY 1: Use the dedicated button text if it was just set
+      if (this.buttonTargetText) {
+        console.log('🔘 Button text from dedicated property:', this.buttonTargetText);
+        return this.buttonTargetText;
+      }
+      
+      // PRIORITY 2: Check if there's a target for the currently selected plant
+      if (this.currentMonthlyTarget) {
+        const plantName = this.plantsData.find(p => p.code === this.currentMonthlyTarget.plant_code)?.name || this.currentMonthlyTarget.plant_code;
+        const simplifiedName = this.simplifyPlantName(plantName);
+        const text = `${this.currentMonthlyTarget.target_percentage}% (${simplifiedName})`;
+        console.log('🔘 Button text from currentMonthlyTarget:', text);
+        return text;
+      }
+      
+      // PRIORITY 3: If no target for selected plant, check if there are any targets set for the current month/year
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      
+      // Look for any plant with a target for the current month, prioritize by highest target percentage
+      const currentMonthTargets = Object.values(this.monthlyTargets).filter(target => {
+        return parseInt(target.month) === currentMonth && 
+               parseInt(target.year || this.trendSelectedYear) === currentYear &&
+               target.target_percentage > 0;
+      });
+      
+      if (currentMonthTargets.length > 0) {
+        // Sort by target percentage (highest first) to show the most significant target
+        const sortedTargets = currentMonthTargets.sort((a, b) => parseFloat(b.target_percentage) - parseFloat(a.target_percentage));
+        const topTarget = sortedTargets[0];
+        
+        const plantName = this.plantsData.find(p => p.code === topTarget.plant_code)?.name || topTarget.plant_code;
+        const simplifiedName = this.simplifyPlantName(plantName);
+        
+        // If there are multiple targets, show count
+        if (currentMonthTargets.length > 1) {
+          const text = `${topTarget.target_percentage}% (${simplifiedName} +${currentMonthTargets.length - 1} more)`;
+          console.log('🔘 Button text from multiple targets:', text);
+          return text;
+        } else {
+          const text = `${topTarget.target_percentage}% (${simplifiedName})`;
+          console.log('🔘 Button text from single target:', text);
+          return text;
+        }
+      }
+      
+      console.log('🔘 No button text found, returning null');
+      return null;
+    },
+    
+    isFormValid() {
+      const hasRequiredFields = this.tempTargetMonth && this.tempTargetYear && this.tempTargetCapacityFactor !== null;
+      
+      if (this.targetType === 'individual') {
+        return hasRequiredFields && this.tempTargetPlant;
+      } else {
+        return hasRequiredFields;
+      }
+    },
+    
+    isCurrentMonthLocked() {
+      // Check if we're trying to modify the current month's target
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+      
+      // Only lock if it's the current month AND a target already exists
+      if (this.tempTargetMonth === currentMonth && this.tempTargetYear === currentYear) {
+        if (this.targetType === 'individual' && this.tempTargetPlant) {
+          const cacheKey = `${this.tempTargetPlant}-${currentYear}-${currentMonth}`;
+          const existingTarget = this.monthlyTargets[cacheKey];
+          return existingTarget && existingTarget.target_percentage > 0;
+        } else if (this.targetType === 'all') {
+          // Check if any plant has a target for current month
+          return Object.keys(this.monthlyTargets).some(key => {
+            const target = this.monthlyTargets[key];
+            return target.month === currentMonth && target.year === currentYear && target.target_percentage > 0;
+          });
+        }
+      }
+      return false;
+    },
+    
+    isSaveDisabled() {
+      // Disable if form is invalid OR if current month is locked (unless override mode is active)
+      if (!this.isFormValid) return true;
+      if (this.isCurrentMonthLocked && !this.overrideMode) return true;
+      return false;
+    },
+    
     availableYears() {
       const currentYear = new Date().getFullYear();
       return [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
     },
+    
+    selectedPlantStats() {
+      if (!this.tempTargetPlant || this.targetType !== 'individual') return null;
+      return this.plantsData.find(p => p.code === this.tempTargetPlant);
+    },
+    
+    isTargetSet() {
+      // Check if there are any targets for the currently selected plant and year
+      if (!this.trendSelectedPlant || !this.trendSelectedYear) return false;
+      
+      // Check if any month has a target > 0 for the selected plant and year
+      for (let month = 1; month <= 12; month++) {
+        const cacheKey = `${this.trendSelectedPlant}-${this.trendSelectedYear}-${month}`;
+        const target = this.monthlyTargets[cacheKey];
+        if (target && target.target_percentage > 0) {
+          return true;
+        }
+      }
+      
+      return false;
+    },
+    
     generationTrendData() {
       const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       
@@ -1028,9 +1353,30 @@ export default {
       ];
 
       if (this.isTargetSet) {
+        // Calculate the average target percentage for the label
+        const nonZeroTargets = this.trendMonthlyTargetData.filter(val => val > 0);
+        const avgTargetGeneration = nonZeroTargets.length > 0 ? 
+          nonZeroTargets.reduce((sum, val) => sum + val, 0) / nonZeroTargets.length : 0;
+        
+        // Calculate the equivalent capacity factor percentage
+        const plantCapacity = this.getPlantCapacity(this.trendSelectedPlant);
+        const avgTargetCF = plantCapacity > 0 ? 
+          (avgTargetGeneration / (plantCapacity * 1000 * 24 * 30)) * 100 : 0; // Approximate 30 days
+        
+        // Find the actual target percentage from the monthly targets cache
+        let displayTargetCF = 0;
+        for (let month = 1; month <= 12; month++) {
+          const cacheKey = `${this.trendSelectedPlant}-${this.trendSelectedYear}-${month}`;
+          const target = this.monthlyTargets[cacheKey];
+          if (target && target.target_percentage > 0) {
+            displayTargetCF = parseFloat(target.target_percentage) || 0;
+            break; // Use the first non-zero target found
+          }
+        }
+        
         datasets.push({
           type: 'line',
-          label: `Target Generation (${this.targetCapacityFactor}% CF)`,
+          label: `Target Generation (${displayTargetCF.toFixed(1)}% CF)`,
           borderColor: '#f59e0b',
           backgroundColor: 'rgba(245, 158, 11, 0.1)',
           borderWidth: 3,
@@ -1141,10 +1487,12 @@ export default {
       console.log('🔄 Loading dashboard data...');
       
       try {
-        // Load all dashboard data concurrently to speed up loading
+        // Step 1: Load plants first as they are required for trend and target data
+        await this.loadPlantsStatsOptimized();
+        
+        // Step 2: Now that trendSelectedPlant is set, load other data concurrently
         await Promise.all([
           this.loadOverallStats(),
-          this.loadPlantsStatsOptimized(),
           this.loadRecentUploads(),
           this.fetchMonthlyTrendData()
         ]);
@@ -1153,7 +1501,6 @@ export default {
         console.log('✅ Dashboard data loaded successfully');
       } catch (error) {
         console.error('❌ Error loading dashboard:', error);
-        console.error('❌ Error details:', error.response);
       } finally {
         this.loading = false;
       }
@@ -1184,6 +1531,9 @@ export default {
         this.plantsData = plantsWithStats;
         this.filteredPlants = [...plantsWithStats];
         this.sortPlants();
+        
+        // Ensure default plant is set to AGUS1 if available
+        this.ensureDefaultPlant();
       } catch (error) {
         console.error('❌ Error loading optimized plant stats:', error);
         console.error('❌ Error response:', error.response);
@@ -1193,11 +1543,14 @@ export default {
     },
     
     async fetchMonthlyTrendData() {
+      this.loadingTrendData = true;
+      
       // Don't fetch data if no plant or year is selected (empty string means placeholder is showing)
       if (!this.trendSelectedPlant || this.trendSelectedPlant === '') {
         if (this.plantsData.length > 0) {
-          // Auto-select first plant only if user hasn't made a selection yet
-          this.trendSelectedPlant = this.plantsData[0].code;
+          // Default to AGUS1 if available, otherwise use first plant
+          const agus1Plant = this.plantsData.find(plant => plant.code === 'AGUS1');
+          this.trendSelectedPlant = agus1Plant ? 'AGUS1' : this.plantsData[0].code;
         } else {
           return;
         }
@@ -1214,6 +1567,46 @@ export default {
         const startDate = `${year}-01-01`;
         const endDate = `${year}-12-31`;
         
+        // Fetch targets for ALL plants to ensure the modal cache is complete
+        // This prevents overwriting other plants' targets with 0% when setting individual targets
+        const targetsResponse = await api.getMonthlyTargets({
+          year: year
+        });
+        
+        const targetsList = targetsResponse.data.results || targetsResponse.data || [];
+        const monthlyTargetMap = {};
+        
+        // Update local cache for the modal and chart to use
+        targetsList.forEach(t => {
+          const pCode = t.plant_code || (t.plant && t.plant.code);
+          const cacheKey = `${pCode}-${year}-${t.month}`;
+          
+          console.log('Processing target:', t);
+          console.log('- Plant code:', pCode);
+          console.log('- Month:', t.month);
+          console.log('- Target percentage:', t.target_percentage);
+          console.log('- Cache key:', cacheKey);
+          
+          this.monthlyTargets[cacheKey] = {
+            ...t,
+            plant_code: pCode,
+            target_percentage: parseFloat(t.target_percentage)
+          };
+          
+          // Only add to monthlyTargetMap if it matches the currently selected plant for the chart
+          if (pCode === this.trendSelectedPlant) {
+            console.log('✅ Target matches selected plant, adding to chart data');
+            monthlyTargetMap[t.month] = parseFloat(t.target_percentage);
+          } else {
+            console.log('❌ Target does not match selected plant:', pCode, 'vs', this.trendSelectedPlant);
+          }
+        });
+        
+        console.log('Fetched targets for plant:', this.trendSelectedPlant, 'year:', year);
+        console.log('Targets list from API:', targetsList);
+        console.log('Monthly target map:', monthlyTargetMap);
+        console.log('Targets cache updated:', this.monthlyTargets);
+
         // Fetch reports for the selected plant and year
         const response = await api.getGenerationReports({
           plant_code: this.trendSelectedPlant,
@@ -1229,13 +1622,54 @@ export default {
         const monthlyAvailSum = Array(12).fill(0);
         const monthlyAvailCount = Array(12).fill(0);
         
-        // Target generation: Accurate calculation based on exact days in each month and target capacity factor
+        // Target generation: Accurate calculation based on exact days in each month and individual monthly targets
         const plantCapacity = this.getPlantCapacity(this.trendSelectedPlant);
-        const monthlyTargetData = Array(12).fill(0).map((_, month) => {
-          const daysInMonth = new Date(year, month + 1, 0).getDate(); // Get exact days for the specific month/year
-          return plantCapacity * 1000 * 24 * daysInMonth * (this.targetCapacityFactor / 100); 
+        const monthlyTargetData = Array(12).fill(0).map((_, monthIndex) => {
+          const monthNumber = monthIndex + 1;
+          const daysInMonth = new Date(year, monthNumber, 0).getDate();
+          const targetPercent = monthlyTargetMap[monthNumber] !== undefined ? monthlyTargetMap[monthNumber] : 0;
+          const calculatedTarget = plantCapacity * 1000 * 24 * daysInMonth * (targetPercent / 100);
+          
+          // Debug logging for target calculation
+          if (targetPercent > 0) {
+            console.log(`Month ${monthNumber}: ${targetPercent}% target`);
+            console.log(`- Plant capacity: ${plantCapacity} MW`);
+            console.log(`- Days in month: ${daysInMonth}`);
+            console.log(`- Calculated target: ${calculatedTarget} kWh`);
+          }
+          
+          return calculatedTarget;
         });
         this.trendMonthlyTargetData = monthlyTargetData;
+        
+        console.log('Calculated monthly target data:', monthlyTargetData);
+        console.log('Plant capacity for', this.trendSelectedPlant, ':', plantCapacity);
+        console.log('Monthly target map:', monthlyTargetMap);
+        console.log('isTargetSet computed:', this.isTargetSet);
+
+        // Update the global targetCapacityFactor for the current month for display purposes
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        
+        if (year === now.getFullYear() && monthlyTargetMap[currentMonth] !== undefined) {
+          this.targetCapacityFactor = monthlyTargetMap[currentMonth];
+          
+          // Update currentMonthlyTarget object for button display (ensure it's for the selected plant)
+          this.currentMonthlyTarget = targetsList.find(t => {
+            const pCode = t.plant_code || (t.plant && t.plant.code);
+            return pCode === this.trendSelectedPlant && parseInt(t.month) === currentMonth;
+          });
+        } else if (monthlyTargetMap && Object.keys(monthlyTargetMap).length > 0) {
+          // If not current month, use the last available target in the year for legacy display
+          const plantTargets = targetsList.filter(t => (t.plant_code || (t.plant && t.plant.code)) === this.trendSelectedPlant);
+          const sortedTargets = [...plantTargets].sort((a, b) => parseInt(b.month) - parseInt(a.month));
+          const lastTarget = sortedTargets[0];
+          this.targetCapacityFactor = parseFloat(lastTarget.target_percentage);
+          this.currentMonthlyTarget = lastTarget;
+        } else {
+          this.targetCapacityFactor = 0;
+          this.currentMonthlyTarget = null;
+        }
 
         // Daily data for availability
         const dailyAvailMap = {};
@@ -1276,6 +1710,9 @@ export default {
         this.trendDailyAvailabilityData = sortedDates.map(d => dailyAvailMap[d].sum / dailyAvailMap[d].count);
       } catch (error) {
         console.error('Error fetching monthly trend data:', error);
+      } finally {
+        this.loadingTrendData = false;
+        this.chartKey++; // Force chart refresh
       }
     },
     
@@ -1283,17 +1720,421 @@ export default {
       this.loadDashboardData();
     },
     
-    openTargetModal() {
-      this.tempTargetCapacityFactor = this.targetCapacityFactor;
-      this.showTargetModal = true;
+    handleTrendSelectionChange() {
+      // Persist selection to localStorage to maintain context on reload
+      localStorage.setItem('trendSelectedPlant', this.trendSelectedPlant);
+      localStorage.setItem('trendSelectedYear', this.trendSelectedYear);
+      
+      // Refresh trend data (which now also updates current target display)
+      this.fetchMonthlyTrendData();
     },
     
-    saveTarget() {
-      this.targetCapacityFactor = this.tempTargetCapacityFactor;
-      this.isTargetSet = true;
-      this.fetchMonthlyTrendData();
-      this.showTargetModal = false;
-      this.$toast.success(`Target Capacity Factor updated to ${this.targetCapacityFactor}%`);
+    ensureDefaultPlant() {
+      // Check localStorage first
+      const savedPlant = localStorage.getItem('trendSelectedPlant');
+      const savedYear = localStorage.getItem('trendSelectedYear');
+      
+      if (savedPlant && this.plantsData.some(p => p.code === savedPlant)) {
+        this.trendSelectedPlant = savedPlant;
+      }
+      
+      if (savedYear) {
+        this.trendSelectedYear = parseInt(savedYear);
+      }
+
+      // Ensure a plant is selected as default if none is currently selected (or not in localStorage)
+      if ((!this.trendSelectedPlant || this.trendSelectedPlant === '') && this.plantsData.length > 0) {
+        const agus1Plant = this.plantsData.find(plant => plant.code === 'AGUS1');
+        this.trendSelectedPlant = agus1Plant ? 'AGUS1' : this.plantsData[0].code;
+        console.log('🏭 Default plant set to:', this.trendSelectedPlant);
+      }
+    },
+    
+    async openTargetModal() {
+      console.log('Opening target modal...'); // Debug log
+      console.log('Current plant:', this.trendSelectedPlant); // Debug log
+      console.log('Current year:', this.trendSelectedYear); // Debug log
+      console.log('Monthly targets cache:', this.monthlyTargets); // Debug log
+      
+      // Clear the dedicated button text so computed property recalculates
+      this.buttonTargetText = null;
+      console.log('🔘 Cleared buttonTargetText for fresh calculation');
+      
+      // Reset override mode when opening modal
+      this.overrideMode = false;
+      
+      // Set defaults for the modal
+      const now = new Date();
+      this.tempTargetMonth = now.getMonth() + 1; // Current month (1-12)
+      this.tempTargetYear = now.getFullYear(); // Current year
+      this.tempTargetPlant = this.trendSelectedPlant || (this.plantsData.length > 0 ? this.plantsData[0].code : '');
+      this.targetType = 'individual'; // Default to individual
+      
+      // DON'T set a default value - wait for loadCurrentTarget to complete
+      this.tempTargetCapacityFactor = null;
+      
+      // Load existing target and wait for it to complete
+      await this.loadCurrentTarget();
+      
+      // If no target was loaded, then set default
+      if (this.tempTargetCapacityFactor === null) {
+        this.tempTargetCapacityFactor = 85; // Default only if no existing target
+        console.log('No existing target found, using default 85%');
+      } else {
+        console.log(`Loaded existing target: ${this.tempTargetCapacityFactor}%`);
+      }
+      
+      this.showTargetModal = true;
+      console.log('Modal should be visible now, showTargetModal:', this.showTargetModal); // Debug log
+      
+      // Force DOM update
+      this.$nextTick(() => {
+        console.log('DOM updated, modal element:', document.querySelector('.enhanced-target-modal'));
+      });
+    },
+    
+    enableOverride(event) {
+      // Only enable override if Ctrl+Shift are held
+      if (event.ctrlKey && event.shiftKey) {
+        this.overrideMode = true;
+        this.$toast.info('⚠️ Override mode enabled. You can now modify the locked target.');
+        console.log('🔓 Override mode enabled');
+      } else {
+        this.$toast.warning('Hold Ctrl+Shift while clicking to enable override mode');
+      }
+    },
+    
+    async loadCurrentTarget() {
+      if (!this.tempTargetPlant || !this.tempTargetMonth || !this.tempTargetYear) {
+        console.log('Missing required parameters for loadCurrentTarget');
+        return;
+      }
+      
+      console.log(`Loading target for ${this.tempTargetPlant}, ${this.tempTargetMonth}/${this.tempTargetYear}`);
+      
+      // First check the local cache (which was just updated by saveTarget)
+      const cacheKey = `${this.tempTargetPlant}-${this.tempTargetYear}-${this.tempTargetMonth}`;
+      const cachedTarget = this.monthlyTargets[cacheKey];
+      
+      if (cachedTarget && cachedTarget.target_percentage !== undefined) {
+        const cachedValue = parseFloat(cachedTarget.target_percentage);
+        this.tempTargetCapacityFactor = cachedValue;
+        console.log(`✅ Loaded from local cache: ${cachedValue}%`);
+        return;
+      }
+      
+      // If not in cache, fetch from API with cache-busting
+      try {
+        const response = await api.getCurrentMonthlyTarget(this.tempTargetPlant, this.tempTargetMonth, this.tempTargetYear);
+        // API returns the target object directly, not wrapped in 'data'
+        if (response.data && response.data.target_percentage !== undefined) {
+          const loadedTarget = parseFloat(response.data.target_percentage);
+          this.tempTargetCapacityFactor = loadedTarget;
+          
+          // Update local cache with the fetched value
+          this.monthlyTargets[cacheKey] = response.data;
+          
+          console.log(`✅ Successfully loaded from API: ${loadedTarget}%`);
+        } else {
+          console.log('❌ No target_percentage in response:', response.data);
+          this.tempTargetCapacityFactor = null;
+        }
+      } catch (error) {
+        // No existing target found, keep null so default can be set
+        console.log('❌ No existing target found or API error:', error.message || error);
+        this.tempTargetCapacityFactor = null;
+      }
+    },
+    
+    // Debug method to check plant codes and targets
+    debugTargetStatus() {
+      console.log('=== TARGET DEBUG INFO ===');
+      console.log('Current selected plant:', this.trendSelectedPlant);
+      console.log('Current selected year:', this.trendSelectedYear);
+      console.log('Available plants:', this.plantsData.map(p => ({ code: p.code, name: p.name })));
+      console.log('Monthly targets cache:', this.monthlyTargets);
+      console.log('isTargetSet computed:', this.isTargetSet);
+      console.log('trendMonthlyTargetData:', this.trendMonthlyTargetData);
+      
+      // Check specific targets for current plant/year
+      console.log('--- Targets for current selection ---');
+      for (let month = 1; month <= 12; month++) {
+        const cacheKey = `${this.trendSelectedPlant}-${this.trendSelectedYear}-${month}`;
+        const target = this.monthlyTargets[cacheKey];
+        if (target && target.target_percentage > 0) {
+          console.log(`Month ${month}: ${target.target_percentage}%`);
+        }
+      }
+      
+      // Check if there are any targets for Agus 7 specifically
+      console.log('--- All Agus 7 targets ---');
+      Object.keys(this.monthlyTargets).forEach(key => {
+        if (key.includes('AGUS7') || key.includes('agus7')) {
+          console.log(`${key}:`, this.monthlyTargets[key]);
+        }
+      });
+      
+      console.log('========================');
+    },
+    
+    async saveTarget() {
+      console.log('🚀 saveTarget() called');
+      console.log('📋 Form validation check...');
+      console.log('  - isFormValid:', this.isFormValid);
+      console.log('  - tempTargetMonth:', this.tempTargetMonth);
+      console.log('  - tempTargetYear:', this.tempTargetYear);
+      console.log('  - tempTargetCapacityFactor:', this.tempTargetCapacityFactor);
+      console.log('  - tempTargetPlant:', this.tempTargetPlant);
+      console.log('  - targetType:', this.targetType);
+      
+      if (!this.isFormValid) {
+        console.error('❌ Form validation FAILED');
+        this.$toast.error('Please fill in all required fields');
+        return;
+      }
+      
+      console.log('✅ Form validation PASSED');
+      
+      // Store the value we're trying to save for verification
+      const targetValueToSave = this.tempTargetCapacityFactor;
+      const plantToSave = this.tempTargetPlant;
+      const monthToSave = this.tempTargetMonth;
+      const yearToSave = this.tempTargetYear;
+      
+      console.log(`💾 Attempting to save target: ${targetValueToSave}% for ${plantToSave}, ${monthToSave}/${yearToSave}`);
+      
+      try {
+        if (this.targetType === 'all') {
+          // Set target for all plants - Use bulk set to avoid multiple requests (prevents 429 error)
+          const targetsToSet = this.plantsData.map(plant => ({
+            plant_code: plant.code,
+            month: this.tempTargetMonth,
+            year: this.tempTargetYear,
+            target_percentage: this.tempTargetCapacityFactor
+          }));
+          
+          const response = await api.bulkSetTargets(targetsToSet);
+          
+          if (response.data.success) {
+            console.log(`✅ Database save successful for all plants`);
+            
+            // Clear the cache first to ensure fresh data
+            this.monthlyTargets = {};
+            
+            // Update local cache with the response data
+            response.data.results.forEach(target => {
+              const targetKey = `${target.plant_code}-${target.year}-${target.month}`;
+              this.monthlyTargets[targetKey] = target;
+              console.log(`📝 Updated cache: ${target.plant_code} = ${target.target_percentage}%`);
+            });
+            
+            // Update current monthly target if it matches current selection
+            const now = new Date();
+            if (this.tempTargetMonth === now.getMonth() + 1 && this.tempTargetYear === now.getFullYear()) {
+              const currentPlantTarget = this.monthlyTargets[`${this.trendSelectedPlant}-${this.tempTargetYear}-${this.tempTargetMonth}`];
+              if (currentPlantTarget) {
+                this.currentMonthlyTarget = currentPlantTarget;
+              }
+            }
+            
+            this.$toast.success(`Target set for all ${response.data.updated_count} plants: ${this.tempTargetCapacityFactor}% for ${this.monthNames[this.tempTargetMonth - 1]} ${this.tempTargetYear}`);
+            
+            // Switch to the current year if we set targets for it
+            if (this.tempTargetYear !== this.trendSelectedYear) {
+              this.trendSelectedYear = this.tempTargetYear;
+            }
+            
+            // OPTIMIZED: Single chart refresh
+            this.chartKey++;
+            
+            // OPTIMIZED: Only fetch trend data once
+            await this.fetchMonthlyTrendData();
+          }
+        } else {
+          // Set target for individual plant - Use bulk set to handle auto-zeroing other plants
+          const targetsToSet = this.plantsData.map(plant => {
+            const isSelected = plant.code === this.tempTargetPlant;
+            const targetKey = `${plant.code}-${this.tempTargetYear}-${this.tempTargetMonth}`;
+            const existingTarget = this.monthlyTargets[targetKey];
+            
+            if (isSelected) {
+              return {
+                plant_code: plant.code,
+                month: this.tempTargetMonth,
+                year: this.tempTargetYear,
+                target_percentage: this.tempTargetCapacityFactor
+              };
+            } else if (!existingTarget) {
+              // Only include other plants if they don't have a target yet
+              return {
+                plant_code: plant.code,
+                month: this.tempTargetMonth,
+                year: this.tempTargetYear,
+                target_percentage: 0
+              };
+            }
+            return null;
+          }).filter(t => t !== null);
+          
+          console.log(`📤 Sending to API:`, targetsToSet.find(t => t.plant_code === plantToSave));
+          console.log(`📡 Making API call to bulkSetTargets...`);
+          
+          const response = await api.bulkSetTargets(targetsToSet);
+          
+          console.log(`📥 API call completed`);
+          console.log(`📊 Response status:`, response.status);
+          console.log(`📊 Response data:`, response.data);
+          
+          if (response.data.success) {
+            console.log(`✅ Database save successful!`);
+            console.log(`📊 API Response:`, response.data);
+            
+            // CRITICAL: Clear the entire cache to force fresh data
+            const oldCache = { ...this.monthlyTargets };
+            this.monthlyTargets = {};
+            
+            // Update local cache with the response data
+            response.data.results.forEach(target => {
+              const targetKey = `${target.plant_code}-${target.year}-${target.month}`;
+              this.monthlyTargets[targetKey] = target;
+              console.log(`📝 Updated cache: ${target.plant_code} = ${target.target_percentage}%`);
+            });
+            
+            // Force Vue to detect the cache change by creating new object reference
+            this.monthlyTargets = { ...this.monthlyTargets };
+            
+            console.log(`🔄 Cache cleared and rebuilt. Old entries: ${Object.keys(oldCache).length}, New entries: ${Object.keys(this.monthlyTargets).length}`);
+            
+            // Verify the saved value matches what we intended to save
+            const savedTarget = response.data.results.find(t => t.plant_code === plantToSave);
+            if (savedTarget) {
+              const savedValue = parseFloat(savedTarget.target_percentage);
+              if (Math.abs(savedValue - targetValueToSave) < 0.01) {
+                console.log(`✅ VERIFICATION PASSED: Saved ${savedValue}% matches intended ${targetValueToSave}%`);
+              } else {
+                console.warn(`⚠️ VERIFICATION WARNING: Saved ${savedValue}% differs from intended ${targetValueToSave}%`);
+              }
+            }
+            
+            // Update current target display - FORCE UPDATE FOR BUTTON
+            // Update for the plant we just saved, regardless of month
+            const savedTargetForPlant = this.monthlyTargets[`${this.tempTargetPlant}-${this.tempTargetYear}-${this.tempTargetMonth}`];
+            if (savedTargetForPlant) {
+              // ALWAYS update button text for current month saves
+              const now = new Date();
+              if (this.tempTargetMonth === now.getMonth() + 1 && this.tempTargetYear === now.getFullYear()) {
+                // Force update currentMonthlyTarget with new object reference
+                this.currentMonthlyTarget = { ...savedTargetForPlant };
+                console.log(`🔄 Updated currentMonthlyTarget for current month: ${savedTargetForPlant.target_percentage}%`);
+                
+                // CRITICAL: Directly set the button text to force immediate update
+                const plantName = this.plantsData.find(p => p.code === this.tempTargetPlant)?.name || this.tempTargetPlant;
+                const simplifiedName = this.simplifyPlantName(plantName);
+                this.buttonTargetText = `${savedTargetForPlant.target_percentage}% (${simplifiedName})`;
+                console.log(`🔘 FORCED button text update: ${this.buttonTargetText}`);
+                
+                // Force Vue reactivity by triggering a re-render
+                this.$forceUpdate();
+              }
+              
+              // If we're viewing this plant, update immediately
+              if (this.tempTargetPlant === this.trendSelectedPlant) {
+                this.currentMonthlyTarget = { ...savedTargetForPlant };
+                console.log(`🔄 Updated currentMonthlyTarget for button display: ${savedTargetForPlant.target_percentage}%`);
+              }
+            }
+            
+            const monthName = this.monthNames[this.tempTargetMonth - 1];
+            const plantName = this.simplifyPlantName(this.plantsData.find(p => p.code === this.tempTargetPlant)?.name || '');
+            
+            this.$toast.success(`✅ Target saved: ${targetValueToSave}% for ${plantName} in ${monthName} ${this.tempTargetYear}`);
+            
+            // IMPORTANT: Switch the trend view to show the plant we just set the target for
+            this.trendSelectedPlant = this.tempTargetPlant;
+            this.trendSelectedYear = this.tempTargetYear;
+            
+            // OPTIMIZED: Single chart refresh instead of multiple
+            this.chartKey++;
+            
+            // OPTIMIZED: Only fetch trend data once, not twice
+            await this.fetchMonthlyTrendData();
+          } else {
+            console.error('❌ API returned success=false');
+            this.$toast.error('Failed to save target. API returned error.');
+            return;
+          }
+        }
+        
+        // Update legacy target for chart compatibility
+        this.targetCapacityFactor = this.tempTargetCapacityFactor;
+        
+        // Close modal immediately - don't wait for extra operations
+        this.showTargetModal = false;
+        
+        console.log(`🎉 Save complete! Target ${targetValueToSave}% is now in database and frontend cache.`);
+        
+      } catch (error) {
+        console.error('❌ Error saving target:', error);
+        this.$toast.error(`Failed to save target: ${error.message || 'Unknown error'}`);
+      }
+    },
+    
+    async fetchMonthlyTargets() {
+      // Force re-fetch all monthly targets from API to ensure button updates
+      console.log('🔄 Re-fetching monthly targets from API...');
+      try {
+        const response = await api.getMonthlyTargets();
+        if (response.data && response.data.results) {
+          // Clear and rebuild cache
+          this.monthlyTargets = {};
+          response.data.results.forEach(target => {
+            const targetKey = `${target.plant_code}-${target.year}-${target.month}`;
+            this.monthlyTargets[targetKey] = target;
+          });
+          console.log(`✅ Refreshed ${response.data.results.length} targets from API`);
+          
+          // Update currentMonthlyTarget if we have one for the selected plant
+          const now = new Date();
+          const currentMonth = now.getMonth() + 1;
+          const currentYear = now.getFullYear();
+          const currentKey = `${this.trendSelectedPlant}-${currentYear}-${currentMonth}`;
+          if (this.monthlyTargets[currentKey]) {
+            this.currentMonthlyTarget = this.monthlyTargets[currentKey];
+            
+            // Update button text directly
+            const plantName = this.plantsData.find(p => p.code === this.trendSelectedPlant)?.name || this.trendSelectedPlant;
+            const simplifiedName = this.simplifyPlantName(plantName);
+            this.buttonTargetText = `${this.currentMonthlyTarget.target_percentage}% (${simplifiedName})`;
+            
+            console.log(`✅ Updated button to show: ${this.buttonTargetText}`);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error fetching monthly targets:', error);
+      }
+    },
+    
+    // Force complete chart refresh
+    async forceChartRefresh() {
+      console.log('🔄 Forcing complete chart refresh...');
+      
+      // Clear cache
+      this.monthlyTargets = {};
+      
+      // Increment chart key to force re-render
+      this.chartKey++;
+      
+      // Fetch fresh data
+      await this.fetchMonthlyTrendData();
+      
+      // Force Vue reactivity update
+      this.$forceUpdate();
+      
+      // Another chart key increment after data is loaded
+      this.$nextTick(() => {
+        this.chartKey++;
+        console.log('✅ Chart refresh complete');
+      });
     },
     
     toggleAutoRefresh() {
@@ -1452,6 +2293,9 @@ export default {
         this.plantsData = plantsWithStats;
         this.filteredPlants = [...plantsWithStats];
         this.sortPlants();
+        
+        // Ensure default plant is set to AGUS1 if available
+        this.ensureDefaultPlant();
       } catch (error) {
         console.error('Error loading plants stats:', error);
       }
@@ -1518,13 +2362,13 @@ export default {
     
     getPlantCapacity(code) {
       const capacities = {
-        'AGUS1': 50,
-        'AGUS2': 180,
-        'AGUS4': 158,
-        'AGUS5': 52,
-        'AGUS6': 200,
-        'AGUS7': 200,
-        'PULANGI4': 255,
+        'AGUS1': 80.0,
+        'AGUS2': 180.0,
+        'AGUS4': 158.1,
+        'AGUS5': 55.0,
+        'AGUS6': 200.0,
+        'AGUS7': 54.0,
+        'PULANGI4': 255.0,
       };
       return capacities[code] || 0;
     },
@@ -1752,6 +2596,42 @@ export default {
       const hours = Math.floor(minutes / 60);
       return `${hours}h ago`;
     },
+  },
+  
+  watch: {
+    // Watch for changes to monthlyTargets and update button text
+    monthlyTargets: {
+      handler(newTargets) {
+        console.log('🔍 monthlyTargets changed, updating button text...');
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+        const currentKey = `${this.trendSelectedPlant}-${currentYear}-${currentMonth}`;
+        
+        if (newTargets[currentKey]) {
+          const target = newTargets[currentKey];
+          const plantName = this.plantsData.find(p => p.code === target.plant_code)?.name || target.plant_code;
+          const simplifiedName = this.simplifyPlantName(plantName);
+          this.buttonTargetText = `${target.target_percentage}% (${simplifiedName})`;
+          console.log(`🔘 Watcher updated button text: ${this.buttonTargetText}`);
+        }
+      },
+      deep: true
+    },
+    
+    // Watch for changes to currentMonthlyTarget
+    currentMonthlyTarget: {
+      handler(newTarget) {
+        if (newTarget) {
+          console.log('🔍 currentMonthlyTarget changed:', newTarget);
+          const plantName = this.plantsData.find(p => p.code === newTarget.plant_code)?.name || newTarget.plant_code;
+          const simplifiedName = this.simplifyPlantName(plantName);
+          this.buttonTargetText = `${newTarget.target_percentage}% (${simplifiedName})`;
+          console.log(`🔘 Watcher updated button text from currentMonthlyTarget: ${this.buttonTargetText}`);
+        }
+      },
+      deep: true
+    }
   },
 };
 </script>
@@ -4256,6 +5136,697 @@ export default {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.loading-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #6b7280;
+  gap: 1rem;
+}
+
+.loading-chart i {
+  font-size: 2rem;
+  color: #3b82f6;
+}
+
+.loading-chart span {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+/* Enhanced monthly target modal styles - More specific selectors */
+.target-modal-overlay.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 99999 !important;
+  padding: 1rem !important;
+  animation: fadeIn 0.3s ease !important;
+  backdrop-filter: blur(4px) !important;
+  pointer-events: auto !important;
+}
+
+.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 99999 !important;
+  padding: 1rem !important;
+  animation: fadeIn 0.3s ease !important;
+  pointer-events: auto !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalAppear {
+  from { 
+    opacity: 0; 
+    transform: scale(0.9) translateY(-20px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  }
+}
+
+.enhanced-target-modal {
+  max-width: 650px !important;
+  width: 100% !important;
+  max-height: 90vh !important;
+  background: white !important;
+  border-radius: 20px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+  overflow: hidden !important;
+  animation: modalAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  position: relative !important;
+  margin: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  padding: 2rem 2rem 1.5rem 2rem !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  position: relative !important;
+}
+
+.modal-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  flex: 1;
+}
+
+.title-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  backdrop-filter: blur(10px);
+}
+
+.title-text h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.title-text p {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
+.btn-close-modal {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  backdrop-filter: blur(10px);
+}
+
+.btn-close-modal:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.modal-body {
+  padding: 2rem !important;
+  max-height: calc(90vh - 200px) !important;
+  overflow-y: auto !important;
+  background: white !important;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.section-label i {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+/* Target Type Selection */
+.target-type-section {
+  margin-bottom: 2rem;
+}
+
+.target-type-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.target-type-option {
+  padding: 1.5rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  background: white;
+}
+
+.target-type-option:hover {
+  border-color: #d1d5db;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.target-type-option.active {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+}
+
+.option-icon {
+  width: 48px;
+  height: 48px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.target-type-option.active .option-icon {
+  background: #3b82f6;
+  color: white;
+}
+
+.option-content h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.option-content p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.option-radio {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.25rem;
+  color: #d1d5db;
+  transition: all 0.3s ease;
+}
+
+.target-type-option.active .option-radio {
+  color: #3b82f6;
+}
+
+/* Form Groups */
+.target-form-group {
+  margin-bottom: 2rem;
+}
+
+.custom-select-wrapper {
+  position: relative;
+}
+
+.enhanced-select {
+  width: 100%;
+  padding: 1rem 3rem 1rem 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: white;
+  color: #1f2937;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  appearance: none;
+}
+
+.enhanced-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.select-arrow {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  font-size: 0.875rem;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.enhanced-select:focus + .select-arrow {
+  color: #3b82f6;
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Time Period Grid */
+.time-period-section {
+  margin-bottom: 2rem;
+}
+
+.time-period-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.time-field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+/* Target Value Section */
+.target-value-section {
+  margin-bottom: 2rem;
+}
+
+.target-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: stretch;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: white;
+  height: 54px;
+}
+
+.input-with-unit:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.enhanced-target-input {
+  flex: 1;
+  padding: 0 1.5rem;
+  border: none !important;
+  font-size: 1.25rem;
+  font-weight: 600;
+  background: transparent;
+  color: #1f2937;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+}
+
+.enhanced-target-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Selected Plant Data Card in Modal */
+.selected-plant-data-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.selected-plant-data-card .data-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.selected-plant-data-card .data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.selected-plant-data-card .data-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.selected-plant-data-card .data-item .label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.selected-plant-data-card .data-item .value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+@media (max-width: 640px) {
+  .selected-plant-data-card .data-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.input-unit {
+  padding: 0 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-left: 2px solid #e5e7eb;
+  font-size: 1.125rem;
+  color: #64748b;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  height: 100%;
+  margin: 0 !important;
+}
+
+.input-with-unit:focus-within .input-unit {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #3b82f6;
+}
+
+.target-range-indicator {
+  margin-top: 1rem;
+}
+
+.range-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.range-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Summary Card */
+.target-summary-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #bae6fd;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  color: #0c4a6e;
+}
+
+.summary-header i {
+  color: #0284c7;
+}
+
+.summary-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.summary-item .label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.summary-item .value {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.summary-item .value.highlight {
+  color: #0284c7;
+  font-size: 1.125rem;
+}
+
+/* Modal Footer */
+.modal-footer {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 1rem !important;
+  padding: 1.5rem 2rem 2rem 2rem !important;
+  background: #f9fafb !important;
+  border-top: 1px solid #e5e7eb !important;
+}
+
+.btn-cancel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border: 2px solid #d1d5db;
+  background: white;
+  color: #374151;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-cancel:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+.btn-save-target {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border: none;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-save-target:hover:not(:disabled) {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.btn-save-target:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.btn-save-target.locked {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.btn-save-target.locked:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.btn-override-secret {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border: 2px dashed #f59e0b;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  color: #92400e;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.btn-override-secret:hover {
+  background: linear-gradient(135deg, #fde68a 0%, #fcd34d 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+  border-color: #d97706;
+}
+
+.override-hint {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .enhanced-target-modal {
+    max-width: 95% !important;
+    margin: 0.5rem !important;
+    max-height: 95vh !important;
+  }
+  
+  .target-type-options {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .time-period-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .modal-header {
+    padding: 1.5rem !important;
+  }
+  
+  .modal-body {
+    padding: 1.5rem !important;
+    max-height: calc(95vh - 180px) !important;
+  }
+  
+  .modal-footer {
+    padding: 1.5rem !important;
+    flex-direction: column !important;
+  }
+  
+  .btn-cancel,
+  .btn-save-target {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .enhanced-target-modal {
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    max-height: 100vh !important;
+  }
+  
+  .modal-header {
+    padding: 1rem !important;
+  }
+  
+  .modal-body {
+    padding: 1rem !important;
+    max-height: calc(100vh - 160px) !important;
+  }
+  
+  .modal-footer {
+    padding: 1rem;
+  }
+  
+  .title-text h3 {
+    font-size: 1.25rem;
+  }
+  
+  .title-text p {
+    font-size: 0.8125rem;
   }
 }
 </style>

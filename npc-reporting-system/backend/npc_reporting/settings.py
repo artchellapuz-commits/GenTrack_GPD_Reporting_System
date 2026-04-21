@@ -80,6 +80,14 @@ DATABASES = {
     }
 }
 
+# Uncomment below for SQLite testing
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 # Performance Caching Configuration
 CACHES = {
     'default': {
@@ -149,8 +157,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
-        'user': '1000/hour'
+        'anon': '10000/hour',  # Increased from 100 to 10000
+        'user': '100000/hour'  # Increased from 1000 to 100000 for unlimited target changes
     }
 }
 

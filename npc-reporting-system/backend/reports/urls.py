@@ -4,7 +4,7 @@ from .views import (
     PlantViewSet, UnitViewSet, UploadedFileViewSet, 
     GenerationReportViewSet, HistoricalDataViewSet, PlantCapacityViewSet,
     WaterNominationViewSet, ActualGenerationViewSet, TestimonialViewSet, AuditLogViewSet,
-    ESignatureViewSet, ReportSignatureViewSet
+    ESignatureViewSet, ReportSignatureViewSet, MonthlyTargetViewSet
 )
 from .views_authorization import SignatoryAuthorizationViewSet
 from .views_signature import DocumentViewSet, SignatureRequestViewSet, DigitalSignatureViewSet, SigningViewSet
@@ -30,6 +30,7 @@ router.register(r'testimonials', TestimonialViewSet, basename='testimonial')
 router.register(r'audit-logs', AuditLogViewSet, basename='auditlog')
 router.register(r'e-signatures', ESignatureViewSet, basename='esignature')
 router.register(r'report-signatures', ReportSignatureViewSet, basename='reportsignature')
+router.register(r'monthly-targets', MonthlyTargetViewSet, basename='monthlytarget')
 router.register(r'signatory-authorizations', SignatoryAuthorizationViewSet, basename='signatoryauthorization')
 
 # E-signature workflow routes

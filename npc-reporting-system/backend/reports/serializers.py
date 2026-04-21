@@ -4,7 +4,8 @@ from django.contrib.auth.password_validation import validate_password
 from .models import (
     Plant, Unit, UploadedFile, GenerationReport, PlantCapacity, 
     HistoricalData, WaterNomination, ActualGeneration, Testimonial,
-    UserProfile, AuditLog, PasswordResetRequest, ESignature, ReportSignature
+    UserProfile, AuditLog, PasswordResetRequest, ESignature, ReportSignature,
+    MonthlyTarget
 )
 
 
@@ -688,3 +689,43 @@ class ESignatureCreateSerializer(serializers.Serializer):
             signature.save()
         
         return signature
+
+
+class MonthlyTargetSerializer(serializers.ModelSerializer):
+    """Serializer for monthly targets"""
+    plant_name = serializers.CharField(source='plant.name', read_only=True)
+    plant_code = serializers.CharField(source='plant.code', read_only=True)
+    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    
+    class Meta:
+        model = MonthlyTarget
+        fields = '__all__'
+        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+    
+    def validate_month(self, value):
+        """Validate month is between 1-12"""
+        if not (1 <= value <= 12):
+            raise serializers.ValidationError("Month must be between 1 and 12")
+        return value
+    
+    def validate_year(self, value):
+        """Validate year is reasonable"""
+        from datetime import datetime
+        current_year = datetime.now().year
+        if not (2020 <= value <= current_year + 10):
+            raise serializers.ValidationError(f"Year must be between 2020 and {current_year + 10}")
+        return value
+    
+    def validate_target_percentage(self, value):
+        """Validate target percentage is reasonable"""
+        if not (0 <= value <= 100):
+            raise serializers.ValidationError("Target percentage must be between 0 and 100")
+        return value
+    
+    def create(self, validated_data):
+        # Set created_by to current user if available
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            validated_data['created_by'] = request.user
+        
+        return super().create(validated_data)
