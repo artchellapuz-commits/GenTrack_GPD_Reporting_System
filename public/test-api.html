@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+        #results { margin-top: 20px; padding: 20px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>🔧 API Connection Test</h1>
+    <p>This page tests if the frontend can connect to the Django backend.</p>
+    
+    <button onclick="testBasicConnection()">Test Basic Connection</button>
+    <button onclick="testCORS()">Test CORS</button>
+    <button onclick="testAuth()">Test Auth Endpoint</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            resultsDiv.appendChild(p);
+            console.log(message);
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testBasicConnection() {
+            log('🧪 Testing basic API connection...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/plants/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    log(`✅ SUCCESS! Status: ${response.status}, Data: ${data}`, 'success');
+                } else {
+                    log(`❌ API Error: Status ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Connection Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testCORS() {
+            log('🧪 Testing CORS with credentials...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/plants/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    log('✅ CORS working! No CORS errors detected.', 'success');
+                } else {
+                    log(`⚠️ API returned ${response.status}, but CORS is working`, 'info');
+                }
+            } catch (error) {
+                if (error.message.includes('CORS')) {
+                    log(`❌ CORS Error: ${error.message}`, 'error');
+                } else {
+                    log(`❌ Other Error: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        async function testAuth() {
+            log('🧪 Testing auth endpoint...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({}),
+                    credentials: 'include'
+                });
+                
+                if (response.status === 400) {
+                    log('✅ Auth endpoint accessible (expects credentials)', 'success');
+                } else if (response.status === 200) {
+                    log('✅ Auth endpoint working', 'success');
+                } else {
+                    log(`⚠️ Auth endpoint returned ${response.status}`, 'info');
+                }
+            } catch (error) {
+                log(`❌ Auth Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run basic test on page load
+        window.onload = function() {
+            log('🚀 Page loaded. Running automatic tests...', 'info');
+            setTimeout(testBasicConnection, 1000);
+        };
+    </script>
+</body>
+</html>
