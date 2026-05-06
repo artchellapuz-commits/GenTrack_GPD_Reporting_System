@@ -3591,3 +3591,6 @@ INFO 2026-05-06 09:32:26,807 basehttp "GET /api/plants/ HTTP/1.1" 200 1778
 INFO 2026-05-06 09:32:26,810 basehttp "GET /api/signatory-authorizations/my-authorizations/ HTTP/1.1" 200 2
 INFO 2026-05-06 09:32:26,810 basehttp "GET /api/report-signatures/for-report/?report_date=2026-05-02&report_type=psr HTTP/1.1" 200 2
 INFO 2026-05-06 09:36:37,608 autoreload Watching for file changes with StatReloader
+INFO 2026-05-06 11:31:40,711 basehttp "OPTIONS /api/generation-reports/preview-report/ HTTP/1.1" 200 0
+WARNING 2026-05-06 11:31:41,316 log Not Found: /api/generation-reports/preview-report/
+WARNING 2026-05-06 11:31:41,317 basehttp "POST /api/generation-reports/preview-report/ HTTP/1.1" 404 52
