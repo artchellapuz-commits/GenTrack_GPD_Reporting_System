@@ -130,11 +130,8 @@
                       <span>{{ currentTargetText || 'Set Target' }}</span>
                     </button>
                   </div>
-                  <select v-model="sortBy" @change="sortPlants" class="trend-select">
-                    <option value="name">Sort by: Name</option>
-                    <option value="generation">Sort by: Generation</option>
-                    <option value="capacityFactor">Sort by: Capacity Factor</option>
-                    <option value="availability">Sort by: Availability</option>
+                  <select v-model="trendSelectedMonth" @change="handleTrendSelectionChange" class="trend-select">
+                    <option v-for="(month, index) in monthNames" :key="index + 1" :value="index + 1">{{ month }}</option>
                   </select>
                   <select v-model="trendSelectedPlant" @change="handleTrendSelectionChange" class="trend-select">
                     <option value="" disabled>Select Plant</option>
@@ -165,7 +162,11 @@
               </div>
               <div class="card-body">
                 <div v-if="plantsData.length" class="professional-bar-chart">
-                  <!-- Target Row -->
+                  <!-- SELECTED MONTH SECTION -->
+                  <div class="chart-section-label">
+                    SELECTED MONTH ({{ monthNames[selectedMonthIndex] }} {{ trendSelectedYear }})
+                  </div>
+                  
                   <div class="chart-row">
                     <div class="row-header">
                       <div class="indicator-dot target-dot"></div>
@@ -174,15 +175,17 @@
                     <div class="chart-area">
                       <div class="bar-background">
                         <div 
-                          class="bar-fill target-fill" 
-                          :style="{ width: targetBarWidth + '%' }"
+                          :class="['bar-fill', 'target-fill', { 'bar-fill-hidden': selectedMonthTarget <= 0 }]"
+                          :style="{ width: selectedMonthTarget > 0 ? selectedMonthTargetWidth + '%' : '0%' }"
                         ></div>
                       </div>
-                      <div class="value-display target-value">{{ formatNumber(totalTarget) }}</div>
+                      <div class="value-display target-value">
+                        <div class="main-value">{{ formatNumber(selectedMonthTarget) }}</div>
+                        <div class="percent-value">{{ formatPercent(selectedMonthTargetPercent) }}</div>
+                      </div>
                     </div>
                   </div>
                   
-                  <!-- Actual Row -->
                   <div class="chart-row">
                     <div class="row-header">
                       <div class="indicator-dot actual-dot"></div>
@@ -191,11 +194,14 @@
                     <div class="chart-area">
                       <div class="bar-background">
                         <div 
-                          class="bar-fill actual-fill" 
-                          :style="{ width: actualBarWidth + '%' }"
+                          :class="['bar-fill', 'actual-fill', { 'bar-fill-hidden': selectedMonthActual <= 0 }]"
+                          :style="{ width: selectedMonthActual > 0 ? selectedMonthActualWidth + '%' : '0%' }"
                         ></div>
                       </div>
-                      <div class="value-display actual-value">{{ formatNumber(totalActual) }}</div>
+                      <div class="value-display actual-value">
+                        <div class="main-value">{{ formatNumber(selectedMonthActual) }}</div>
+                        <div class="percent-value">{{ formatPercent(selectedMonthActualPercent) }}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -227,17 +233,14 @@
                       Daily
                     </button>
                   </div>
-                  <select v-model="sortBy" @change="sortPlants" class="trend-select">
-                    <option value="name">Sort by: Name</option>
-                    <option value="generation">Sort by: Generation</option>
-                    <option value="capacityFactor">Sort by: Capacity Factor</option>
-                    <option value="availability">Sort by: Availability</option>
+                  <select v-model="trendSelectedMonth" @change="handleTrendSelectionChange" class="trend-select">
+                    <option v-for="(month, index) in monthNames" :key="index + 1" :value="index + 1">{{ month }}</option>
                   </select>
-                  <select v-model="trendSelectedPlant" @change="fetchMonthlyTrendData" class="trend-select">
+                  <select v-model="trendSelectedPlant" @change="handleTrendSelectionChange" class="trend-select">
                     <option value="" disabled>Select Plant</option>
                     <option v-for="plant in plantsData" :key="plant.code" :value="plant.code">{{ simplifyPlantName(plant.name) }}</option>
                   </select>
-                  <select v-model="trendSelectedYear" @change="fetchMonthlyTrendData" class="trend-select">
+                  <select v-model="trendSelectedYear" @change="handleTrendSelectionChange" class="trend-select">
                     <option value="" disabled>Select Year</option>
                     <option v-for="year in availableYears" :key="year" :value="year">{{ year }}</option>
                   </select>
@@ -918,6 +921,7 @@ export default {
 
       // Monthly Trend State
       trendSelectedPlant: 'AGUS1',  // Default to Agus 1
+      trendSelectedMonth: new Date().getMonth() + 1, // Default to current month
       trendSelectedYear: '',   // Empty string to show placeholder
       trendMonthlyData: Array(12).fill(0),
       trendMonthlyAvailabilityData: Array(12).fill(0),
@@ -982,9 +986,17 @@ export default {
             callbacks: {
               label: function(context) {
                 let label = context.dataset.label || '';
+                
+                // Add custom target CF if this is the target dataset
+                if (context.dataset.customTargetCFs && context.dataIndex !== undefined) {
+                  const cf = context.dataset.customTargetCFs[context.dataIndex];
+                  label += ` (${cf.toFixed(1)}% CF)`;
+                }
+                
                 if (label) {
                   label += ': ';
                 }
+                
                 if (context.parsed.y !== null) {
                   if (label.toLowerCase().includes('generation')) {
                     label += new Intl.NumberFormat('en-US').format(context.parsed.y) + ' kWh';
@@ -1234,10 +1246,9 @@ export default {
         return text;
       }
       
-      // PRIORITY 3: If no target for selected plant, check if there are any targets set for the current month/year
-      const now = new Date();
-      const currentMonth = now.getMonth() + 1;
-      const currentYear = now.getFullYear();
+      // PRIORITY 3: If no target for selected plant, check if there are any targets set for the selected month/year
+      const currentMonth = this.trendSelectedMonth;
+      const currentYear = this.trendSelectedYear || new Date().getFullYear();
       
       // Look for any plant with a target for the current month, prioritize by highest target percentage
       const currentMonthTargets = Object.values(this.monthlyTargets).filter(target => {
@@ -1353,30 +1364,26 @@ export default {
       ];
 
       if (this.isTargetSet) {
-        // Calculate the average target percentage for the label
-        const nonZeroTargets = this.trendMonthlyTargetData.filter(val => val > 0);
-        const avgTargetGeneration = nonZeroTargets.length > 0 ? 
-          nonZeroTargets.reduce((sum, val) => sum + val, 0) / nonZeroTargets.length : 0;
-        
         // Calculate the equivalent capacity factor percentage
         const plantCapacity = this.getPlantCapacity(this.trendSelectedPlant);
-        const avgTargetCF = plantCapacity > 0 ? 
-          (avgTargetGeneration / (plantCapacity * 1000 * 24 * 30)) * 100 : 0; // Approximate 30 days
         
-        // Find the actual target percentage from the monthly targets cache
-        let displayTargetCF = 0;
+        // Find the actual target percentage from the monthly targets cache per month
+        const monthlyTargetCFs = [];
+        let firstValidTarget = 0;
         for (let month = 1; month <= 12; month++) {
           const cacheKey = `${this.trendSelectedPlant}-${this.trendSelectedYear}-${month}`;
           const target = this.monthlyTargets[cacheKey];
-          if (target && target.target_percentage > 0) {
-            displayTargetCF = parseFloat(target.target_percentage) || 0;
-            break; // Use the first non-zero target found
+          const cf = target && target.target_percentage > 0 ? parseFloat(target.target_percentage) : 0;
+          monthlyTargetCFs.push(cf);
+          if (cf > 0 && firstValidTarget === 0) {
+            firstValidTarget = cf;
           }
         }
         
         datasets.push({
           type: 'line',
-          label: `Target Generation (${displayTargetCF.toFixed(1)}% CF)`,
+          label: 'Target Generation',
+          customTargetCFs: monthlyTargetCFs,
           borderColor: '#f59e0b',
           backgroundColor: 'rgba(245, 158, 11, 0.1)',
           borderWidth: 3,
@@ -1400,17 +1407,72 @@ export default {
     totalActual() {
       return this.trendMonthlyData.reduce((sum, val) => sum + val, 0);
     },
+    currentMonthIndex() {
+      return new Date().getMonth();
+    },
+    currentMonthActual() {
+      // Only show current month data if the selected year is the current year
+      const currentYear = new Date().getFullYear();
+      if (this.trendSelectedYear !== currentYear) return 0;
+      return this.trendMonthlyData[this.currentMonthIndex] || 0;
+    },
+    currentMonthTarget() {
+      const currentYear = new Date().getFullYear();
+      if (this.trendSelectedYear !== currentYear) return 0;
+      return this.trendMonthlyTargetData[this.currentMonthIndex] || 0;
+    },
+    selectedMonthIndex() {
+      return (this.trendSelectedMonth || 1) - 1;
+    },
+    selectedMonthActual() {
+      return this.trendMonthlyData[this.selectedMonthIndex] || 0;
+    },
+    selectedMonthTarget() {
+      return this.trendMonthlyTargetData[this.selectedMonthIndex] || 0;
+    },
+    yearlyActualPercent() {
+      return this.calculateGenerationPercentage(this.totalActual, this.trendSelectedYear);
+    },
+    selectedMonthTargetPercent() {
+      return this.getMonthlyTargetPercentage(this.selectedMonthIndex + 1, this.trendSelectedYear);
+    },
+    selectedMonthActualPercent() {
+      return this.calculateGenerationPercentage(this.selectedMonthActual, this.trendSelectedYear, this.selectedMonthIndex + 1);
+    },
+    currentMonthTargetPercent() {
+      const currentYear = new Date().getFullYear();
+      if (this.trendSelectedYear !== currentYear) return 0;
+      return this.getMonthlyTargetPercentage(this.currentMonthIndex + 1, this.trendSelectedYear);
+    },
+    currentMonthActualPercent() {
+      const currentYear = new Date().getFullYear();
+      if (this.trendSelectedYear !== currentYear) return 0;
+      return this.calculateGenerationPercentage(this.currentMonthActual, this.trendSelectedYear, this.currentMonthIndex + 1);
+    },
+    currentMonthTargetWidth() {
+      return (this.currentMonthTarget / this.maxChartValue) * 100;
+    },
+    currentMonthActualWidth() {
+      return (this.currentMonthActual / this.maxChartValue) * 100;
+    },
+    selectedMonthTargetWidth() {
+      return (this.selectedMonthTarget / this.maxChartValue) * 100;
+    },
+    selectedMonthActualWidth() {
+      return (this.selectedMonthActual / this.maxChartValue) * 100;
+    },
     maxChartValue() {
-      const max = Math.max(this.totalTarget, this.totalActual);
-      return max > 0 ? max * 1.35 : 1; // Add 35% padding so text labels fit inside container
+      let max = 0;
+      
+      // Check selected month values
+      if (this.selectedMonthTarget > 0 || this.selectedMonthActual > 0) {
+        max = Math.max(max, this.selectedMonthTarget || 0, this.selectedMonthActual || 0);
+      }
+      
+      // Return max without padding so the highest bar is always 100% full
+      return max > 0 ? max : 1;
     },
-    targetBarWidth() {
-      return (this.totalTarget / this.maxChartValue) * 100;
-    },
-    actualBarWidth() {
-      return (this.totalActual / this.maxChartValue) * 100;
-    },
-    plantCapacityData() {
+  plantCapacityData() {
       const labels = this.filteredPlants.map(p => p.name.replace(/ Hydroelectric Power Plant/gi, ''));
       const data = this.filteredPlants.map(p => this.getPlantCapacity(p.code));
       const backgroundColors = [
@@ -1647,11 +1709,10 @@ export default {
         console.log('Monthly target map:', monthlyTargetMap);
         console.log('isTargetSet computed:', this.isTargetSet);
 
-        // Update the global targetCapacityFactor for the current month for display purposes
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1;
+        // Update the global targetCapacityFactor for the selected month for display purposes
+        const currentMonth = this.trendSelectedMonth;
         
-        if (year === now.getFullYear() && monthlyTargetMap[currentMonth] !== undefined) {
+        if (monthlyTargetMap[currentMonth] !== undefined) {
           this.targetCapacityFactor = monthlyTargetMap[currentMonth];
           
           // Update currentMonthlyTarget object for button display (ensure it's for the selected plant)
@@ -1659,13 +1720,6 @@ export default {
             const pCode = t.plant_code || (t.plant && t.plant.code);
             return pCode === this.trendSelectedPlant && parseInt(t.month) === currentMonth;
           });
-        } else if (monthlyTargetMap && Object.keys(monthlyTargetMap).length > 0) {
-          // If not current month, use the last available target in the year for legacy display
-          const plantTargets = targetsList.filter(t => (t.plant_code || (t.plant && t.plant.code)) === this.trendSelectedPlant);
-          const sortedTargets = [...plantTargets].sort((a, b) => parseInt(b.month) - parseInt(a.month));
-          const lastTarget = sortedTargets[0];
-          this.targetCapacityFactor = parseFloat(lastTarget.target_percentage);
-          this.currentMonthlyTarget = lastTarget;
         } else {
           this.targetCapacityFactor = 0;
           this.currentMonthlyTarget = null;
@@ -1724,6 +1778,7 @@ export default {
       // Persist selection to localStorage to maintain context on reload
       localStorage.setItem('trendSelectedPlant', this.trendSelectedPlant);
       localStorage.setItem('trendSelectedYear', this.trendSelectedYear);
+      localStorage.setItem('trendSelectedMonth', this.trendSelectedMonth);
       
       // Refresh trend data (which now also updates current target display)
       this.fetchMonthlyTrendData();
@@ -1733,6 +1788,7 @@ export default {
       // Check localStorage first
       const savedPlant = localStorage.getItem('trendSelectedPlant');
       const savedYear = localStorage.getItem('trendSelectedYear');
+      const savedMonth = localStorage.getItem('trendSelectedMonth');
       
       if (savedPlant && this.plantsData.some(p => p.code === savedPlant)) {
         this.trendSelectedPlant = savedPlant;
@@ -1740,6 +1796,10 @@ export default {
       
       if (savedYear) {
         this.trendSelectedYear = parseInt(savedYear);
+      }
+      
+      if (savedMonth) {
+        this.trendSelectedMonth = parseInt(savedMonth);
       }
 
       // Ensure a plant is selected as default if none is currently selected (or not in localStorage)
@@ -1765,8 +1825,8 @@ export default {
       
       // Set defaults for the modal
       const now = new Date();
-      this.tempTargetMonth = now.getMonth() + 1; // Current month (1-12)
-      this.tempTargetYear = now.getFullYear(); // Current year
+      this.tempTargetMonth = this.trendSelectedMonth; // Selected month
+      this.tempTargetYear = this.trendSelectedYear || now.getFullYear(); // Selected year
       this.tempTargetPlant = this.trendSelectedPlant || (this.plantsData.length > 0 ? this.plantsData[0].code : '');
       this.targetType = 'individual'; // Default to individual
       
@@ -1778,8 +1838,8 @@ export default {
       
       // If no target was loaded, then set default
       if (this.tempTargetCapacityFactor === null) {
-        this.tempTargetCapacityFactor = 85; // Default only if no existing target
-        console.log('No existing target found, using default 85%');
+        this.tempTargetCapacityFactor = 0; // Default to 0 instead of 85
+        console.log('No existing target found, using default 0%');
       } else {
         console.log(`Loaded existing target: ${this.tempTargetCapacityFactor}%`);
       }
@@ -1929,8 +1989,7 @@ export default {
             });
             
             // Update current monthly target if it matches current selection
-            const now = new Date();
-            if (this.tempTargetMonth === now.getMonth() + 1 && this.tempTargetYear === now.getFullYear()) {
+            if (this.tempTargetMonth === this.trendSelectedMonth && this.tempTargetYear === (this.trendSelectedYear || new Date().getFullYear())) {
               const currentPlantTarget = this.monthlyTargets[`${this.trendSelectedPlant}-${this.tempTargetYear}-${this.tempTargetMonth}`];
               if (currentPlantTarget) {
                 this.currentMonthlyTarget = currentPlantTarget;
@@ -2020,9 +2079,8 @@ export default {
             // Update for the plant we just saved, regardless of month
             const savedTargetForPlant = this.monthlyTargets[`${this.tempTargetPlant}-${this.tempTargetYear}-${this.tempTargetMonth}`];
             if (savedTargetForPlant) {
-              // ALWAYS update button text for current month saves
-              const now = new Date();
-              if (this.tempTargetMonth === now.getMonth() + 1 && this.tempTargetYear === now.getFullYear()) {
+              // ALWAYS update button text for selected month saves
+              if (this.tempTargetMonth === this.trendSelectedMonth && this.tempTargetYear === (this.trendSelectedYear || new Date().getFullYear())) {
                 // Force update currentMonthlyTarget with new object reference
                 this.currentMonthlyTarget = { ...savedTargetForPlant };
                 console.log(`🔄 Updated currentMonthlyTarget for current month: ${savedTargetForPlant.target_percentage}%`);
@@ -2319,9 +2377,36 @@ export default {
       });
     },
     
+    formatPercent(value) {
+      if (!value) return '0.00%';
+      return `${parseFloat(value).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}%`;
+    },
+    
+    getMonthlyTargetPercentage(month, year) {
+      if (!this.trendSelectedPlant || !month || !year) return 0;
+      const cacheKey = `${this.trendSelectedPlant}-${year}-${month}`;
+      const target = this.monthlyTargets[cacheKey];
+      return target && target.target_percentage > 0 ? parseFloat(target.target_percentage) : 0;
+    },
+    
+    calculateGenerationPercentage(generationValue, year, month = null) {
+      const plantCapacity = this.getPlantCapacity(this.trendSelectedPlant);
+      if (!plantCapacity || !year || !generationValue) return 0;
+      
+      const periodDays = month
+        ? new Date(year, month, 0).getDate()
+        : new Date(year, 12, 0).getDate();
+      const maxGeneration = plantCapacity * 1000 * 24 * periodDays;
+      
+      return maxGeneration > 0 ? (parseFloat(generationValue) / maxGeneration) * 100 : 0;
+    },
+    
     simplifyPlantName(name) {
       if (!name) return '';
-      return name.replace(/ Hydroelectric Power Plant/gi, '');
+      return name.replace(/ Hydro(-)?Electric Power Plant/gi, '').replace(/ Hydroelectric Power Plant/gi, '');
     },
     
     formatDate(dateString) {
@@ -3009,6 +3094,24 @@ export default {
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-section-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.chart-section-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 0.75rem 0;
 }
 
 .chart-row {
@@ -3039,7 +3142,7 @@ export default {
 }
 
 .target-dot {
-  background: linear-gradient(135deg, #8b9dc3 0%, #6b7280 100%);
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
 }
 
 .actual-dot {
@@ -3078,12 +3181,17 @@ export default {
   border-radius: 13px;
   transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
-  min-width: 3px;
+  min-width: 0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
+.bar-fill-hidden {
+  opacity: 0;
+  box-shadow: none;
+}
+
 .target-fill {
-  background: linear-gradient(135deg, #8b9dc3 0%, #6b7280 100%);
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
 }
 
 .actual-fill {
@@ -3106,6 +3214,10 @@ export default {
   animation: slideShimmer 3s infinite;
 }
 
+.bar-fill-hidden::before {
+  display: none;
+}
+
 @keyframes slideShimmer {
   0% { transform: translateX(-100%); }
   50% { transform: translateX(100%); }
@@ -3123,11 +3235,28 @@ export default {
   background: white;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.main-value {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.percent-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-top: 0.1rem;
 }
 
 .target-value {
-  color: #6b7280;
-  border-color: #e5e7eb;
+  color: #a16207;
+  border-color: #fde68a;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
 }
 
 .actual-value {

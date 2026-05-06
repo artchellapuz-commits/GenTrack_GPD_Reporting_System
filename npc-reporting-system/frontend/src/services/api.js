@@ -55,10 +55,23 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Suppress 404 errors for pending_count endpoint (non-critical)
-    if (error.config?.url?.includes('/auth/pending_count/') && error.response?.status === 404) {
+    // Suppress non-critical errors
+    const nonCriticalEndpoints = [
+      '/auth/pending_count/',
+      '/password-reset-requests/pending_count/',
+      '/auth/user/',
+      '/signatory-authorizations/my-authorizations/',
+      '/auth/pending_reset_count/',
+      '/users/',
+    ];
+    
+    const isNonCritical = nonCriticalEndpoints.some(endpoint => 
+      error.config?.url?.includes(endpoint)
+    );
+    
+    if (isNonCritical && (error.response?.status === 404 || error.response?.status === 403 || error.response?.status === 401)) {
       // Silently return default response without logging error
-      return Promise.resolve({ data: { count: 0 } });
+      return Promise.resolve({ data: { count: 0, results: [] } });
     }
     
     console.error('❌ API Response Error:', {
@@ -69,8 +82,8 @@ apiClient.interceptors.response.use(
       data: error.response?.data
     });
     
-    // Handle 401 errors
-    if (error.response?.status === 401) {
+    // Handle 401 errors (but not for non-critical endpoints)
+    if (error.response?.status === 401 && !isNonCritical) {
       import('../utils/auth').then(({ clearAuth }) => {
         clearAuth();
         if (window.location.pathname !== '/login') {
@@ -219,11 +232,11 @@ export const api = {
 
   async getPendingResetCount() {
     try {
-      const response = await apiClient.get('/auth/pending_count/');
+      const response = await apiClient.get('/password-reset-requests/pending_count/');
       return response; // Return full response object
     } catch (error) {
-      // Return 0 if endpoint doesn't exist
-      if (error.response?.status === 404) {
+      // Return 0 if endpoint doesn't exist or fails
+      if (error.response?.status === 404 || error.response?.status === 403) {
         return { data: { count: 0 } };
       }
       throw error;
@@ -232,7 +245,40 @@ export const api = {
 
   // User management
   async getCurrentUser() {
-    const response = await apiClient.get('/auth/user/');
+    const response = await apiClient.get('/auth/profile/');
+    return response; // Return full response object
+  },
+
+  async getUsers() {
+    try {
+      const response = await apiClient.get('/users/');
+      return response; // Return full response object
+    } catch (error) {
+      // Return empty array if endpoint fails (user not logged in or no permission)
+      if (error.response?.status === 403 || error.response?.status === 401) {
+        return { data: { results: [] } };
+      }
+      throw error;
+    }
+  },
+
+  async createUser(userData) {
+    const response = await apiClient.post('/users/', userData);
+    return response; // Return full response object
+  },
+
+  async updateUser(id, userData) {
+    const response = await apiClient.put(`/users/${id}/`, userData);
+    return response; // Return full response object
+  },
+
+  async patchUser(id, userData) {
+    const response = await apiClient.patch(`/users/${id}/`, userData);
+    return response; // Return full response object
+  },
+
+  async deleteUser(id) {
+    const response = await apiClient.delete(`/users/${id}/`);
     return response; // Return full response object
   },
 
@@ -325,8 +371,16 @@ export const api = {
 
   // E-Signature methods
   async getUserSignatoryAuthorizations() {
-    const response = await apiClient.get('/signatory-authorizations/my-authorizations/');
-    return response; // Return full response object
+    try {
+      const response = await apiClient.get('/signatory-authorizations/my-authorizations/');
+      return response; // Return full response object
+    } catch (error) {
+      // Return empty array if endpoint fails (user not logged in or no authorizations)
+      if (error.response?.status === 403 || error.response?.status === 401) {
+        return { data: { results: [] } };
+      }
+      throw error;
+    }
   },
 
   async getESignatures(params = {}) {

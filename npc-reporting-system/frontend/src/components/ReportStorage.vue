@@ -601,8 +601,8 @@ export default {
       }
     },
     async requestSignatures(report) {
-      // Navigate to signature request page or show modal
-      this.$router.push(`/documents/${report.id}/signatures`)
+      // Navigate to Request Signature Access page
+      this.$router.push('/signatory-authorization')
     },
     
     viewDetails(report) {

@@ -291,6 +291,7 @@
 </template>
 
 <script>
+import api from '../services/api';
 import axios from 'axios';
 import AppLayout from './AppLayout.vue';
 import Paginator from 'primevue/paginator';
@@ -418,11 +419,17 @@ export default {
     async loadUsers() {
       this.loading = true;
       try {
-        const response = await axios.get('http://localhost:8000/api/users/');
+        const response = await api.getUsers();
         this.users = response.data.results || response.data || [];
       } catch (error) {
-        console.error('Error loading users:', error);
-        alert('Failed to load users');
+        // Silently fail if not authenticated or no permission
+        if (error.response?.status === 403 || error.response?.status === 401) {
+          this.users = [];
+          // Don't log error for authentication issues
+        } else {
+          console.error('Error loading users:', error);
+          alert('Failed to load users');
+        }
       } finally {
         this.loading = false;
       }
@@ -467,19 +474,24 @@ export default {
         }
 
         if (this.editMode) {
-          await axios.put(`http://localhost:8000/api/users/${this.formData.id}/`, userData);
+          await api.updateUser(this.formData.id, userData);
           alert('User updated successfully');
         } else {
-          await axios.post('http://localhost:8000/api/users/', userData);
+          await api.createUser(userData);
           alert('User created successfully');
         }
 
         this.closeModal();
         this.loadUsers();
       } catch (error) {
-        console.error('Error saving user:', error);
-        const errorMsg = error.response?.data?.error || error.response?.data?.detail || 'Failed to save user';
-        alert(errorMsg);
+        // Handle authentication errors silently
+        if (error.response?.status === 403 || error.response?.status === 401) {
+          alert('You do not have permission to manage users. Please log in as an administrator.');
+        } else {
+          console.error('Error saving user:', error);
+          const errorMsg = error.response?.data?.error || error.response?.data?.detail || 'Failed to save user';
+          alert(errorMsg);
+        }
       }
     },
     editUser(user) {
@@ -502,26 +514,34 @@ export default {
       if (!confirm(`Are you sure you want to ${action} ${user.username}?`)) return;
 
       try {
-        await axios.patch(`http://localhost:8000/api/users/${user.id}/`, {
+        await api.patchUser(user.id, {
           is_active: !user.is_active
         });
         alert(`User ${action}d successfully`);
         this.loadUsers();
       } catch (error) {
-        console.error('Error toggling user status:', error);
-        alert('Failed to update user status');
+        if (error.response?.status === 403 || error.response?.status === 401) {
+          alert('You do not have permission to manage users.');
+        } else {
+          console.error('Error toggling user status:', error);
+          alert('Failed to update user status');
+        }
       }
     },
     async deleteUser(user) {
       if (!confirm(`Are you sure you want to delete ${user.username}? This action cannot be undone.`)) return;
 
       try {
-        await axios.delete(`http://localhost:8000/api/users/${user.id}/`);
+        await api.deleteUser(user.id);
         alert('User deleted successfully');
         this.loadUsers();
       } catch (error) {
-        console.error('Error deleting user:', error);
-        alert('Failed to delete user');
+        if (error.response?.status === 403 || error.response?.status === 401) {
+          alert('You do not have permission to delete users.');
+        } else {
+          console.error('Error deleting user:', error);
+          alert('Failed to delete user');
+        }
       }
     },
     closeModal() {

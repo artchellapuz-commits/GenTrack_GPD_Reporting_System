@@ -69,6 +69,7 @@ export default defineConfig({
   // Development server optimization
   server: {
     port: 3000,
+    strictPort: true, // Don't try other ports if 3000 is in use
     host: true,
     
     // Proxy API requests to backend
@@ -118,23 +119,9 @@ export default defineConfig({
   
   // CSS preprocessing
   css: {
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@import "@/assets/variables.scss";`
-      }
-    },
-    
     // PostCSS configuration
     postcss: {
-      plugins: [
-        // Autoprefixer for browser compatibility
-        require('autoprefixer'),
-        
-        // CSS optimization
-        require('cssnano')({
-          preset: 'default'
-        })
-      ]
+      plugins: []
     }
   },
   

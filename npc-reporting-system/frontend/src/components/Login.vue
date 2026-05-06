@@ -306,7 +306,7 @@ export default {
 
       try {
         await axios.post(
-          `${process.env.VUE_APP_API_URL}/auth/password_reset_request/`,
+          `${import.meta.env.VITE_APP_API_URL || 'http://localhost:8000/api'}/auth/password_reset_request/`,
           {
             username: this.resetRequest.username,
             reason: this.resetRequest.reason || 'User requested password reset'
@@ -345,7 +345,7 @@ export default {
 
       try {
         const response = await axios.post(
-          `${process.env.VUE_APP_API_URL}/auth/login/`,
+          `${import.meta.env.VITE_APP_API_URL || 'http://localhost:8000/api'}/auth/login/`,
           this.credentials
         );
 
@@ -360,13 +360,9 @@ export default {
           localStorage.removeItem('rememberMe');
         }
 
-        // Store tokens
-        localStorage.setItem('access_token', response.data.access);
-        localStorage.setItem('refresh_token', response.data.refresh);
+        // Store user data (session-based auth)
         localStorage.setItem('user', JSON.stringify(response.data.user));
-
-        // Set default authorization header
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+        localStorage.setItem('session_id', response.data.session_id);
 
         // Redirect to dashboard
         this.$router.push('/');

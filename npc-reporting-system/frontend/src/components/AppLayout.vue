@@ -570,24 +570,9 @@ export default {
       this.isDarkMode = isDark;
     },
     async loadPendingResetCount() {
-      // Updated: 2026-04-21 12:54 PM - Fixed 404 handling
       try {
-        const response = await fetch('http://localhost:8000/api/auth/pending_reset_count/', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-          }
-        });
-        
-        // Silently handle 404 - endpoint may not exist
-        if (response.status === 404) {
-          this.pendingResetCount = 0;
-          return;
-        }
-        
-        if (response.ok) {
-          const data = await response.json();
-          this.pendingResetCount = data.count || 0;
-        }
+        const response = await api.getPendingResetCount();
+        this.pendingResetCount = response.data.count || 0;
       } catch (error) {
         // Silently fail - this is a non-critical feature
         this.pendingResetCount = 0;

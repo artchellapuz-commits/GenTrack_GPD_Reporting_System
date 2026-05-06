@@ -1693,9 +1693,8 @@ export default {
         this.userAuthorizations = Array.isArray(response.data) ? response.data : (response.data.results || []);
         console.log('Loaded user authorizations:', this.userAuthorizations);
       } catch (error) {
-        console.error('Error loading authorizations:', error);
+        // Silently fail - user may not be logged in or have authorizations
         this.userAuthorizations = [];
-        // Don't show error toast - fail silently and allow all signatures (fail-open)
       }
     },
     

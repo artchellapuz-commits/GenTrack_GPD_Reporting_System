@@ -5,7 +5,7 @@
 
 import axios from 'axios';
 
-let API_URL = process.env.VUE_APP_API_URL || 'http://localhost:8000/api';
+let API_URL = import.meta.env.VITE_APP_API_URL || process.env.VUE_APP_API_URL || 'http://localhost:8000/api';
 
 // Force production URL if running on Netlify domain
 if (window.location.hostname.includes('netlify.app')) {
@@ -46,7 +46,10 @@ export function getUsername() {
  * Check if user is authenticated
  */
 export function isAuthenticated() {
-  return !!getAccessToken();
+  // For session-based auth, check if user data exists
+  const user = getUser();
+  const sessionId = localStorage.getItem('session_id');
+  return !!(user && sessionId);
 }
 
 /**
@@ -72,6 +75,7 @@ export function clearAuth() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
+  localStorage.removeItem('session_id');
   sessionStorage.removeItem('generateReportState');
   delete axios.defaults.headers.common['Authorization'];
 }
@@ -122,13 +126,11 @@ const processQueue = (error, token = null) => {
 };
 
 export function setupAxiosInterceptors() {
-  // Request interceptor to add token
+  // Request interceptor - for session-based auth, axios will automatically send cookies
   axios.interceptors.request.use(
     (config) => {
-      const token = getAccessToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
+      // Enable credentials for session-based auth
+      config.withCredentials = true;
       return config;
     },
     (error) => {
@@ -136,56 +138,15 @@ export function setupAxiosInterceptors() {
     }
   );
 
-  // Response interceptor to handle token expiration
+  // Response interceptor to handle authentication errors
   axios.interceptors.response.use(
     (response) => response,
     async (error) => {
-      const originalRequest = error.config;
-
-      // If error is 401 and we haven't retried yet
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        
-        // Prevent infinite loop
-        if (originalRequest.url.includes('/auth/refresh/') || originalRequest.url.includes('/token/refresh/')) {
-          // Refresh token itself failed, clear auth and redirect
-          clearAuth();
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
-          return Promise.reject(error);
-        }
-
-        if (isRefreshing) {
-          // If already refreshing, queue this request
-          return new Promise((resolve, reject) => {
-            failedQueue.push({ resolve, reject });
-          })
-            .then(token => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              return axios(originalRequest);
-            })
-            .catch(err => {
-              return Promise.reject(err);
-            });
-        }
-
-        originalRequest._retry = true;
-        isRefreshing = true;
-
-        try {
-          const newToken = await refreshAccessToken();
-          processQueue(null, newToken);
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return axios(originalRequest);
-        } catch (refreshError) {
-          processQueue(refreshError, null);
-          clearAuth();
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
-          return Promise.reject(refreshError);
-        } finally {
-          isRefreshing = false;
+      // If error is 401, redirect to login
+      if (error.response?.status === 401) {
+        clearAuth();
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
         }
       }
 
