@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.pyc
+
+# Django
+*.log
+*.pot
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+*.sqlite3
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Virtual environments
+venv/
+env/
+ENV/
+backend/venv/
+backend/env/
+
+# Node modules and dependencies
+node_modules/
+frontend/node_modules/
+package-lock.json
+
+# Build outputs
+frontend/dist/
+frontend/build/
+frontend/.cache/
+.cache/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.bak
+.vite/
+*.log
+
+# Uploaded files (keep structure, ignore content)
+backend/media/admin_signatures/*.png
+backend/media/admin_signatures/*.jpg
+backend/media/documents/**/*
+backend/media/exports/**/*
+backend/media/signatures/**/*
+backend/media/uploads/**/*
+
+# Keep .gitkeep files
+!**/.gitkeep
