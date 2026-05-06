@@ -903,3 +903,14 @@ WARNING 2026-04-21 15:47:55,741 log Unauthorized: /api/auth/pending_reset_count/
 WARNING 2026-04-21 15:47:55,742 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 401 274
 INFO 2026-04-21 15:48:14,138 basehttp "OPTIONS /api/auth/pending_reset_count/ HTTP/1.1" 200 0
 INFO 2026-04-21 15:48:14,240 basehttp "GET /api/auth/pending_reset_count/ HTTP/1.1" 200 11
+INFO 2026-04-30 08:16:18,804 autoreload Watching for file changes with StatReloader
+INFO 2026-04-30 08:18:00,771 autoreload Watching for file changes with StatReloader
+INFO 2026-04-30 08:18:50,264 autoreload Watching for file changes with StatReloader
+ERROR 2026-04-30 08:19:54,389 models Failed to create audit log: relation "audit_logs" does not exist
+LINE 1: INSERT INTO "audit_logs" ("user_id", "action", "model_name",...
+                    ^
+
+WARNING 2026-04-30 08:19:54,414 log Not Found: /
+WARNING 2026-04-30 08:19:54,420 log "GET / HTTP/1.1" 404 3368
+WARNING 2026-04-30 08:19:54,573 log Not Found: /favicon.ico
+WARNING 2026-04-30 08:19:54,575 log "GET /favicon.ico HTTP/1.1" 404 3419
